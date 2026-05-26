@@ -240,28 +240,63 @@ const idToken = hashParams.get('id_token') || queryParams.get('id_token');
 let isHandlingIdToken = false;
 
 if (idToken) {
-    isHandlingIdToken = true;
-    const nonce = localStorage.getItem('supabase-auth-nonce') || undefined;
-    window.history.replaceState({}, document.title, window.location.pathname);
-    supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: idToken,
-        nonce: nonce
-    }).then(({ data, error }) => {
-        isHandlingIdToken = false;
-        if (error) {
-            import('./utils').then(m => m.showError('Login Error: ' + error.message));
-            
-            // On error we need to show the auth screen manually since we skipped it
-            document.getElementById('auth-screen')!.classList.remove('hidden');
-            const loader = document.getElementById('initial-loader');
-            if (loader) {
-                loader.classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => loader.remove(), 300);
+    const localNonce = localStorage.getItem('supabase-auth-nonce');
+    // If we are on the Web (not native) AND there's no nonce in this browser, 
+    // it means auth was initiated from the mobile app (different WebView/localStorage space).
+    // So we must redirect back to the app via deep link.
+    if (!Capacitor.isNativePlatform() && !localNonce) {
+        window.location.href = "com.vibegram.app://auth" + window.location.hash;
+    } else {
+        isHandlingIdToken = true;
+        window.history.replaceState({}, document.title, window.location.pathname);
+        supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+            nonce: localNonce || undefined
+        }).then(({ data, error }) => {
+            isHandlingIdToken = false;
+            if (error) {
+                import('./utils').then(m => m.showError('Login Error: ' + error.message));
+                
+                document.getElementById('auth-screen')!.classList.remove('hidden');
+                const loader = document.getElementById('initial-loader');
+                if (loader) {
+                    loader.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => loader.remove(), 300);
+                }
             }
-        }
+        });
+    }
+}
+
+// Deep linking for app resuming from the web auth proxy
+if (Capacitor.isPluginAvailable('App')) {
+    import('@capacitor/app').then(({ App }) => {
+        App.addListener('appUrlOpen', async (data) => {
+            console.log('App opened with URL:', data.url);
+            if (data.url.includes('com.vibegram.app://auth') && data.url.includes('id_token')) {
+                const url = new URL(data.url.replace('#', '?')); // easy parsing
+                const deepIdToken = url.searchParams.get('id_token');
+                if (deepIdToken) {
+                    isHandlingIdToken = true;
+                    const nonce = localStorage.getItem('supabase-auth-nonce') || undefined;
+                    const res = await supabase.auth.signInWithIdToken({
+                        provider: 'google',
+                        token: deepIdToken,
+                        nonce: nonce
+                    });
+                    isHandlingIdToken = false;
+                    if (res.error) {
+                        import('./utils').then(m => m.showError('Deep Link Login Error: ' + res.error?.message));
+                        document.getElementById('auth-screen')!.classList.remove('hidden');
+                    }
+                }
+            }
+        });
     });
-} else if (hashError) {
+}
+
+else if (!idToken && hashError) {
     let errorMsg = decodeURIComponent(hashError.replace(/\+/g, ' '));
     if (errorMsg.includes('OAuth state not found') || errorMsg.includes('expired')) {
          errorMsg += ' (Подсказка: если ошибка повторяется, попробуйте открыть сайт в обычном браузере)';
