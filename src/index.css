@@ -1,0 +1,379 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+.icon-pop-anim {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.icon-pop-anim:hover {
+    transform: scale(1.1);
+}
+.icon-pop-anim:active {
+    transform: scale(0.95);
+}
+
+body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+.dark body { background-color: #111827; color: #f3f4f6; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+.chat-bg { background-color: var(--chat-bg-color, #e5ddd5); background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E"); }
+.dark .chat-bg { background-color: var(--chat-bg-color, #0f172a); background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23ffffff' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E"); }
+
+/* Custom Backgrounds */
+.bg-anim-1 {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 25%, #f5f7fa 50%, #c3cfe2 75%, #f5f7fa 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 14s linear infinite;
+}
+.dark .bg-anim-1 {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #1e293b 75%, #0f172a 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 14s linear infinite;
+}
+.bg-anim-2 {
+    background: linear-gradient(to top, #accbee 0%, #e7f0fd 25%, #accbee 50%, #e7f0fd 75%, #accbee 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 16s linear infinite;
+}
+.dark .bg-anim-2 {
+    background: linear-gradient(to top, #020617 0%, #0f172a 25%, #020617 50%, #0f172a 75%, #020617 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 16s linear infinite;
+}
+.bg-anim-3 {
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle at 20% 30%, #e2e8f0 0%, transparent 60%), radial-gradient(circle at 80% 80%, #cbd5e1 0%, transparent 60%);
+    background-size: 200% 200%;
+    animation: bgOrbs 20s ease-in-out infinite;
+}
+.dark .bg-anim-3 {
+    background-color: #020617;
+    background-image: radial-gradient(circle at 20% 30%, #1e293b 0%, transparent 60%), radial-gradient(circle at 80% 80%, #334155 0%, transparent 60%);
+    background-size: 200% 200%;
+    animation: bgOrbs 20s ease-in-out infinite;
+}
+.bg-anim-4 {
+    background: linear-gradient(-45deg, #e3ebe8 0%, #e3eeff 25%, #e3ebe8 50%, #e3eeff 75%, #e3ebe8 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+.dark .bg-anim-4 {
+    background: linear-gradient(-45deg, #1e1b4b 0%, #111827 25%, #1e1b4b 50%, #111827 75%, #1e1b4b 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+.bg-anim-5 {
+    background: radial-gradient(circle at top left, #fff1eb 0%, #ace0f9 100%);
+    background-size: 200% 200%;
+    animation: bgFlow 18s ease-in-out infinite;
+}
+.dark .bg-anim-5 {
+    background: radial-gradient(circle at top left, #1e0000 0%, #001e2b 100%);
+    background-size: 200% 200%;
+    animation: bgFlow 18s ease-in-out infinite;
+}
+.bg-anim-6 {
+    background: linear-gradient(120deg, #f6d365 0%, #fda085 25%, #f6d365 50%, #fda085 75%, #f6d365 100%);
+    background-size: 200% 100%;
+    animation: linearFlow 12s linear infinite;
+}
+.dark .bg-anim-6 {
+    background: linear-gradient(120deg, #4c1d95 0%, #2a0a4a 25%, #4c1d95 50%, #2a0a4a 75%, #4c1d95 100%);
+    background-size: 200% 100%;
+    animation: linearFlow 12s linear infinite;
+}
+.bg-anim-7 {
+    background-color: #fcfcfc;
+    background-image: linear-gradient(90deg, transparent 79px, #e2e8f0 79px, #e2e8f0 81px, transparent 81px),
+                      linear-gradient(#e2e8f0 1px, transparent 1px);
+    background-size: 100% 100%, 80px 80px;
+    animation: slideFlow 30s linear infinite;
+}
+.dark .bg-anim-7 {
+    background-color: #0b0f19;
+    background-image: linear-gradient(90deg, transparent 79px, #1e293b 79px, #1e293b 81px, transparent 81px),
+                      linear-gradient(#1e293b 1px, transparent 1px);
+    background-size: 100% 100%, 80px 80px;
+    animation: slideFlow 30s linear infinite;
+}
+.bg-pattern-dots {
+    background-color: #f8fafc;
+    background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: patternSlow 40s linear infinite;
+}
+.dark .bg-pattern-dots {
+    background-color: #020617;
+    background-image: radial-gradient(#475569 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: patternSlow 40s linear infinite;
+}
+
+/* Premium Animated Backgrounds */
+.bg-premium-1 {
+    background: linear-gradient(-45deg, #ff9a9e 0%, #fecfef 25%, #a1c4fd 50%, #fecfef 75%, #ff9a9e 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+.dark .bg-premium-1 {
+    background: linear-gradient(-45deg, #2a0845 0%, #6441A5 25%, #0f172a 50%, #6441A5 75%, #2a0845 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+.bg-premium-2 {
+    background: radial-gradient(circle at 10% 20%, #a8edea 0%, transparent 60%),
+                radial-gradient(circle at 90% 80%, #fed6e3 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, #e0c3fc 0%, transparent 60%);
+    background-color: #f8fafc;
+    background-size: 200% 200%;
+    animation: premiumOrbs 20s ease-in-out infinite;
+}
+.dark .bg-premium-2 {
+    background: radial-gradient(circle at 10% 20%, #1e3a8a 0%, transparent 60%),
+                radial-gradient(circle at 90% 80%, #4c1d95 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, #0369a1 0%, transparent 60%);
+    background-color: #020617;
+    background-size: 200% 200%;
+    animation: premiumOrbs 20s ease-in-out infinite;
+}
+.bg-premium-3 {
+    background: linear-gradient(120deg, #d4fc79 0%, #96e6a1 25%, #84fab0 50%, #96e6a1 75%, #d4fc79 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+.dark .bg-premium-3 {
+    background: linear-gradient(120deg, #064e3b 0%, #0f766e 25%, #075985 50%, #0f766e 75%, #064e3b 100%);
+    background-size: 200% 200%;
+    animation: linearFlow 15s linear infinite;
+}
+
+@keyframes linearFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+@keyframes bgFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes bgOrbs {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+@keyframes premiumFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes premiumOrbs {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+@keyframes premiumAurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes slideFlow {
+    0% { background-position: 0px 0px; }
+    100% { background-position: 80px 80px; }
+}
+@keyframes patternSlow {
+    0% { background-position: 0px 0px; }
+    100% { background-position: 20px 20px; }
+}
+
+.modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+.custom-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 6px;
+    display: block !important;
+    -webkit-appearance: none;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(156, 163, 175, 0.1);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(75, 85, 99, 0.2);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.6);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 1);
+}
+
+.tick-single { color: #818cf8; opacity: 0.8; }
+.tick-double { color: #3b82f6; opacity: 1; }
+
+.format-size { font-variant-numeric: tabular-nums; }
+
+.video-circle-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 640px) {
+    .video-circle-container {
+        width: 240px;
+        height: 240px;
+    }
+}
+
+.video-circle-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-progress-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: rotate(-90deg);
+    z-index: 30;
+}
+
+.video-progress-ring circle {
+    fill: transparent;
+    stroke: #3b82f6;
+    stroke-width: 3; /* thinner scroll */
+    stroke-dasharray: 301.6; /* 2 * PI * 48 */
+    stroke-dashoffset: 301.6;
+    transition: stroke-dashoffset 0.25s linear;
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.video-overlay-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.video-circle-container.uninteracted .video-progress-ring,
+.video-circle-container.uninteracted .video-overlay-icon {
+    display: none !important;
+}
+
+.video-circle-container.paused .video-overlay-icon,
+.video-circle-container.show-status .video-overlay-icon {
+    opacity: 1;
+}
+
+/* Animated Emojis */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@keyframes emoji-heart {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.25); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.25); }
+  60% { transform: scale(1); }
+}
+@keyframes emoji-laugh {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-15deg) scale(1.1); }
+  75% { transform: rotate(15deg) scale(1.1); }
+}
+@keyframes emoji-fire {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(255,100,0,0.4)); }
+  50% { transform: scale(1.1) rotate(2deg); filter: drop-shadow(0 0 10px rgba(255,100,0,0.8)); }
+}
+@keyframes emoji-thumb {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(-15deg) translateY(-5px); }
+  40% { transform: rotate(10deg) translateY(0); }
+  60% { transform: rotate(-10deg) translateY(-2px); }
+  80% { transform: rotate(5deg) translateY(0); }
+}
+@keyframes emoji-wow {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.1) translateY(-5px); }
+}
+@keyframes emoji-cry {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+@keyframes emoji-default {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.anim-emoji-heart { animation: emoji-heart 3s ease-in-out infinite; display: inline-block; transform-origin: center; }
+.anim-emoji-laugh { animation: emoji-laugh 4s ease-in-out infinite; display: inline-block; transform-origin: center; }
+.anim-emoji-fire { animation: emoji-fire 3s ease-in-out infinite; display: inline-block; transform-origin: bottom center; }
+.anim-emoji-thumb { animation: emoji-thumb 4s ease-in-out infinite; display: inline-block; transform-origin: bottom left; }
+.anim-emoji-wow { animation: emoji-wow 4s ease-in-out infinite; display: inline-block; transform-origin: center; }
+.anim-emoji-cry { animation: emoji-cry 5s ease-in-out infinite; display: inline-block; transform-origin: center; }
+.anim-emoji-default { animation: emoji-default 6s ease-in-out infinite; display: inline-block; transform-origin: center; }
+
+.big-emoji {
+    font-size: 4rem;
+    line-height: 1.1;
+    display: inline-block;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    margin: 0 2px;
+}
+
+.reaction-menu-emoji {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.reaction-menu-emoji:hover {
+  transform: scale(1.4) translateY(-2px);
+}
+
+.reaction-btn {
+    transition: all 0.2s ease;
+}
+.reaction-btn:active {
+    transform: scale(0.9);
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Vibegram Pro APK",
+  "description": "",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
