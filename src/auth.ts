@@ -25,7 +25,14 @@ export async function loginWithGoogle() {
                 localStorage.setItem('supabase-auth-nonce', rawNonce);
                 
                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(exactRedirectUrl)}&response_type=id_token&scope=${encodeURIComponent('openid email profile')}&nonce=${hashedNonce}&prompt=select_account`;
-                window.location.href = authUrl;
+                
+                if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Browser')) {
+                    import('@capacitor/browser').then(({ Browser }) => {
+                        Browser.open({ url: authUrl });
+                    });
+                } else {
+                    window.location.href = authUrl;
+                }
             });
         });
     } catch (err: any) {

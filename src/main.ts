@@ -275,6 +275,9 @@ if (Capacitor.isPluginAvailable('App')) {
         App.addListener('appUrlOpen', async (data) => {
             console.log('App opened with URL:', data.url);
             if (data.url.includes('com.vibegram.app://auth') && data.url.includes('id_token')) {
+                if (Capacitor.isPluginAvailable('Browser')) {
+                    import('@capacitor/browser').then(({ Browser }) => Browser.close());
+                }
                 const url = new URL(data.url.replace('#', '?')); // easy parsing
                 const deepIdToken = url.searchParams.get('id_token');
                 if (deepIdToken) {
