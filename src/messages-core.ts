@@ -1077,10 +1077,15 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 
                 if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
                     s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
+                        console.log('Target user push_token:', data?.push_token);
                         if (data?.push_token) {
+                            console.log('Invoking send-push edge function...');
                             s.supabase.functions.invoke('send-push', {
                                 body: { token: data.push_token, title, body }
-                            }).catch(e => console.warn('Push error', e));
+                            }).then(res => console.log('Edge function response:', res))
+                              .catch(e => console.warn('Push error', e));
+                        } else {
+                            console.log('Skipping push: No push_token found in DB for user', state.activeChatOtherUser.id);
                         }
                     });
                 } else if (state.activeChatIsGroup) {
@@ -1091,11 +1096,16 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                 s.supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
                                     if (profiles) {
                                         const tokens = profiles.map(p => p.push_token).filter(t => t);
+                                        console.log('Target group tokens:', tokens);
                                         if (tokens.length > 0) {
                                             const groupTitle = state.activeGroupDetails?.name ? `${state.activeGroupDetails.name} (${title})` : title;
+                                            console.log('Invoking group send-push edge function...');
                                             s.supabase.functions.invoke('send-push', {
                                                 body: { tokens: tokens, title: groupTitle, body }
-                                            }).catch(e => console.warn('Group Push error', e));
+                                            }).then(res => console.log('Group edge function response:', res))
+                                              .catch(e => console.warn('Group Push error', e));
+                                        } else {
+                                            console.log('Skipping group push: No valid tokens found for group members');
                                         }
                                     }
                                 });
