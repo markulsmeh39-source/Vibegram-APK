@@ -214,7 +214,7 @@ export async function forwardSelectedMessages() {
         div.innerHTML = `
             <div class="relative">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
-                    ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : chatName.charAt(0).toUpperCase()}
+                    ${avatarUrl ? `<img src="${avatarUrl}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : chatName.charAt(0).toUpperCase()}
                 </div>
                 <div id="forward-check-${chat.id}" class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center hidden scale-0 transition-transform">
                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>

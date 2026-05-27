@@ -224,7 +224,7 @@ export async function showPollVoters(messageId: string) {
                 
                 const name = profile.display_name || profile.username || 'User';
                 const avatar = profile.avatar_url 
-                    ? `<img src="${profile.avatar_url}" class="w-6 h-6 rounded-full object-cover">`
+                    ? `<img src="${profile.avatar_url}" referrerpolicy="no-referrer" class="w-6 h-6 rounded-full object-cover">`
                     : `<div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold">${name.charAt(0).toUpperCase()}</div>`;
                     
                 html += `

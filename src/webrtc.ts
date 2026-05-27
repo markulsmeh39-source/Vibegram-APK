@@ -94,7 +94,7 @@ export async function initWebRTC() {
             if (document.getElementById('incoming-call-avatar')) {
                 const incAvatar = document.getElementById('incoming-call-avatar')!;
                 if (data.callerAvatar) {
-                    incAvatar.innerHTML = `<img src="${data.callerAvatar}" class="w-full h-full object-cover rounded-full border border-gray-700">`;
+                    incAvatar.innerHTML = `<img src="${data.callerAvatar}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full border border-gray-700">`;
                 } else {
                     incAvatar.innerText = data.callerName[0].toUpperCase();
                 }
@@ -225,7 +225,7 @@ async function startCall(isVideo: boolean) {
     const avatarEl = document.getElementById('call-avatar');
     if (avatarEl) {
         if (targetUser.avatar_url) {
-            avatarEl.innerHTML = `<img src="${targetUser.avatar_url}" class="w-full h-full object-cover rounded-full border border-gray-700">`;
+            avatarEl.innerHTML = `<img src="${targetUser.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full border border-gray-700">`;
         } else {
             avatarEl.innerText = name[0].toUpperCase();
         }
@@ -350,7 +350,7 @@ export async function answerCall(callerId: string, offer: any, callerName: strin
     const avatarEl = document.getElementById('call-avatar');
     if (avatarEl) {
         if (callerAvatar) {
-            avatarEl.innerHTML = `<img src="${callerAvatar}" class="w-full h-full object-cover rounded-full border border-gray-700">`;
+            avatarEl.innerHTML = `<img src="${callerAvatar}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full border border-gray-700">`;
         } else {
             avatarEl.innerText = callerName[0].toUpperCase();
         }

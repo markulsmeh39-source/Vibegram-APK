@@ -80,7 +80,7 @@ export async function openShortsSubscriptions() {
                 list.innerHTML = data.map(p => `
                 <div class="flex items-center gap-3 p-4 hover:bg-[#222222] cursor-pointer transition select-none border-b border-[#222222]" onclick="window.navigateToUserFromSubscriptions('${p.id}')">
                     <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-700 shrink-0">
-                        ${p.avatar_url ? `<img src="${p.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-sm text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`}
+                        ${p.avatar_url ? `<img src="${p.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-sm text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="font-bold text-white text-sm truncate">${p.display_name || p.username}</div>
@@ -225,7 +225,7 @@ export function performFullShortsSearch(query: string) {
                                 <div class="text-xs text-gray-400 mt-1">${s.views_count || 0} просмотров</div>
                                 <div class="flex items-center gap-1.5 mt-2">
                                     <div class="w-5 h-5 rounded-full overflow-hidden bg-gray-600 shrink-0">
-                                        ${s.profiles?.avatar_url ? `<img src="${s.profiles.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-[8px] text-white">${authorName[0]?.toUpperCase() || '?'}</div>`}
+                                        ${s.profiles?.avatar_url ? `<img src="${s.profiles.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-[8px] text-white">${authorName[0]?.toUpperCase() || '?'}</div>`}
                                     </div>
                                     <div class="text-xs text-gray-400 truncate">${authorName}</div>
                                 </div>
@@ -251,9 +251,9 @@ export function performFullShortsSearch(query: string) {
                     <div class="flex items-center gap-3 p-4 hover:bg-[#222222] cursor-pointer transition select-none border-b border-[#222222]" onclick="window.navigateToUserFromSearch('${p.id}')">
                         <div class="w-12 h-12 relative rounded-full shrink-0">
                             <div class="w-full h-full rounded-full overflow-hidden bg-gray-700">
-                                ${p.avatar_url ? `<img src="${p.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-sm text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`}
+                                ${p.avatar_url ? `<img src="${p.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-sm text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`}
                             </div>
-                            ${isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-[#111111] rounded-full p-0.5 shadow-sm border border-[#222222] z-50 w-5 h-5 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : ''}
+                            ${isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-[#111111] rounded-full p-0.5 shadow-sm border border-[#222222] z-50 w-5 h-5 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : ''}
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="font-bold text-white text-sm truncate">${p.display_name || p.username}</div>
@@ -297,8 +297,8 @@ async function _doViewUserShorts(targetId: string) {
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', targetId).single();
     if (profile) {
         const isPremiumUser = profile.is_premium && (!profile.premium_until || new Date(profile.premium_until) > new Date());
-        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-6 h-6 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
-        let avatarStr = profile.avatar_url ? `<img src="${profile.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">${(profile.display_name || profile.username || '?')[0].toUpperCase()}</div>`;
+        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-6 h-6 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+        let avatarStr = profile.avatar_url ? `<img src="${profile.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">${(profile.display_name || profile.username || '?')[0].toUpperCase()}</div>`;
         document.getElementById('analytics-avatar')!.innerHTML = `<div class="w-full h-full relative rounded-full overflow-hidden">${avatarStr}</div>${premiumBadgeHtml}`;
         document.getElementById('analytics-avatar')!.classList.remove('overflow-hidden'); // The badge needs to overflow the main container
         document.getElementById('analytics-name')!.innerText = profile.display_name || profile.username;
@@ -554,7 +554,7 @@ async function loadShorts(initialShortId?: string, authorFilterId?: string) {
                 const { data: subProfiles } = await supabase.from('profiles').select('id, display_name, username, avatar_url').in('id', subs);
                 if (subProfiles) {
                     subBar.innerHTML = subProfiles.map(p => {
-                        const avatarStr = p.avatar_url ? `<img src="${p.avatar_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`;
+                        const avatarStr = p.avatar_url ? `<img src="${p.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`;
                         return `<div class="flex flex-col items-center gap-1 cursor-pointer shrink-0" onclick="window.viewUserShorts('${p.id}')">
                             <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-blue-500 transition-all">${avatarStr}</div>
                             <div class="text-[10px] text-white w-14 truncate text-center font-bold drop-shadow-md">${p.display_name || p.username}</div>
@@ -632,10 +632,10 @@ function appendShortsFromQueue(count: number) {
             const name = short.profiles?.display_name || short.profiles?.username || 'Неизвестный';
             let avatarStr = '';
             const isPremiumUser = short.profiles?.is_premium && (!short.profiles?.premium_until || new Date(short.profiles.premium_until) > new Date());
-            const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-black/60 backdrop-blur rounded-full p-0.5 shadow-sm border border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+            const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-black/60 backdrop-blur rounded-full p-0.5 shadow-sm border border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
             
             if (short.profiles?.avatar_url) {
-                avatarStr = `<div class="w-full h-full relative"><img src="${short.profiles.avatar_url}" class="w-full h-full object-cover rounded-full select-none" draggable="false">${premiumBadgeHtml}</div>`;
+                avatarStr = `<div class="w-full h-full relative"><img src="${short.profiles.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full select-none" draggable="false">${premiumBadgeHtml}</div>`;
             } else {
                 avatarStr = `<div class="w-full h-full relative"><div class="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center font-bold text-white shadow-sm select-none overflow-hidden">${name[0].toUpperCase()}</div>${premiumBadgeHtml}</div>`;
             }
@@ -997,10 +997,10 @@ async function loadShortComments(shortId: string) {
         const renderComment = (c: any, isReply: boolean = false) => {
             const name = c.profiles?.display_name || c.profiles?.username || 'Неизвестный';
             const isPremiumUser = c.profiles?.is_premium && (!c.profiles?.premium_until || new Date(c.profiles.premium_until) > new Date());
-            const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-black/60 backdrop-blur rounded-full p-0.5 shadow-sm border border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+            const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-black/60 backdrop-blur rounded-full p-0.5 shadow-sm border border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
             let avatarStr = '';
             if (c.profiles?.avatar_url) {
-                avatarStr = `<div class="w-full h-full relative"><img src="${c.profiles.avatar_url}" class="w-full h-full object-cover rounded-full">${premiumBadgeHtml}</div>`;
+                avatarStr = `<div class="w-full h-full relative"><img src="${c.profiles.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">${premiumBadgeHtml}</div>`;
             } else {
                 avatarStr = `<div class="w-full h-full relative"><div class="w-full h-full bg-slate-600 rounded-full flex items-center justify-center font-bold text-white text-xs overflow-hidden">${name[0].toUpperCase()}</div>${premiumBadgeHtml}</div>`;
             }

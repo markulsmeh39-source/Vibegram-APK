@@ -112,7 +112,7 @@ export async function forwardMessage(id: string, content: string, senderName: st
             }
         }
         
-        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
 
         const firstLetter = (chatName || 'C')[0].toUpperCase();
         
@@ -121,7 +121,7 @@ export async function forwardMessage(id: string, content: string, senderName: st
             avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
         } else {
             avatarHtml = avatarUrl 
-                ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>` 
+                ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" referrerpolicy="no-referrer" class="w-full h-full object-cover"></div>` 
                 : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
         }
 

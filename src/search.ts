@@ -16,7 +16,7 @@ export function searchUsers(q: string) {
                 const title = channel.title;
                 const div = document.createElement('div');
                 div.className = 'p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0';
-                const avatarHtml = channel.avatar_url ? `<img src="${channel.avatar_url}" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
+                const avatarHtml = channel.avatar_url ? `<img src="${channel.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
                 div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}</span><span class="text-xs text-gray-500 truncate block">По ключу-приглашению</span></div>`;
                 div.onclick = () => { resultsBox.classList.add('hidden'); (document.getElementById('search-input') as HTMLInputElement).value = ''; joinChannelWithKey(channel, q); };
                 resultsBox.appendChild(div);
@@ -44,9 +44,9 @@ export function searchUsers(q: string) {
                 const nickname = u.display_name || u.username;
                 const div = document.createElement('div');
                 div.className = 'p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0';
-                const avatarHtml = u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${nickname[0].toUpperCase()}</div>`;
+                const avatarHtml = u.avatar_url ? `<img src="${u.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${nickname[0].toUpperCase()}</div>`;
                 const isPremiumUser = u.is_premium && (!u.premium_until || new Date(u.premium_until) > new Date());
-                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
                 let usernameTag = u.username ? `<span class="text-xs text-gray-500 truncate block">@${u.username}</span>` : '';
                 div.innerHTML = `<div class="w-10 h-10 shrink-0 relative"><div class="w-full h-full bg-blue-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden">${avatarHtml}</div>${premiumBadgeHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${nickname}</span>${usernameTag}</div>`;
                 div.onclick = () => { resultsBox.classList.add('hidden'); (document.getElementById('search-input') as HTMLInputElement).value = ''; startChatWithUser(u); };
@@ -56,7 +56,7 @@ export function searchUsers(q: string) {
                 const title = g.title;
                 const div = document.createElement('div');
                 div.className = 'p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0';
-                const avatarHtml = g.avatar_url ? `<img src="${g.avatar_url}" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
+                const avatarHtml = g.avatar_url ? `<img src="${g.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
                 let usernameTag = g.username ? ` • @${g.username}` : '';
                 div.innerHTML = `<div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}</span><span class="text-xs text-gray-500 truncate block">Группа${usernameTag}</span></div>`;
                 div.onclick = () => { resultsBox.classList.add('hidden'); (document.getElementById('search-input') as HTMLInputElement).value = ''; joinGroup(g); };
@@ -66,7 +66,7 @@ export function searchUsers(q: string) {
                 const title = c.title;
                 const div = document.createElement('div');
                 div.className = 'p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0';
-                const avatarHtml = c.avatar_url ? `<img src="${c.avatar_url}" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
+                const avatarHtml = c.avatar_url ? `<img src="${c.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
                 let usernameTag = c.username ? ` • @${c.username}` : '';
                 div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}</span><span class="text-xs text-gray-500 truncate block">Канал${usernameTag}</span></div>`;
                 div.onclick = () => { resultsBox.classList.add('hidden'); (document.getElementById('search-input') as HTMLInputElement).value = ''; joinChannel(c); };
@@ -187,9 +187,9 @@ export async function openUserProfile(userId: string) {
     }
     
     let isPremiumUser = userToFind.is_premium && (!userToFind.premium_until || new Date(userToFind.premium_until) > new Date());
-    const premiumBadgeHtml = isPremiumUser ? `<div class="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-900 z-50 w-8 h-8 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+    const premiumBadgeHtml = isPremiumUser ? `<div class="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-900 z-50 w-8 h-8 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
     
-    const avatarInnerHtml = userToFind.avatar_url ? `<img src="${userToFind.avatar_url}" class="w-full h-full object-cover rounded-full">` : `${(userToFind.display_name || userToFind.username || 'U')[0].toUpperCase()}`;
+    const avatarInnerHtml = userToFind.avatar_url ? `<img src="${userToFind.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `${(userToFind.display_name || userToFind.username || 'U')[0].toUpperCase()}`;
     const avatarHtml = `<div class="w-full h-full relative rounded-full flex items-center justify-center ${!userToFind.avatar_url ? 'bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-4xl' : ''}">${avatarInnerHtml}${premiumBadgeHtml}</div>`;
     
     let usernameHtml = '';

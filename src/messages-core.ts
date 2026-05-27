@@ -506,7 +506,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         }
 
         const isPremium = msg.profiles?.is_premium && (!msg.profiles.premium_until || new Date(msg.profiles.premium_until) > new Date());
-        const premiumBadge = isPremium ? `<span class="inline-flex items-center justify-center ml-1" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
+        const premiumBadge = isPremium ? `<span class="inline-flex items-center justify-center ml-1" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
 
         const senderNameHtml = (state.activeChatType === 'group' && (!isMe || isSystemAdmin)) ? `<div onclick="event.stopPropagation(); openUserProfile('${msg.sender_id}')" class="text-[13px] font-bold text-blue-500 mb-0.5 flex items-center cursor-pointer hover:underline w-fit">${displaySenderName}${premiumBadge}</div>` : '';
         
@@ -529,7 +529,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             const avatarUrl = msg.profiles?.avatar_url;
             avatarHtml = `
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 shrink-0 mr-2 self-end mb-1 cursor-pointer flex items-center justify-center text-white font-bold text-sm overflow-hidden shadow-sm" onclick="event.stopPropagation(); window.openUserProfile('${msg.sender_id}')" title="${displaySenderName}">
-                    ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : firstLetter}
+                    ${avatarUrl ? `<img src="${avatarUrl}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : firstLetter}
                 </div>
             `;
         }

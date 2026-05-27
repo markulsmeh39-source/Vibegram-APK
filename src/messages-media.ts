@@ -224,7 +224,7 @@ export function renderMediaModal() {
         const url = URL.createObjectURL(file);
         let previewContent = '';
         if (file.type.startsWith('image/')) {
-            previewContent = `<img src="${url}" class="w-24 h-24 object-cover rounded-xl border border-gray-200 dark:border-gray-700">`;
+            previewContent = `<img src="${url}" referrerpolicy="no-referrer" class="w-24 h-24 object-cover rounded-xl border border-gray-200 dark:border-gray-700">`;
         } else if (file.type.startsWith('video/')) {
             previewContent = `<video src="${url}" class="w-24 h-24 object-cover rounded-xl border border-gray-200 dark:border-gray-700"></video>`;
         }

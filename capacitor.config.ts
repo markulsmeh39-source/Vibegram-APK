@@ -12,6 +12,9 @@ const config: CapacitorConfig = {
       presentationOptions: ["badge", "sound"],
     },
   },
+  server: {
+    cleartext: true
+  }
 };
 
 export default config;
