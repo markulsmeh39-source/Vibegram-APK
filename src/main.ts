@@ -39,19 +39,28 @@ export async function requestNativePermissions() {
                 
                 PushNotifications.addListener('pushNotificationReceived', (notification) => {
                     console.log('Push received in foreground:', notification.title);
-                    const chatId = notification.data?.chatId;
-                    // Show in-app notification if we are not in the same chat
-                    if (!chatId || chatId !== state.activeChatId) {
-                        import('./utils').then(m => {
-                            m.customToast(`${notification.title}\n${notification.body}`);
-                        });
-                    }
+                    // Убираем customToast, чтобы не дублировать внутренние уведомления мессенджера, 
+                    // которые уже работают штатно через realtime.
                 });
                 
                 PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
                     const chatId = action.notification.data?.chatId;
                     if (chatId) {
-                        import('./chat').then(m => m.openChat(chatId));
+                        const checkAndOpen = () => {
+                            const chatEl = document.querySelector(`#chats-list > div[data-chat-id="${chatId}"]`) as HTMLElement;
+                            if (chatEl) {
+                                chatEl.click();
+                            } else {
+                                // Try again after loadChats completes
+                                import('./chat').then(m => m.loadChats()).then(() => {
+                                    setTimeout(() => {
+                                        const retryEl = document.querySelector(`#chats-list > div[data-chat-id="${chatId}"]`) as HTMLElement;
+                                        if (retryEl) retryEl.click();
+                                    }, 500);
+                                });
+                            }
+                        };
+                        checkAndOpen();
                     }
                 });
             }
