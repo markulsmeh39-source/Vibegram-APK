@@ -18,11 +18,13 @@ export async function requestNativePermissions() {
                 await PushNotifications.register();
                 
                 await PushNotifications.createChannel({
-                    id: 'default',
-                    name: 'Messages',
-                    description: 'Incoming messages',
+                    id: 'vibegram_messages_v1',
+                    name: 'Сообщения',
+                    description: 'Входящие сообщения',
                     importance: 5,
-                    visibility: 1
+                    visibility: 1,
+                    sound: 'default',
+                    vibration: true
                 });
 
                 // Add listeners

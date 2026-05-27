@@ -175,7 +175,7 @@ async function startServer() {
            notification: {
              defaultSound: true,
              defaultVibrateTimings: true,
-             channelId: "default"
+             channelId: "vibegram_messages_v1"
            }
         }
       };

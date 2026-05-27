@@ -61,6 +61,11 @@ public class MainActivity extends BridgeActivity {
                 intent.setData(Uri.parse("package:" + getPackageName()));
                 startActivity(intent);
             }
+            if (!Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, 103);
+            }
         }
     }
 }

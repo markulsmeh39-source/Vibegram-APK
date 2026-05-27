@@ -324,7 +324,6 @@ export function showInAppNotification(chatId: string, title: string, text: strin
         startX = e.touches[0].clientX;
         isSwiping = true;
         notif.style.transition = 'none';
-        clearTimeout(clickTimer);
     }, {passive: true});
 
     notif.addEventListener('touchmove', (e) => {
@@ -345,60 +344,37 @@ export function showInAppNotification(chatId: string, title: string, text: strin
             notif.style.transform = `translate3d(${currentX > 0 ? screenW : -screenW}px, 0, 0)`;
             notif.style.opacity = '0';
             setTimeout(() => notif.remove(), 300);
+            // prevent click from firing when we swipe to dismiss
+            const preventClick = (ev: Event) => {
+                ev.stopPropagation();
+                ev.preventDefault();
+                notif.removeEventListener('click', preventClick, true);
+            };
+            notif.addEventListener('click', preventClick, true);
             return;
         } else {
             // Snap back
             notif.style.transform = '';
             notif.style.opacity = '1';
         }
-        
-        if (Math.abs(currentX) < 10) {
-            // Treat as click if it was just a tap without movement
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile) {
-                clickCount++;
-                if (clickCount === 1) {
-                    clickTimer = setTimeout(() => {
-                        clickCount = 0;
-                    }, 400); // Wait 400ms for a second tap
-                    return;
-                } else {
-                    clickCount = 0;
-                }
-            }
-            
-            const chatElement = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
-            if (chatElement) {
-                chatElement.click();
-            } else {
-                if ((window as any).logic?.loadChats) {
-                    (window as any).logic.loadChats().then(() => {
-                        const el = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
-                        if (el) el.click();
-                    });
-                }
-            }
-            notif.remove();
-        }
         currentX = 0;
     });
 
     notif.onclick = (e) => {
-        // Desktop click fallback
-        if (window.innerWidth > 768) {
-            const chatElement = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
-            if (chatElement) {
-                chatElement.click();
-            } else {
-                if ((window as any).logic?.loadChats) {
-                    (window as any).logic.loadChats().then(() => {
-                        const el = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
-                        if (el) el.click();
-                    });
-                }
+        e.preventDefault();
+        e.stopPropagation();
+        const chatElement = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
+        if (chatElement) {
+            chatElement.click();
+        } else {
+            if ((window as any).logic?.loadChats) {
+                (window as any).logic.loadChats().then(() => {
+                    const el = document.querySelector(`div[data-chat-id="${chatId}"]`) as HTMLElement;
+                    if (el) el.click();
+                });
             }
-            notif.remove();
         }
+        notif.remove();
     };
 
     container.appendChild(notif);
