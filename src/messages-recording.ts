@@ -264,12 +264,15 @@ export async function toggleRecording(type: 'voice' | 'video') {
                             
                             // Push Notification for Audio/Video
                             const senderName = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
-                            const notificationBody = type === 'voice' ? 'Голосовое сообщение' : 'Видеосообщение';
+                            const notificationBody = type === 'voice' ? '🎤 Голосовое сообщение' : '📹 Видеосообщение';
                             
                             let title = senderName;
                             let finalBody = notificationBody;
 
-                            if (state.activeChatIsGroup) {
+                            if (state.activeChatType === 'channel') {
+                                title = state.activeGroupDetails?.name || title;
+                                finalBody = notificationBody;
+                            } else if (state.activeChatIsGroup) {
                                 title = state.activeGroupDetails?.name || title;
                                 finalBody = `${senderName}: ${notificationBody}`;
                             }

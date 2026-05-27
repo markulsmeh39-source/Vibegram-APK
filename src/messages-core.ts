@@ -1076,14 +1076,15 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 let notificationBody = text;
                 if (!notificationBody) {
                     if (actualMediaCount > 0) {
-                        const hasDocument = mediaArr.some(m => m.type === 'document' || !m.type?.startsWith('image/') && !m.type?.startsWith('video/'));
-                        const hasPhoto = mediaArr.some(m => m.type?.startsWith('image/'));
-                        const hasVideo = mediaArr.some(m => m.type?.startsWith('video/'));
+                        const uploadedMedia = mediaArr.slice(0, actualMediaCount);
+                        const hasDocument = uploadedMedia.some((m: any) => m.asFile || (!m.type?.startsWith('image/') && !m.type?.startsWith('video/')));
+                        const hasVideo = uploadedMedia.some((m: any) => !m.asFile && m.type?.startsWith('video/'));
+                        const hasPhoto = uploadedMedia.some((m: any) => !m.asFile && m.type?.startsWith('image/'));
                         
-                        if (hasDocument) notificationBody = 'Отправлен файл';
-                        else if (hasPhoto) notificationBody = 'Фотография';
-                        else if (hasVideo) notificationBody = 'Видео';
-                        else notificationBody = 'Отправлено медиа';
+                        if (hasDocument) notificationBody = '📎 Файл';
+                        else if (hasVideo) notificationBody = '📹 Видео';
+                        else if (hasPhoto) notificationBody = '📷 Фотография';
+                        else notificationBody = '📎 Медиа';
                     } else {
                         notificationBody = 'Новое сообщение';
                     }
@@ -1092,7 +1093,10 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 let title = senderName;
                 let finalBody = notificationBody;
 
-                if (state.activeChatIsGroup) {
+                if (state.activeChatType === 'channel') {
+                    title = state.activeGroupDetails?.name || title;
+                    finalBody = notificationBody;
+                } else if (state.activeChatIsGroup) {
                     title = state.activeGroupDetails?.name || title;
                     finalBody = `${senderName}: ${notificationBody}`;
                 }

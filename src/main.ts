@@ -39,7 +39,13 @@ export async function requestNativePermissions() {
                 
                 PushNotifications.addListener('pushNotificationReceived', (notification) => {
                     console.log('Push received in foreground:', notification.title);
-                    // Do not show custom toasts here based on user request (no notifications when app is open)
+                    const chatId = notification.data?.chatId;
+                    // Show in-app notification if we are not in the same chat
+                    if (!chatId || chatId !== state.activeChatId) {
+                        import('./utils').then(m => {
+                            m.customToast(`${notification.title}\n${notification.body}`);
+                        });
+                    }
                 });
                 
                 PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
