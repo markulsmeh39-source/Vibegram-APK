@@ -156,14 +156,15 @@ async function startServer() {
   // API Route for sending FCM push notification
   app.post("/api/send-push", async (req, res) => {
     try {
-      const { token, title, body, data } = req.body;
-      if (!token) {
-        res.status(400).json({ error: "Missing token" });
+      const { token, tokens, title, body, data } = req.body;
+      const targetTokens = tokens || (token ? [token] : []);
+      
+      if (targetTokens.length === 0) {
+        res.status(400).json({ error: "Missing token(s)" });
         return;
       }
       
       const payload = {
-        token,
         notification: {
           title: title || "New Message",
           body: body || ""
@@ -179,7 +180,13 @@ async function startServer() {
         }
       };
 
-      const response = await admin.messaging().send(payload);
+      let response;
+      if (targetTokens.length === 1) {
+          response = await admin.messaging().send({ ...payload, token: targetTokens[0] });
+      } else {
+          response = await admin.messaging().sendEachForMulticast({ ...payload, tokens: targetTokens });
+      }
+      
       res.json({ success: true, response });
     } catch (error: any) {
       console.error("FCM send error:", error);

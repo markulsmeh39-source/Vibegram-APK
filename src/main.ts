@@ -7,7 +7,7 @@ import { setupMiniApps, runStandaloneMiniApp } from './miniapps';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 
-async function requestNativePermissions() {
+export async function requestNativePermissions() {
     try {
         if (Capacitor.isPluginAvailable('PushNotifications')) {
             let permStatus = await PushNotifications.checkPermissions();
@@ -27,6 +27,7 @@ async function requestNativePermissions() {
 
                 // Add listeners
                 PushNotifications.addListener('registration', async (token) => {
+                    localStorage.setItem('vibegram_push_token', token.value);
                     if (state.currentUser) {
                         try {
                             await supabase.from('profiles').update({ push_token: token.value }).eq('id', state.currentUser.id);

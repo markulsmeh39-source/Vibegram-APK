@@ -110,6 +110,11 @@ export async function checkUser(authEvent?: string) {
             
             state.currentProfile = data;
             
+            const savedPushToken = localStorage.getItem('vibegram_push_token');
+            if (savedPushToken && data.push_token !== savedPushToken) {
+                supabase.from('profiles').update({ push_token: savedPushToken }).eq('id', user.id).then();
+            }
+            
             if (data.settings?.force_pin_reset) {
                 localStorage.removeItem('vibegram_app_lock_' + user.id);
                 const newSettings = { ...data.settings };

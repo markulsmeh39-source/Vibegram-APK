@@ -1072,16 +1072,38 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 s.broadcastUpdate(state.activeChatId!, 'message');
                 
                 // Push Notification
+                const title = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
+                const body = text || (actualMediaCount > 0 ? 'Отправлено медиа' : 'Новое сообщение');
+                
                 if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
                     s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
                         if (data?.push_token) {
-                            const title = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
-                            const body = text || (actualMediaCount > 0 ? 'Отправлено медиа' : 'Новое сообщение');
                             fetch('/api/send-push', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ token: data.push_token, title, body })
                             }).catch(e => console.warn('Push error', e));
+                        }
+                    });
+                } else if (state.activeChatIsGroup) {
+                    s.supabase.from('chat_members').select('user_id').eq('chat_id', state.activeChatId).then(({ data: members }) => {
+                        if (members && members.length > 0) {
+                            const memberIds = members.map(m => m.user_id).filter(id => id !== state.currentUser?.id);
+                            if (memberIds.length > 0) {
+                                s.supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
+                                    if (profiles) {
+                                        const tokens = profiles.map(p => p.push_token).filter(t => t);
+                                        if (tokens.length > 0) {
+                                            const groupTitle = state.activeGroupDetails?.name ? `${state.activeGroupDetails.name} (${title})` : title;
+                                            fetch('/api/send-push', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ tokens: tokens, title: groupTitle, body })
+                                            }).catch(e => console.warn('Group Push error', e));
+                                        }
+                                    }
+                                });
+                            }
                         }
                     });
                 }
