@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Vibegram',
   webDir: 'dist',
   plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },

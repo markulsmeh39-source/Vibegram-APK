@@ -259,6 +259,9 @@ if (idToken) {
                 import('./utils').then(m => m.showError('Login Error: ' + error.message));
                 
                 document.getElementById('auth-screen')!.classList.remove('hidden');
+                document.getElementById('google-login-btn')?.classList.remove('hidden');
+                document.getElementById('google-login-btn')?.removeAttribute('disabled');
+                document.getElementById('auth-loading-indicator')?.classList.add('hidden');
                 const loader = document.getElementById('initial-loader');
                 if (loader) {
                     loader.classList.add('opacity-0', 'pointer-events-none');
@@ -292,6 +295,9 @@ if (Capacitor.isPluginAvailable('App')) {
                     if (res.error) {
                         import('./utils').then(m => m.showError('Deep Link Login Error: ' + res.error?.message));
                         document.getElementById('auth-screen')!.classList.remove('hidden');
+                        document.getElementById('google-login-btn')?.classList.remove('hidden');
+                        document.getElementById('google-login-btn')?.removeAttribute('disabled');
+                        document.getElementById('auth-loading-indicator')?.classList.add('hidden');
                     }
                 }
             }

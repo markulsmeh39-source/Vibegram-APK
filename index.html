@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
     <title>Vibegram</title>
     <link rel="icon" href="./image/Gemini_Generated_Image_fpoqbdfpoqbdfpoq (1).png" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +39,7 @@
             </div>
             <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">Vibegram</h1>
             <p class="text-gray-500 dark:text-gray-400 mb-8 text-sm">Подключайся и общайся</p>
-            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold p-4 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-md border border-gray-200 dark:border-gray-700 mx-auto">
+            <button id="google-login-btn" onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold p-4 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-md border border-gray-200 dark:border-gray-700 mx-auto">
                 <svg class="w-6 h-6" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -47,6 +48,10 @@
                 </svg>
                 Продолжить с Google
             </button>
+            <div id="auth-loading-indicator" class="hidden mt-4 flex flex-col items-center">
+                <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-gray-500 mt-2">Авторизация...</p>
+            </div>
             <p id="auth-error" class="text-red-500 mt-4 text-sm font-medium min-h-[1rem] transition-all"></p>
         </div>
     </div>

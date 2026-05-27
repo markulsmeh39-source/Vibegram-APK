@@ -4,8 +4,12 @@ import { loadChats } from './chat';
 import { initWebRTC } from './webrtc';
 
 export async function loginWithGoogle() {
-    const btn = event?.currentTarget as HTMLButtonElement | undefined;
-    if (btn) btn.disabled = true;
+    const btn = document.getElementById('google-login-btn') as HTMLButtonElement;
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('hidden');
+        document.getElementById('auth-loading-indicator')?.classList.remove('hidden');
+    }
     try {
         const clientId = '362424832513-mdflqja6lr0jq81es5frq66vqic6i1n9.apps.googleusercontent.com';
         
@@ -36,7 +40,11 @@ export async function loginWithGoogle() {
             });
         });
     } catch (err: any) {
-        if (btn) btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('hidden');
+            document.getElementById('auth-loading-indicator')?.classList.add('hidden');
+        }
         import('./utils').then(m => m.showError('Ошибка входа через Google: ' + err.message));
     }
 }
