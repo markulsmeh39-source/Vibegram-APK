@@ -38,11 +38,15 @@ export async function requestNativePermissions() {
                 });
                 
                 PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                    import('./utils').then(m => m.customToast(notification.title + ': ' + notification.body));
+                    console.log('Push received in foreground:', notification.title);
+                    // Do not show custom toasts here based on user request (no notifications when app is open)
                 });
                 
-                PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-                    // Navigate to chat or whatever if needed
+                PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+                    const chatId = action.notification.data?.chatId;
+                    if (chatId) {
+                        import('./chat').then(m => m.openChat(chatId));
+                    }
                 });
             }
         }

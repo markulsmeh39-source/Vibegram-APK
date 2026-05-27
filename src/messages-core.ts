@@ -1072,8 +1072,30 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 s.broadcastUpdate(state.activeChatId!, 'message');
                 
                 // Push Notification
-                const title = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
-                const body = text || (actualMediaCount > 0 ? 'Отправлено медиа' : 'Новое сообщение');
+                const senderName = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
+                let notificationBody = text;
+                if (!notificationBody) {
+                    if (actualMediaCount > 0) {
+                        const hasDocument = mediaArr.some(m => m.type === 'document' || !m.type?.startsWith('image/') && !m.type?.startsWith('video/'));
+                        const hasPhoto = mediaArr.some(m => m.type?.startsWith('image/'));
+                        const hasVideo = mediaArr.some(m => m.type?.startsWith('video/'));
+                        
+                        if (hasDocument) notificationBody = 'Отправлен файл';
+                        else if (hasPhoto) notificationBody = 'Фотография';
+                        else if (hasVideo) notificationBody = 'Видео';
+                        else notificationBody = 'Отправлено медиа';
+                    } else {
+                        notificationBody = 'Новое сообщение';
+                    }
+                }
+
+                let title = senderName;
+                let finalBody = notificationBody;
+
+                if (state.activeChatIsGroup) {
+                    title = state.activeGroupDetails?.name || title;
+                    finalBody = `${senderName}: ${notificationBody}`;
+                }
                 
                 if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
                     s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
@@ -1081,7 +1103,12 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                         if (data?.push_token) {
                             console.log('Invoking send-push edge function...');
                             s.supabase.functions.invoke('send-push', {
-                                body: { token: data.push_token, title, body }
+                                body: { 
+                                    token: data.push_token, 
+                                    title, 
+                                    body: finalBody,
+                                    data: { chatId: state.activeChatId } 
+                                }
                             }).then(res => console.log('Edge function response:', res))
                               .catch(e => console.warn('Push error', e));
                         } else {
@@ -1098,10 +1125,14 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                         const tokens = profiles.map(p => p.push_token).filter(t => t);
                                         console.log('Target group tokens:', tokens);
                                         if (tokens.length > 0) {
-                                            const groupTitle = state.activeGroupDetails?.name ? `${state.activeGroupDetails.name} (${title})` : title;
                                             console.log('Invoking group send-push edge function...');
                                             s.supabase.functions.invoke('send-push', {
-                                                body: { tokens: tokens, title: groupTitle, body }
+                                                body: { 
+                                                    tokens: tokens, 
+                                                    title, 
+                                                    body: finalBody,
+                                                    data: { chatId: state.activeChatId }
+                                                }
                                             }).then(res => console.log('Group edge function response:', res))
                                               .catch(e => console.warn('Group Push error', e));
                                         } else {
