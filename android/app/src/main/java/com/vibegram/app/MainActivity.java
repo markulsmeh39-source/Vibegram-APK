@@ -54,6 +54,13 @@ public class MainActivity extends BridgeActivity {
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, 102);
             }
+            
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
         }
     }
 }
