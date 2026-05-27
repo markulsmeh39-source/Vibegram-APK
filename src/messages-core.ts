@@ -1078,10 +1078,8 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
                     s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
                         if (data?.push_token) {
-                            fetch('/api/send-push', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ token: data.push_token, title, body })
+                            s.supabase.functions.invoke('send-push', {
+                                body: { token: data.push_token, title, body }
                             }).catch(e => console.warn('Push error', e));
                         }
                     });
@@ -1095,10 +1093,8 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                         const tokens = profiles.map(p => p.push_token).filter(t => t);
                                         if (tokens.length > 0) {
                                             const groupTitle = state.activeGroupDetails?.name ? `${state.activeGroupDetails.name} (${title})` : title;
-                                            fetch('/api/send-push', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ tokens: tokens, title: groupTitle, body })
+                                            s.supabase.functions.invoke('send-push', {
+                                                body: { tokens: tokens, title: groupTitle, body }
                                             }).catch(e => console.warn('Group Push error', e));
                                         }
                                     }
