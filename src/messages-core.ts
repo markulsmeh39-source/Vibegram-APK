@@ -1123,6 +1123,7 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                     chat_id: state.activeChatId,
                                     text: notificationBody,
                                     sender_name: senderName,
+                                    sender_id: state.currentUser?.id,
                                     data: { chatId: state.activeChatId } 
                                 }
                             }).then(res => console.log('Edge function response:', res))
@@ -1153,6 +1154,7 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                                     chat_id: state.activeChatId,
                                                     text: notificationBody,
                                                     sender_name: senderName,
+                                                    sender_id: state.currentUser?.id,
                                                     data: { chatId: state.activeChatId }
                                                 }
                                             }).then(res => console.log('Group edge function response:', res))

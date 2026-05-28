@@ -296,6 +296,7 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                 chat_id: state.activeChatId,
                                                 text: notificationBody,
                                                 sender_name: senderName,
+                                                sender_id: state.currentUser?.id,
                                                 data: { chatId: state.activeChatId }
                                             }
                                         }).catch(e => console.warn('Push error', e));
@@ -321,6 +322,7 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                                 chat_id: state.activeChatId,
                                                                 text: notificationBody,
                                                                 sender_name: senderName,
+                                                                sender_id: state.currentUser?.id,
                                                                 data: { chatId: state.activeChatId }
                                                             }
                                                         }).catch(e => console.warn('Group Push error', e));

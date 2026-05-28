@@ -20,14 +20,9 @@ serve(async (req) => {
       throw new Error('Missing FIREBASE_SERVICE_ACCOUNT env var');
     }
 
-    const authHeader = req.headers.get('Authorization');
-    const supabaseOptions = authHeader ? { global: { headers: { Authorization: authHeader } } } : {};
-    
-    // Инициализируем клиент от лица пользователя, чтобы работали RLS политики для chats
-    const supabaseUserClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      supabaseOptions
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
@@ -46,7 +41,7 @@ serve(async (req) => {
     // Читаем тело из вызова с клиента
     const payload = await req.json();
     
-    // Делаем обработку гибкой (иногда CapacitorHttp или разные версии supabase-js оборачивают body)
+    // Делаем обработку гибкой
     let reqData = payload;
     if (payload && !payload.token && !payload.tokens && payload.body) {
          if (typeof payload.body === 'string') {
@@ -58,36 +53,35 @@ serve(async (req) => {
     
     let title = reqData.title || "Vibegram";
     let bodyText = reqData.body || "Новое сообщение";
-    const { chat_id, text, sender_name } = reqData;
+    const { chat_id, text, sender_name, sender_id } = reqData;
 
-    // Серверная логика форматирования (как в ТГ), если клиент передал нужные данные
     if (chat_id && text) {
-       // Получаем информацию о чате
-       const { data: chatData, error: chatError } = await supabaseUserClient.from('chats').select('type, title').eq('id', chat_id).single();
+       // Получаем информацию о чате через Admin Client (bypassing RLS для надежности)
+       const { data: chatData, error: chatError } = await supabaseAdmin.from('chats').select('type, title').eq('id', chat_id).single();
        if (chatError) console.error("Chat fetch error:", chatError);
-       console.log("Chat data:", chatData);
 
-       // Идентифицируем реального отправителя по JWT
        let realSenderName = sender_name;
-       if (authHeader) {
-           const token = authHeader.replace('Bearer ', '');
-           const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser(token);
-           if (authError) console.error("Auth error:", authError);
-           
+       
+       // Если клиент передал свой ID, надежно достаем его профиль
+       if (sender_id) {
+           const { data: profile } = await supabaseAdmin.from('profiles').select('display_name, username').eq('id', sender_id).single();
+           if (profile) {
+               realSenderName = profile.display_name || profile.username || sender_name;
+           }
+       } else if (req.headers.get('Authorization')) {
+           // Резервный поиск по токену, если sender_id не передан
+           const token = req.headers.get('Authorization')!.replace('Bearer ', '');
+           const { data: { user } } = await supabaseAdmin.auth.getUser(token);
            if (user) {
-               console.log("Logged in user:", user.id);
-               const { data: profile, error: profileError } = await supabaseUserClient.from('profiles').select('display_name, username').eq('id', user.id).single();
-               if (profileError) console.error("Profile error:", profileError);
-               
+               const { data: profile } = await supabaseAdmin.from('profiles').select('display_name, username').eq('id', user.id).single();
                if (profile) {
                    realSenderName = profile.display_name || profile.username || sender_name;
-                   console.log("Resolved realSenderName:", realSenderName);
                }
            }
        }
        
-       if (realSenderName === "Vibegram" || !realSenderName) {
-           realSenderName = "Пользователь";
+       if (!realSenderName || realSenderName === "Vibegram") {
+           realSenderName = "Новое сообщение";
        }
 
        if (chatData) {
@@ -104,14 +98,10 @@ serve(async (req) => {
                title = realSenderName;
                bodyText = text;
            }
-           console.log("Final Push details:", { title, bodyText });
        } else {
-           console.log("WARNING: chatData is null, falling back to client defaults");
-           // Попытка исправить клиентский default:
-           if (reqData.title === "Vibegram" || reqData.body?.startsWith("Vibegram:")) {
-               if (title === "Vibegram") title = realSenderName;
-               if (bodyText.startsWith("Vibegram:")) bodyText = bodyText.replace("Vibegram:", `${realSenderName}:`);
-           }
+           // Если чат не найден, пытаемся хотя бы имя подставить вместо Vibegram
+           if (title === "Vibegram") title = realSenderName;
+           if (bodyText.startsWith("Vibegram:")) bodyText = bodyText.replace("Vibegram:", `${realSenderName}:`);
        }
     }
     
