@@ -21,16 +21,17 @@ serve(async (req) => {
     }
 
     const authHeader = req.headers.get('Authorization');
-    
     const supabaseOptions = authHeader ? { global: { headers: { Authorization: authHeader } } } : {};
     
-    const supabase = createClient(
+    // Инициализируем клиент от лица пользователя, чтобы работали RLS политики для chats
+    const supabaseUserClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       supabaseOptions
     );
 
     const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+    
     
     // Авторизация для FCM v1 API
     const jwtClient = new JWT({
@@ -62,17 +63,25 @@ serve(async (req) => {
     // Серверная логика форматирования (как в ТГ), если клиент передал нужные данные
     if (chat_id && text) {
        // Получаем информацию о чате
-       const { data: chatData } = await supabase.from('chats').select('type, title').eq('id', chat_id).single();
-       
+       const { data: chatData, error: chatError } = await supabaseUserClient.from('chats').select('type, title').eq('id', chat_id).single();
+       if (chatError) console.error("Chat fetch error:", chatError);
+       console.log("Chat data:", chatData);
+
        // Идентифицируем реального отправителя по JWT
        let realSenderName = sender_name;
        if (authHeader) {
            const token = authHeader.replace('Bearer ', '');
-           const { data: { user } } = await supabase.auth.getUser(token);
+           const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser(token);
+           if (authError) console.error("Auth error:", authError);
+           
            if (user) {
-               const { data: profile } = await supabase.from('profiles').select('display_name, username').eq('id', user.id).single();
+               console.log("Logged in user:", user.id);
+               const { data: profile, error: profileError } = await supabaseUserClient.from('profiles').select('display_name, username').eq('id', user.id).single();
+               if (profileError) console.error("Profile error:", profileError);
+               
                if (profile) {
                    realSenderName = profile.display_name || profile.username || sender_name;
+                   console.log("Resolved realSenderName:", realSenderName);
                }
            }
        }
@@ -91,9 +100,17 @@ serve(async (req) => {
                title = chatData.title || title;
                bodyText = `${realSenderName}: ${text}`;
            } else {
-               // Личный чат: Заголовок = Имя, Текст = Сообщение
+               // Личный чат (direct / private): Заголовок = Имя, Текст = Сообщение
                title = realSenderName;
                bodyText = text;
+           }
+           console.log("Final Push details:", { title, bodyText });
+       } else {
+           console.log("WARNING: chatData is null, falling back to client defaults");
+           // Попытка исправить клиентский default:
+           if (reqData.title === "Vibegram" || reqData.body?.startsWith("Vibegram:")) {
+               if (title === "Vibegram") title = realSenderName;
+               if (bodyText.startsWith("Vibegram:")) bodyText = bodyText.replace("Vibegram:", `${realSenderName}:`);
            }
        }
     }

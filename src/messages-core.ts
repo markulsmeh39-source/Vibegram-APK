@@ -1108,11 +1108,14 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 }
                 
                 if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
-                    s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
+                    s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(async ({ data }) => {
                         console.log('Target user push_token:', data?.push_token);
                         if (data?.push_token) {
                             console.log('Invoking send-push edge function...');
+                            const { data: sessionData } = await s.supabase.auth.getSession();
+                            const tokenHeader = sessionData?.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : undefined;
                             s.supabase.functions.invoke('send-push', {
+                                headers: tokenHeader,
                                 body: { 
                                     token: data.push_token, 
                                     title, 
@@ -1133,13 +1136,16 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                         if (members && members.length > 0) {
                             const memberIds = members.map(m => m.user_id).filter(id => id !== state.currentUser?.id);
                             if (memberIds.length > 0) {
-                                s.supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
+                                s.supabase.from('profiles').select('push_token').in('id', memberIds).then(async ({ data: profiles }) => {
                                     if (profiles) {
                                         const tokens = profiles.map(p => p.push_token).filter(t => t);
                                         console.log('Target group tokens:', tokens);
                                         if (tokens.length > 0) {
                                             console.log('Invoking group send-push edge function...');
+                                            const { data: sessionData } = await s.supabase.auth.getSession();
+                                            const tokenHeader = sessionData?.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : undefined;
                                             s.supabase.functions.invoke('send-push', {
+                                                headers: tokenHeader,
                                                 body: { 
                                                     tokens: tokens, 
                                                     title, 
