@@ -263,7 +263,7 @@ export async function toggleRecording(type: 'voice' | 'video') {
                             s.broadcastUpdate(state.activeChatId!, 'message');
                             
                             // Push Notification for Audio/Video
-                            const senderName = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
+                            const senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name || "Vibegram";
                             const notificationBody = type === 'voice' ? '🎤 Голосовое сообщение' : '📹 Видеосообщение';
                             
                             let title = senderName;

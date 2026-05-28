@@ -22,8 +22,7 @@ serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
     const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
@@ -57,8 +56,27 @@ serve(async (req) => {
 
     // Серверная логика форматирования (как в ТГ), если клиент передал нужные данные
     if (chat_id && text) {
-       // Получаем информацию о чате от лица пользователя (через его токен)
+       // Получаем информацию о чате
        const { data: chatData } = await supabase.from('chats').select('type, title').eq('id', chat_id).single();
+       
+       // Идентифицируем реального отправителя по JWT
+       let realSenderName = sender_name;
+       const authHeader = req.headers.get('Authorization');
+       if (authHeader) {
+           const token = authHeader.replace('Bearer ', '');
+           const { data: { user } } = await supabase.auth.getUser(token);
+           if (user) {
+               const { data: profile } = await supabase.from('profiles').select('display_name, username').eq('id', user.id).single();
+               if (profile) {
+                   realSenderName = profile.display_name || profile.username || sender_name;
+               }
+           }
+       }
+       
+       if (realSenderName === "Vibegram" || !realSenderName) {
+           realSenderName = "Пользователь";
+       }
+
        if (chatData) {
            if (chatData.type === 'channel') {
                // Канал: Заголовок = Название канала, Текст = Сообщение
@@ -67,11 +85,10 @@ serve(async (req) => {
            } else if (chatData.type === 'group') {
                // Группа: Заголовок = Название группы, Текст = Имя: Сообщение
                title = chatData.title || title;
-               const sender = sender_name || "Пользователь";
-               bodyText = `${sender}: ${text}`;
+               bodyText = `${realSenderName}: ${text}`;
            } else {
                // Личный чат: Заголовок = Имя, Текст = Сообщение
-               title = sender_name || title;
+               title = realSenderName;
                bodyText = text;
            }
        }

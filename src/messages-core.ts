@@ -1072,7 +1072,7 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                 s.broadcastUpdate(state.activeChatId!, 'message');
                 
                 // Push Notification
-                const senderName = state.currentUser?.display_name || state.currentUser?.username || "Vibegram";
+                const senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name || "Vibegram";
                 let notificationBody = text;
                 if (!notificationBody) {
                     if (actualMediaCount > 0) {
