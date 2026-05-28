@@ -268,27 +268,27 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                 const { data: p } = await s.supabase.from('profiles').select('display_name, username').eq('id', state.currentUser.id).single();
                                 if (p) senderName = p.display_name || p.username;
                             }
-                            senderName = senderName || "Vibegram";
+                            senderName = senderName || "Пользователь";
                             const notificationBody = type === 'voice' ? '🎤 Голосовое сообщение' : '📹 Видеосообщение';
                             
                             let title = senderName;
                             let finalBody = notificationBody;
 
                             if (state.activeChatType === 'channel') {
-                                title = state.activeGroupDetails?.name || title;
+                                title = state.activeGroupDetails?.name || 'Канал';
                                 finalBody = notificationBody;
                             } else if (state.activeChatIsGroup) {
-                                title = state.activeGroupDetails?.name || title;
+                                title = state.activeGroupDetails?.name || 'Группа';
                                 finalBody = `${senderName}: ${notificationBody}`;
+                            } else {
+                                title = senderName;
+                                finalBody = notificationBody;
                             }
                             
                             if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
-                                s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(async ({ data }) => {
+                                s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
                                     if (data?.push_token) {
-                                        const { data: sessionData } = await s.supabase.auth.getSession();
-                                        const tokenHeader = sessionData?.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : undefined;
                                         s.supabase.functions.invoke('send-push', {
-                                            headers: tokenHeader,
                                             body: { 
                                                 token: data.push_token, 
                                                 title, 
@@ -296,7 +296,6 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                 chat_id: state.activeChatId,
                                                 text: notificationBody,
                                                 sender_name: senderName,
-                                                sender_id: state.currentUser?.id,
                                                 data: { chatId: state.activeChatId }
                                             }
                                         }).catch(e => console.warn('Push error', e));
@@ -307,14 +306,11 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                     if (members && members.length > 0) {
                                         const memberIds = members.map(m => m.user_id).filter(id => id !== state.currentUser?.id);
                                         if (memberIds.length > 0) {
-                                            s.supabase.from('profiles').select('push_token').in('id', memberIds).then(async ({ data: profiles }) => {
+                                            s.supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
                                                 if (profiles) {
                                                     const tokens = profiles.map(p => p.push_token).filter(t => t);
                                                     if (tokens.length > 0) {
-                                                        const { data: sessionData } = await s.supabase.auth.getSession();
-                                                        const tokenHeader = sessionData?.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : undefined;
                                                         s.supabase.functions.invoke('send-push', {
-                                                            headers: tokenHeader,
                                                             body: { 
                                                                 tokens: tokens, 
                                                                 title, 
@@ -322,7 +318,6 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                                 chat_id: state.activeChatId,
                                                                 text: notificationBody,
                                                                 sender_name: senderName,
-                                                                sender_id: state.currentUser?.id,
                                                                 data: { chatId: state.activeChatId }
                                                             }
                                                         }).catch(e => console.warn('Group Push error', e));

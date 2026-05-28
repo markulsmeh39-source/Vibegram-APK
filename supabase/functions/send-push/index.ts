@@ -20,13 +20,15 @@ serve(async (req) => {
       throw new Error('Missing FIREBASE_SERVICE_ACCOUNT env var');
     }
 
+    const authHeader = req.headers.get('Authorization');
+    
+    // Create an admin client to bypass RLS when fetching chats/profiles
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
     const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
-    
     
     // Авторизация для FCM v1 API
     const jwtClient = new JWT({
@@ -41,7 +43,7 @@ serve(async (req) => {
     // Читаем тело из вызова с клиента
     const payload = await req.json();
     
-    // Делаем обработку гибкой
+    // Делаем обработку гибкой (иногда CapacitorHttp или разные версии supabase-js оборачивают body)
     let reqData = payload;
     if (payload && !payload.token && !payload.tokens && payload.body) {
          if (typeof payload.body === 'string') {
@@ -51,60 +53,10 @@ serve(async (req) => {
          }
     }
     
-    let title = reqData.title || "Vibegram";
+    let title = reqData.title || "Пользователь";
     let bodyText = reqData.body || "Новое сообщение";
-    const { chat_id, text, sender_name, sender_id } = reqData;
+    const { chat_id, text, sender_name } = reqData;
 
-    if (chat_id && text) {
-       // Получаем информацию о чате через Admin Client (bypassing RLS для надежности)
-       const { data: chatData, error: chatError } = await supabaseAdmin.from('chats').select('type, title').eq('id', chat_id).single();
-       if (chatError) console.error("Chat fetch error:", chatError);
-
-       let realSenderName = sender_name;
-       
-       // Если клиент передал свой ID, надежно достаем его профиль
-       if (sender_id) {
-           const { data: profile } = await supabaseAdmin.from('profiles').select('display_name, username').eq('id', sender_id).single();
-           if (profile) {
-               realSenderName = profile.display_name || profile.username || sender_name;
-           }
-       } else if (req.headers.get('Authorization')) {
-           // Резервный поиск по токену, если sender_id не передан
-           const token = req.headers.get('Authorization')!.replace('Bearer ', '');
-           const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-           if (user) {
-               const { data: profile } = await supabaseAdmin.from('profiles').select('display_name, username').eq('id', user.id).single();
-               if (profile) {
-                   realSenderName = profile.display_name || profile.username || sender_name;
-               }
-           }
-       }
-       
-       if (!realSenderName || realSenderName === "Vibegram") {
-           realSenderName = "Новое сообщение";
-       }
-
-       if (chatData) {
-           if (chatData.type === 'channel') {
-               // Канал: Заголовок = Название канала, Текст = Сообщение
-               title = chatData.title || title;
-               bodyText = text;
-           } else if (chatData.type === 'group') {
-               // Группа: Заголовок = Название группы, Текст = Имя: Сообщение
-               title = chatData.title || title;
-               bodyText = `${realSenderName}: ${text}`;
-           } else {
-               // Личный чат (direct / private): Заголовок = Имя, Текст = Сообщение
-               title = realSenderName;
-               bodyText = text;
-           }
-       } else {
-           // Если чат не найден, пытаемся хотя бы имя подставить вместо Vibegram
-           if (title === "Vibegram") title = realSenderName;
-           if (bodyText.startsWith("Vibegram:")) bodyText = bodyText.replace("Vibegram:", `${realSenderName}:`);
-       }
-    }
-    
     // FCM v1 строго требует, чтобы ВСЕ значения внутри объекта "data" были строками
     const pushData: Record<string, string> = {};
     if (reqData.data && typeof reqData.data === 'object') {
