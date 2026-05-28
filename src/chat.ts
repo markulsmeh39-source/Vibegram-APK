@@ -193,7 +193,7 @@ export async function loadChats() {
 
             const otherUserProfile = !isGroup ? chat.chat_members?.find((m: any) => m.user_id !== state.currentUser.id)?.profiles : null;
             const isPremiumUser = otherUserProfile?.is_premium && (!otherUserProfile.premium_until || new Date(otherUserProfile.premium_until) > new Date());
-            const premiumBadgeListHtml = isPremiumUser ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
+            const premiumBadgeListHtml = isPremiumUser ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
 
             div.innerHTML = `
                 <div class="relative shrink-0 w-12 h-12 pointer-events-none">
@@ -600,7 +600,7 @@ export async function openChat(chatId: string, chatName: string, firstLetter: st
         });
     }
 
-    const premiumBadgeListHtml = isPremiumUser ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-4 h-4 object-contain" alt="Premium"></span>` : '';
+    const premiumBadgeListHtml = isPremiumUser ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-4 h-4 object-contain" alt="Premium"></span>` : '';
     document.getElementById('current-chat-name')!.innerHTML = `<span class="truncate shrink">${chatName}</span>${premiumBadgeListHtml}`;
     
     const backBtn = document.querySelector('#chat-header-container button');

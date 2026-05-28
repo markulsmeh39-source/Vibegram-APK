@@ -153,6 +153,27 @@ async function startServer() {
     }
   });
 
+  // API Route for Pollinations proxy
+  app.post("/api/pollinations-proxy", async (req, res) => {
+    try {
+      const { url } = req.body;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+         const errText = await response.text();
+         res.status(response.status).send(errText);
+         return;
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      res.setHeader("Content-Type", response.headers.get("Content-Type") || "image/jpeg");
+      res.send(Buffer.from(arrayBuffer));
+      
+    } catch (e: any) {
+       res.status(500).json({ error: e.message });
+    }
+  });
+
   // API Route for sending FCM push notification
   app.post("/api/send-push", async (req, res) => {
     try {

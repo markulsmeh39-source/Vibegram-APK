@@ -359,7 +359,7 @@ async function loadMiniApps(tab: string) {
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow relative group">
                 <div class="flex items-start gap-4">
                     <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-inner shrink-0 truncate px-1 cursor-pointer" onclick="window.runMiniApp('${app.id}')">
-                        ${app.icon_url ? `<img src="${app.icon_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-2xl">` : app.title.substring(0, 2).toUpperCase()}
+                        ${app.icon_url ? `<img src="${app.icon_url}" class="w-full h-full object-cover rounded-2xl">` : app.title.substring(0, 2).toUpperCase()}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-start gap-2">
@@ -713,7 +713,7 @@ export async function runMiniApp(id: string) {
         document.getElementById('run-app-title')!.textContent = data.title;
         const iconEl = document.getElementById('run-app-icon')!;
         if (data.icon_url) {
-            iconEl.innerHTML = `<img src="${data.icon_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-lg">`;
+            iconEl.innerHTML = `<img src="${data.icon_url}" class="w-full h-full object-cover rounded-lg">`;
         } else {
             iconEl.textContent = data.title.substring(0, 2).toUpperCase();
         }

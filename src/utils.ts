@@ -300,7 +300,7 @@ export function showInAppNotification(chatId: string, title: string, text: strin
     // Add swipe to dismiss or close button wrapper
     const firstLetter = (title || 'U')[0].toUpperCase();
     const avatarHtml = avatarUrl 
-        ? `<img src="${avatarUrl}" referrerpolicy="no-referrer" class="w-10 h-10 object-cover rounded-full shrink-0">` 
+        ? `<img src="${avatarUrl}" class="w-10 h-10 object-cover rounded-full shrink-0">` 
         : `<div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold shrink-0">${firstLetter}</div>`;
 
     notif.innerHTML = `

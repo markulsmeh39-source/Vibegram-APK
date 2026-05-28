@@ -285,6 +285,9 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                 token: data.push_token, 
                                                 title, 
                                                 body: finalBody,
+                                                chat_id: state.activeChatId,
+                                                text: notificationBody,
+                                                sender_name: senderName,
                                                 data: { chatId: state.activeChatId }
                                             }
                                         }).catch(e => console.warn('Push error', e));
@@ -304,6 +307,9 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                                 tokens: tokens, 
                                                                 title, 
                                                                 body: finalBody,
+                                                                chat_id: state.activeChatId,
+                                                                text: notificationBody,
+                                                                sender_name: senderName,
                                                                 data: { chatId: state.activeChatId }
                                                             }
                                                         }).catch(e => console.warn('Group Push error', e));

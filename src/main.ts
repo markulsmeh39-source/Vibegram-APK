@@ -510,7 +510,7 @@ function setupRealtime() {
                 }
                 
                 const isPremium = payload.new.is_premium && (!payload.new.premium_until || new Date(payload.new.premium_until) > new Date());
-                const badge = isPremium ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
+                const badge = isPremium ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
                 const myNicknameEl = document.getElementById('my-nickname');
                 if (myNicknameEl) {
                     myNicknameEl.innerHTML = `<span class="flex items-center">${payload.new.display_name || payload.new.username || ''}${badge}</span>`;

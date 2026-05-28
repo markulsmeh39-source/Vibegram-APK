@@ -4,6 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.vibegram.app',
   appName: 'Vibegram',
   webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+    allowNavigation: ['*']
+  },
   plugins: {
     CapacitorHttp: {
       enabled: true,
@@ -12,9 +17,6 @@ const config: CapacitorConfig = {
       presentationOptions: ["badge", "sound"],
     },
   },
-  server: {
-    cleartext: true
-  }
 };
 
 export default config;

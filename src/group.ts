@@ -461,13 +461,13 @@ export async function openChatInfo(skipPushState = false) {
         isPremiumUser = state.activeChatOtherUser.is_premium && (!state.activeChatOtherUser.premium_until || new Date(state.activeChatOtherUser.premium_until) > new Date());
     }
     
-    const premiumBadgeHtml = isPremiumUser ? `<div class="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-900 z-50 w-8 h-8 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+    const premiumBadgeHtml = isPremiumUser ? `<div class="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-900 z-50 w-8 h-8 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
     
     let avatarHtml;
     if (isSavedMessages) {
         avatarHtml = `<div class="w-full h-full relative rounded-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-4xl shadow-sm">И</div>`;
     } else {
-        const avatarInnerHtml = avatarUrl ? `<img src="${avatarUrl}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : `${(name && name[0]) ? name[0].toUpperCase() : 'U'}`;
+        const avatarInnerHtml = avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">` : `${(name && name[0]) ? name[0].toUpperCase() : 'U'}`;
         avatarHtml = `<div class="w-full h-full relative rounded-full flex items-center justify-center ${!avatarUrl ? (state.activeChatIsGroup ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-bold text-4xl' : 'bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-4xl') : ''}">${avatarInnerHtml}${premiumBadgeHtml}</div>`;
     }
     
@@ -596,8 +596,8 @@ export async function openChatInfo(skipPushState = false) {
                         <div ${canManage && m.user_id !== state.currentUser.id && m.role !== 'creator' ? `oncontextmenu="window.showMemberManageMenu(event, '${m.user_id}', '${m.role}', ${isCreator})" ontouchstart="window.startMemberLongPress(event, '${m.user_id}', '${m.role}', ${isCreator})" ontouchend="window.cancelMemberLongPress()" ontouchmove="window.cancelMemberLongPress()" ontouchcancel="window.cancelMemberLongPress()"` : ''} onclick="if((window as any).isMemberLongPressOpen || event.target.closest('button') || '${m.user_id}' === '${state.currentUser.id}') return; startDirectChatById('${m.user_id}')" class="${m.user_id !== state.currentUser.id ? 'cursor-pointer' : ''} flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group" title="${m.user_id !== state.currentUser.id ? 'Написать сообщение' : ''}">
                             <div class="flex items-center gap-3 min-w-0 pointer-events-none">
                                 <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold relative shrink-0">
-                                    ${m.profiles.avatar_url ? `<img src="${m.profiles.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : (m.profiles.display_name || m.profiles.username || 'U')[0].toUpperCase()}
-                                    ${m.profiles.is_premium && (!m.profiles.premium_until || new Date(m.profiles.premium_until) > new Date()) ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-3 h-3 object-contain" alt="Premium"></div>` : ''}
+                                    ${m.profiles.avatar_url ? `<img src="${m.profiles.avatar_url}" class="w-full h-full object-cover rounded-full">` : (m.profiles.display_name || m.profiles.username || 'U')[0].toUpperCase()}
+                                    ${m.profiles.is_premium && (!m.profiles.premium_until || new Date(m.profiles.premium_until) > new Date()) ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3 h-3 object-contain" alt="Premium"></div>` : ''}
                                     ${m.profiles.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>' : ''}
                                 </div>
                                 <div class="min-w-0">
@@ -1144,12 +1144,12 @@ export async function searchUsersForAdding(query: string) {
 
     resultsContainer.innerHTML = filteredData.map(u => {
         const isPremiumUser = u.is_premium && (!u.premium_until || new Date(u.premium_until) > new Date());
-        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
         return `
         <div class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0" onclick="selectUserForAdding('${u.id}', '${u.display_name || u.username}')">
             <div class="relative w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold shrink-0">
                 <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-blue-100 dark:bg-blue-900/50">
-                    ${u.avatar_url ? `<img src="${u.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
+                    ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
                 </div>
                 ${premiumBadgeHtml}
             </div>
@@ -1309,12 +1309,12 @@ export function renderCreateGroupModal(type: 'group' | 'channel' = 'group') {
         if (state.groupCreationSelectedUsers.length > 0) {
             state.groupCreationSelectedUsers.forEach(u => {
                 const isPremiumUser = u.is_premium && (!u.premium_until || new Date(u.premium_until) > new Date());
-                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-0.5 -left-0.5 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-2.5 h-2.5 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-0.5 -left-0.5 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-2.5 h-2.5 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
                 list.innerHTML += `
                     <div class="bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 border border-blue-100 dark:border-blue-900/30 shadow-sm animate-fadeIn max-w-full">
                         <div class="relative w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] shrink-0">
                             <div class="w-full h-full overflow-hidden rounded-full flex items-center justify-center bg-blue-100">
-                                ${u.avatar_url ? `<img src="${u.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
+                                ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
                             </div>
                             ${premiumBadgeHtml}
                         </div>
@@ -1344,14 +1344,14 @@ export async function searchGroupUsers(q: string, type: 'group' | 'channel' = 'g
         if(data && data.length > 0) {
             data.forEach(u => {
                 const isPremiumUser = u.is_premium && (!u.premium_until || new Date(u.premium_until) > new Date());
-                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" referrerpolicy="no-referrer" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+                const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-3 h-3 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
                 if(state.groupCreationSelectedUsers.find(su => su.id === u.id)) return;
                 const div = document.createElement('div');
                 div.className = 'p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-50 dark:border-gray-700 flex items-center gap-3 transition-colors min-w-0';
                 div.innerHTML = `
                     <div class="relative w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold text-xs shrink-0">
                         <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-blue-100 dark:bg-blue-900/50">
-                            ${u.avatar_url ? `<img src="${u.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
+                            ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : (u.display_name || u.username)[0].toUpperCase()}
                         </div>
                         ${premiumBadgeHtml}
                     </div>
@@ -1551,7 +1551,7 @@ export function showGlobalPendingModal(pendingMembers: any[]) {
                         <div class="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg> ${m.chats?.title || 'Группа'}</div>
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-lg shrink-0 uppercase shadow-sm">
-                                ${m.profiles?.avatar_url ? `<img src="${m.profiles.avatar_url}" referrerpolicy="no-referrer" class="w-full h-full object-cover rounded-full">` : (m.profiles?.display_name || m.profiles?.username || 'U')[0]}
+                                ${m.profiles?.avatar_url ? `<img src="${m.profiles.avatar_url}" class="w-full h-full object-cover rounded-full">` : (m.profiles?.display_name || m.profiles?.username || 'U')[0]}
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="font-bold text-gray-900 dark:text-white text-base truncate">${m.profiles?.display_name || m.profiles?.username}</div>
