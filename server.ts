@@ -70,6 +70,18 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Enable CORS for API routes
+  app.use("/api", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-client-info, apikey");
+    if (req.method === "OPTIONS") {
+      res.status(200).end();
+      return;
+    }
+    next();
+  });
+
   // API Route for soft-delete
   app.post("/api/cloudinary/soft-delete", async (req, res) => {
     try {
