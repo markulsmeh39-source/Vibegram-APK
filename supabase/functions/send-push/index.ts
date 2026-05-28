@@ -20,9 +20,14 @@ serve(async (req) => {
       throw new Error('Missing FIREBASE_SERVICE_ACCOUNT env var');
     }
 
+    const authHeader = req.headers.get('Authorization');
+    
+    const supabaseOptions = authHeader ? { global: { headers: { Authorization: authHeader } } } : {};
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseOptions
     );
 
     const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
@@ -61,7 +66,6 @@ serve(async (req) => {
        
        // Идентифицируем реального отправителя по JWT
        let realSenderName = sender_name;
-       const authHeader = req.headers.get('Authorization');
        if (authHeader) {
            const token = authHeader.replace('Bearer ', '');
            const { data: { user } } = await supabase.auth.getUser(token);

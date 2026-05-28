@@ -1068,11 +1068,17 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
             import('./messages-core').then(m => m.loadMessages(state.activeChatId!));
             import('./chat').then(c => c.loadChats());
             // Broadcast to other users
-            import('./supabase').then(s => {
+            import('./supabase').then(async s => {
                 s.broadcastUpdate(state.activeChatId!, 'message');
                 
                 // Push Notification
-                const senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name || "Vibegram";
+                let senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name;
+                if (!senderName) {
+                    const { data: p } = await s.supabase.from('profiles').select('display_name, username').eq('id', state.currentUser.id).single();
+                    if (p) senderName = p.display_name || p.username;
+                }
+                senderName = senderName || "Vibegram";
+                
                 let notificationBody = text;
                 if (!notificationBody) {
                     if (actualMediaCount > 0) {
