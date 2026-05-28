@@ -271,14 +271,15 @@ export async function toggleRecording(type: 'voice' | 'video') {
                             senderName = senderName || "Пользователь";
                             const notificationBody = type === 'voice' ? '🎤 Голосовое сообщение' : '📹 Видеосообщение';
                             
+                            const chatName = document.getElementById('current-chat-name')?.innerText?.trim() || 'Чат';
                             let title = senderName;
                             let finalBody = notificationBody;
 
                             if (state.activeChatType === 'channel') {
-                                title = state.activeGroupDetails?.name || 'Канал';
+                                title = chatName;
                                 finalBody = notificationBody;
                             } else if (state.activeChatIsGroup) {
-                                title = state.activeGroupDetails?.name || 'Группа';
+                                title = chatName;
                                 finalBody = `${senderName}: ${notificationBody}`;
                             } else {
                                 title = senderName;
@@ -293,9 +294,6 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                 token: data.push_token, 
                                                 title, 
                                                 body: finalBody,
-                                                chat_id: state.activeChatId,
-                                                text: notificationBody,
-                                                sender_name: senderName,
                                                 data: { chatId: state.activeChatId }
                                             }
                                         }).catch(e => console.warn('Push error', e));
@@ -315,9 +313,6 @@ export async function toggleRecording(type: 'voice' | 'video') {
                                                                 tokens: tokens, 
                                                                 title, 
                                                                 body: finalBody,
-                                                                chat_id: state.activeChatId,
-                                                                text: notificationBody,
-                                                                sender_name: senderName,
                                                                 data: { chatId: state.activeChatId }
                                                             }
                                                         }).catch(e => console.warn('Group Push error', e));

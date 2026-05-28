@@ -1096,14 +1096,15 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                     }
                 }
 
+                const chatName = document.getElementById('current-chat-name')?.innerText?.trim() || 'Чат';
                 let title = senderName;
                 let finalBody = notificationBody;
 
                 if (state.activeChatType === 'channel') {
-                    title = state.activeGroupDetails?.name || 'Канал';
+                    title = chatName;
                     finalBody = notificationBody;
                 } else if (state.activeChatIsGroup) {
-                    title = state.activeGroupDetails?.name || 'Группа';
+                    title = chatName;
                     finalBody = `${senderName}: ${notificationBody}`;
                 } else {
                     title = senderName;
@@ -1120,9 +1121,6 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                     token: data.push_token, 
                                     title, 
                                     body: finalBody,
-                                    chat_id: state.activeChatId,
-                                    text: notificationBody,
-                                    sender_name: senderName,
                                     data: { chatId: state.activeChatId } 
                                 }
                             }).then(res => console.log('Edge function response:', res))
@@ -1147,9 +1145,6 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
                                                     tokens: tokens, 
                                                     title, 
                                                     body: finalBody,
-                                                    chat_id: state.activeChatId,
-                                                    text: notificationBody,
-                                                    sender_name: senderName,
                                                     data: { chatId: state.activeChatId }
                                                 }
                                             }).then(res => console.log('Group edge function response:', res))
