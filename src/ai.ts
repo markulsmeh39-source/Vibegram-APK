@@ -47,19 +47,7 @@ export async function generateAiImage() {
 
     try {
         const pollUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
-        // On Native (Android), relative path '/api/...' won't work because the Express server isn't running on the phone.
-        // We must use the absolute URL of the Cloud Run app when on native.
-        const isNative = (window as any).Capacitor?.isNative;
-        const proxyUrl = isNative 
-            ? 'https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/api/pollinations-proxy' 
-            : '/api/pollinations-proxy';
-            
-        const response = await fetch(proxyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: pollUrl }),
-            signal: abortController.signal
-        });
+        const response = await fetch(pollUrl, { signal: abortController.signal });
         
         if (!response.ok) {
             throw new Error(`Ошибка генерации: ${response.status}`);
