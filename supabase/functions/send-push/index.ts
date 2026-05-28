@@ -40,14 +40,24 @@ serve(async (req) => {
 
     // Читаем тело из вызова с клиента
     const payload = await req.json();
-    const reqData = payload.body || payload;
+    
+    // Делаем обработку гибкой (иногда CapacitorHttp или разные версии supabase-js оборачивают body)
+    let reqData = payload;
+    if (payload && !payload.token && !payload.tokens && payload.body) {
+         if (typeof payload.body === 'string') {
+             try { reqData = JSON.parse(payload.body); } catch(e) {}
+         } else {
+             reqData = payload.body;
+         }
+    }
     
     let title = reqData.title || "Vibegram";
     let bodyText = reqData.body || "Новое сообщение";
     const { chat_id, text, sender_name } = reqData;
 
     // Серверная логика форматирования (как в ТГ), если клиент передал нужные данные
-    if (chat_id && text && sender_name) {
+    if (chat_id && text) {
+       // Получаем информацию о чате от лица пользователя (через его токен)
        const { data: chatData } = await supabase.from('chats').select('type, title').eq('id', chat_id).single();
        if (chatData) {
            if (chatData.type === 'channel') {
@@ -57,10 +67,11 @@ serve(async (req) => {
            } else if (chatData.type === 'group') {
                // Группа: Заголовок = Название группы, Текст = Имя: Сообщение
                title = chatData.title || title;
-               bodyText = `${sender_name}: ${text}`;
+               const sender = sender_name || "Пользователь";
+               bodyText = `${sender}: ${text}`;
            } else {
                // Личный чат: Заголовок = Имя, Текст = Сообщение
-               title = sender_name;
+               title = sender_name || title;
                bodyText = text;
            }
        }
