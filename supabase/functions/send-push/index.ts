@@ -221,12 +221,6 @@ serve(async (req) => {
             title: title,
             body: bodyText
           },
-          android: {
-            notification: {
-              icon: "ic_launcher_foreground",
-              color: "#111827"
-            }
-          },
           data: pushData
         }
       };
