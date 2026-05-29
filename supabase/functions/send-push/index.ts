@@ -214,12 +214,18 @@ serve(async (req) => {
 
     // Отправляем пуши на каждый токен Android устройства
     const sendResults = await Promise.all(targetTokens.map(async (token: string) => {
-      const fcmMessage = {
+      const fcmMessage: any = {
         message: {
           token: token,
           notification: {
             title: title,
             body: bodyText
+          },
+          android: {
+            notification: {
+              icon: "ic_launcher_foreground",
+              color: "#111827"
+            }
           },
           data: pushData
         }
