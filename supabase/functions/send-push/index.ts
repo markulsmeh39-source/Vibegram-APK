@@ -221,6 +221,11 @@ serve(async (req) => {
             title: title,
             body: bodyText
           },
+          android: {
+            notification: {
+              color: "#111827"
+            }
+          },
           data: pushData
         }
       };
