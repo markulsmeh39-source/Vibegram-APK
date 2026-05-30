@@ -223,7 +223,7 @@ serve(async (req) => {
           },
           android: {
             notification: {
-              icon: "ic_launcher_foreground",
+              icon: "ic_stat_notification",
               color: "#111827"
             }
           },
