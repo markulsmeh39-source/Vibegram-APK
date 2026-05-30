@@ -18,7 +18,7 @@ export async function requestNativePermissions() {
                 await PushNotifications.register();
                 
                 await PushNotifications.createChannel({
-                    id: 'vibegram_messages_v1',
+                    id: 'vibegram_messages_v3',
                     name: 'Сообщения',
                     description: 'Входящие сообщения',
                     importance: 5,
