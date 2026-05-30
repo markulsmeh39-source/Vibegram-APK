@@ -223,7 +223,7 @@ serve(async (req) => {
           },
           android: {
             notification: {
-              icon: "ic_stat_vibegram_notify",
+              icon: "ic_launcher_foreground",
               color: "#111827"
             }
           },
