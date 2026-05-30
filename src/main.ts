@@ -412,7 +412,7 @@ function setupRealtime() {
                                 const { data: sender } = await supabase.from('profiles').select('display_name, username').eq('id', payload.new.sender_id).single();
                                 const senderName = sender?.display_name || sender?.username || 'Пользователь';
                                 const text = payload.new.content || (payload.new.message_type === 'voice' ? '🎤 Голосовое сообщение' : 'Медиа сообщение');
-                                new Notification(`Новое сообщение от ${senderName}`, { body: text });
+                                new Notification(`Новое сообщение от ${senderName}`, { body: text, icon: './image/Gemini_Generated_Image_fpoqbdfpoqbdfpoq (1).png' });
                             } catch(e) { console.error("Notification API failed:", e); }
                         }
                     }
@@ -433,7 +433,7 @@ function setupRealtime() {
                             
                             if (document.hidden && "Notification" in window && Notification.permission === "granted") {
                                 try {
-                                    new Notification(`Новое сообщение от ${senderName}`, { body: text });
+                                    new Notification(`Новое сообщение от ${senderName}`, { body: text, icon: './image/Gemini_Generated_Image_fpoqbdfpoqbdfpoq (1).png' });
                                 } catch(e) { console.error("Notification API failed:", e); }
                             }
                             
