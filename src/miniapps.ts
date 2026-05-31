@@ -295,8 +295,16 @@ async function loadMiniApps(tab: string) {
             *,
             creator:creator_id(username, display_name, avatar_url)
         `,
-      )
-      .order("created_at", { ascending: false });
+      );
+
+    if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {
+      query = query
+        .order("likes_count", { ascending: false })
+        .order("views_count", { ascending: false })
+        .order("created_at", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
 
     if (currentAuthorFilter) {
       query = query
@@ -829,6 +837,23 @@ export async function submitEditMiniApp() {
   }
 }
 
+async function fetchAndInjectBase(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Fetch failed");
+  let text = await res.text();
+  const urlObj = new URL(url);
+  urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+  const baseTag = `<base href="${urlObj.href}">`;
+  if (/<head[^>]*>/i.test(text)) {
+    text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
+  } else if (/<html[^>]*>/i.test(text)) {
+    text = text.replace(/(<html[^>]*>)/i, `$1<head>${baseTag}</head>`);
+  } else {
+    text = `<head>${baseTag}</head>` + text;
+  }
+  return text;
+}
+
 export async function runMiniApp(id: string) {
   customToast("Загрузка приложения...");
 
@@ -857,24 +882,29 @@ export async function runMiniApp(id: string) {
       "mini-app-frame",
     ) as HTMLIFrameElement;
 
+    iframe.removeAttribute("srcdoc");
+    iframe.removeAttribute("src");
+
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("https://")) {
-      try {
-        const res = await fetch(data.html_content);
-        if (!res.ok) throw new Error("Fetch failed");
-        const text = await res.text();
-        iframe.srcdoc = text;
-      } catch (err) {
+      if (data.html_content.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
+        } catch (err) {
+          iframe.src = data.html_content;
+        }
+      } else {
         iframe.src = data.html_content;
       }
     } else if (data.html_url) {
-      try {
-        const res = await fetch(data.html_url);
-        if (!res.ok) throw new Error("Fetch failed");
-        const text = await res.text();
-        iframe.srcdoc = text;
-      } catch (err) {
+      if (data.html_url.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
+        } catch (err) {
+          iframe.src = data.html_url;
+        }
+      } else {
         iframe.src = data.html_url;
       }
     } else if (data.html_content) {
@@ -915,7 +945,8 @@ export function closeMiniApp() {
       const iframe = document.getElementById(
         "mini-app-frame",
       ) as HTMLIFrameElement;
-      iframe.srcdoc = "";
+      iframe.removeAttribute("srcdoc");
+      iframe.removeAttribute("src");
       currentRunningAppId = null;
       miniAppContentData = null;
     }, 300);
@@ -961,24 +992,29 @@ export async function runStandaloneMiniApp(id: string) {
       "standalone-miniapp-frame",
     ) as HTMLIFrameElement;
 
+    iframe.removeAttribute("srcdoc");
+    iframe.removeAttribute("src");
+
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("https://")) {
-      try {
-        const res = await fetch(data.html_content);
-        if (!res.ok) throw new Error("Fetch failed");
-        const text = await res.text();
-        iframe.srcdoc = text;
-      } catch (err) {
+      if (data.html_content.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
+        } catch (err) {
+          iframe.src = data.html_content;
+        }
+      } else {
         iframe.src = data.html_content;
       }
     } else if (data.html_url) {
-      try {
-        const res = await fetch(data.html_url);
-        if (!res.ok) throw new Error("Fetch failed");
-        const text = await res.text();
-        iframe.srcdoc = text;
-      } catch (err) {
+      if (data.html_url.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
+        } catch (err) {
+          iframe.src = data.html_url;
+        }
+      } else {
         iframe.src = data.html_url;
       }
     } else if (data.html_content) {
