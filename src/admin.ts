@@ -653,8 +653,8 @@ function renderChatsList(chats: any[]) {
         }
         
         if (!confirm('Are you strictly sure? This deletes the user and cascades data.')) return;
-        // Will only work if RLS allows it, or we bypass. 
-        const { error } = await supabase.from('profiles').delete().eq('id', userId);
+        // Invoke RPC to bypass RLS and delete from auth.users
+        const { error } = await supabase.rpc('admin_delete_user', { target_user_id: userId });
         if (error) throw error;
         loadAdminData();
     } catch(e: any) {

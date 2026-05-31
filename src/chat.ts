@@ -44,7 +44,7 @@ export async function loadChats() {
         });
 
         // Find Saved Messages
-        let savedMessagesIdx = chats.findIndex((c: any) => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members || c.chat_members.filter((m: any) => m.user_id !== state.currentUser.id).length === 0));
+        let savedMessagesIdx = chats.findIndex((c: any) => c.type === 'private' && (!c.chat_members || c.chat_members.filter((m: any) => m.user_id !== state.currentUser.id).length === 0));
         let savedMessagesChat = null;
         if (savedMessagesIdx !== -1) {
             savedMessagesChat = chats.splice(savedMessagesIdx, 1)[0];
@@ -52,7 +52,7 @@ export async function loadChats() {
 
         const showSavedMessages = state.currentProfile?.settings?.show_saved_messages !== false;
         
-        const activeChatIsSavedMessages = !state.activeChatIsGroup && state.activeChatMembers?.length > 0 && state.activeChatMembers.every((m: any) => m.user_id === state.currentUser?.id);
+        const activeChatIsSavedMessages = state.activeChatType === 'private' && state.activeChatMembers?.length > 0 && state.activeChatMembers.every((m: any) => m.user_id === state.currentUser?.id);
         const isSavedActive = state.activeChatId === 'new_saved_messages' || (savedMessagesChat && savedMessagesChat.id === state.activeChatId) || activeChatIsSavedMessages;
 
         if (showSavedMessages || isSavedActive) {
@@ -78,7 +78,7 @@ export async function loadChats() {
             if (chat.description === 'POST_COMMENTS' || (chat.title === 'Комментарии' && chat.type === 'group' && chat.is_public)) return;
             
             let isGroup = chat.type === 'group' || chat.type === 'channel';
-            let isSavedMsgs = !isGroup && (!chat.chat_members || chat.chat_members.filter((m: any) => m.user_id !== state.currentUser.id).length === 0);
+            let isSavedMsgs = chat.type === 'private' && (!chat.chat_members || chat.chat_members.filter((m: any) => m.user_id !== state.currentUser.id).length === 0);
             
             // Skip empty direct chats (ghost chats) unless it's currently active or it's saved messages
             if ((chat.type === 'direct' || chat.type === 'private') && (!chat.messages || chat.messages.length === 0) && chat.id !== state.activeChatId && chat.id !== 'new_saved_messages' && !isSavedMsgs) {
@@ -95,8 +95,12 @@ export async function loadChats() {
             } else if (!isGroup) {
                 const others = chat.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id);
                 if (!others || others.length === 0) {
-                    isSavedMessages = true;
-                    chatName = 'Избранное';
+                    if (chat.type === 'private') {
+                        isSavedMessages = true;
+                        chatName = 'Избранное';
+                    } else {
+                        chatName = 'Удалённый аккаунт';
+                    }
                 } else {
                     const other = others[0];
                     if(other?.profiles) {
