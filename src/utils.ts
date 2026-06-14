@@ -715,6 +715,74 @@ export async function uploadToCloudinary(file: File | Blob, isAvatar = false, ab
             }
         }
         
-        el.outerHTML = `<div class="${aspectCls} w-full bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col items-center justify-center text-gray-400 text-xs p-4 text-center border border-gray-200 dark:border-gray-700 cursor-pointer" onclick="window.open('${url}', '_blank')"><svg class="w-8 h-8 mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${errorText}</div>`;
+        el.outerHTML = `<div class="${aspectCls} w-full bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col items-center justify-center text-gray-400 text-xs p-4 text-center border border-gray-200 dark:border-gray-700 cursor-pointer" onclick="window.open('${url}', '_blank')"><svg class="w-8 h-8 mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>\${errorText}</div>`;
     }
 };
+
+export async function sendPushNotification(
+    targetUserIds: string[],
+    title: string,
+    body: string,
+    chatId: string,
+    text: string,
+    senderName: string
+) {
+    if (!targetUserIds || targetUserIds.length === 0) return;
+
+    try {
+        const pushTokens = new Set<string>();
+
+        // 1. Fetch from profiles (push_token and settings)
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('push_token, settings')
+            .in('id', targetUserIds);
+
+        if (profiles) {
+            profiles.forEach(p => {
+                if (p.push_token) pushTokens.add(p.push_token);
+                if (p.settings?.fcm_token) pushTokens.add(p.settings.fcm_token);
+                if (p.settings?.fcm_web_token) pushTokens.add(p.settings.fcm_web_token);
+            });
+        }
+
+        // 2. Fetch from device_tokens table
+        try {
+            const { data: dbTokens } = await supabase
+                .from('device_tokens')
+                .select('token')
+                .in('user_id', targetUserIds);
+
+            if (dbTokens) {
+                dbTokens.forEach(row => {
+                    if (row.token) pushTokens.add(row.token);
+                });
+            }
+        } catch (e) {
+            console.warn("Table device_tokens might not exist yet, skipping", e);
+        }
+
+        const targetTokens = Array.from(pushTokens).filter(Boolean);
+
+        if (targetTokens.length > 0) {
+            console.log('Invoking send-push edge function with ' + targetTokens.length + ' tokens...');
+            const res = await supabase.functions.invoke('send-push', {
+                body: {
+                    tokens: targetTokens, // Support for array of tokens
+                    token: targetTokens[0], // Keep it for backwards compatibility if edge expects single
+                    title,
+                    body,
+                    chat_id: chatId,
+                    text,
+                    sender_name: senderName,
+                    data: { chat_id: chatId, chatId: chatId } // chat_id is needed for iOS PWA!
+                }
+            });
+            console.log('send-push response:', res);
+        } else {
+            console.log('Skipping push: No tokens found for target users');
+        }
+    } catch (e) {
+        console.warn('Push error', e);
+    }
+}

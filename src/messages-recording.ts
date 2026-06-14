@@ -1,5 +1,5 @@
 import { supabase, state } from './supabase';
-import { scrollToBottom, customAlert, customConfirm, customPrompt, closeModal, customToast } from './utils';
+import { scrollToBottom, customAlert, customConfirm, customPrompt, closeModal, customToast, sendPushNotification } from './utils';
 import { isSelectionMode, toggleSelectionMode, toggleMessageSelection, deleteSelectedMessages, forwardSelectedMessages, confirmForwardMultiple, selectedMessages } from './selection';
 import { openLightbox, closeLightbox, lightboxNext, lightboxPrev } from './lightbox';
 import { toggleReactionMenu, toggleReaction, toggleMessageMenu, toggleEmojiMenu, sendEmojiMessage, getNotoEmojiUrl, closeAllMessageMenus, adjustMenuPosition, generateReactionsHtml } from './reactions';
@@ -285,44 +285,27 @@ export async function toggleRecording(type: 'voice' | 'video') {
                             }
                             
                             if (!state.activeChatIsGroup && state.activeChatOtherUser?.id) {
-                                s.supabase.from('profiles').select('push_token').eq('id', state.activeChatOtherUser.id).single().then(({ data }) => {
-                                    if (data?.push_token) {
-                                        s.supabase.functions.invoke('send-push', {
-                                            body: { 
-                                                token: data.push_token, 
-                                                title, 
-                                                body: finalBody,
-                                                chat_id: state.activeChatId,
-                                                text: notificationBody,
-                                                sender_name: senderName,
-                                                data: { chatId: state.activeChatId }
-                                            }
-                                        }).catch(e => console.warn('Push error', e));
-                                    }
-                                });
+                                sendPushNotification(
+                                    [state.activeChatOtherUser.id],
+                                    title,
+                                    finalBody,
+                                    state.activeChatId,
+                                    notificationBody,
+                                    senderName
+                                );
                             } else if (state.activeChatIsGroup) {
                                 s.supabase.from('chat_members').select('user_id').eq('chat_id', state.activeChatId).then(({ data: members }) => {
                                     if (members && members.length > 0) {
                                         const memberIds = members.map(m => m.user_id).filter(id => id !== state.currentUser?.id);
                                         if (memberIds.length > 0) {
-                                            s.supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
-                                                if (profiles) {
-                                                    const tokens = profiles.map(p => p.push_token).filter(t => t);
-                                                    if (tokens.length > 0) {
-                                                        s.supabase.functions.invoke('send-push', {
-                                                            body: { 
-                                                                tokens: tokens, 
-                                                                title, 
-                                                                body: finalBody,
-                                                                chat_id: state.activeChatId,
-                                                                text: notificationBody,
-                                                                sender_name: senderName,
-                                                                data: { chatId: state.activeChatId }
-                                                            }
-                                                        }).catch(e => console.warn('Group Push error', e));
-                                                    }
-                                                }
-                                            });
+                                            sendPushNotification(
+                                                memberIds,
+                                                title,
+                                                finalBody,
+                                                state.activeChatId,
+                                                notificationBody,
+                                                senderName
+                                            );
                                         }
                                     }
                                 });

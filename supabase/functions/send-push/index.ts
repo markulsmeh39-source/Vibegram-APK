@@ -192,7 +192,13 @@ serve(async (req) => {
     console.log("Processed Push notification payload server-side:", { title, bodyText });
     
     // FCM v1 строго требует, чтобы ВСЕ значения внутри объекта "data" были строками
-    const pushData: Record<string, string> = {};
+    const pushData: Record<string, string> = {
+      click_action: "FLUTTER_NOTIFICATION_CLICK"
+    };
+    if (chatId) {
+      pushData.chat_id = String(chatId);
+    }
+    
     if (reqData.data && typeof reqData.data === 'object') {
       for (const [key, value] of Object.entries(reqData.data)) {
         pushData[key] = String(value);
@@ -212,22 +218,34 @@ serve(async (req) => {
     const projectId = serviceAccount.project_id;
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
-    // Отправляем пуши на каждый токен Android устройства
+    // Отправляем пуши на каждый токен
     const sendResults = await Promise.all(targetTokens.map(async (token: string) => {
       const fcmMessage: any = {
         message: {
           token: token,
           notification: {
             title: title,
-            body: bodyText
+            body: bodyText,
+            icon: "/pwa-icon.png",
+            badge: "/pwa-icon.png"
           },
+          data: pushData,
           android: {
+            priority: "high",
             notification: {
-              icon: "ic_launcher_foreground",
-              color: "#111827"
+              sound: "default",
+              click_action: "FLUTTER_NOTIFICATION_CLICK"
             }
           },
-          data: pushData
+          apns: {
+            payload: {
+              aps: {
+                "sound": "default",
+                "badge": 1,
+                "content-available": 1
+              }
+            }
+          }
         }
       };
 
