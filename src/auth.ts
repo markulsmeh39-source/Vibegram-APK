@@ -382,7 +382,7 @@ function finalizeAppSetup() {
                 if (showHeaderMiniApps) miniAppsBtn.classList.remove('hidden');
                 else miniAppsBtn.classList.add('hidden');
             }
-
+            
             setOnlineStatus(document.hasFocus() && !document.hidden);
             window.addEventListener('focus', () => setOnlineStatus(true));
             window.addEventListener('blur', () => setOnlineStatus(false));
