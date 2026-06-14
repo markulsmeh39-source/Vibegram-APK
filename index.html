@@ -21,7 +21,7 @@
 </head>
 <body class="fixed inset-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] flex overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
     <!-- Standalone Mini App Screen -->
-    <div id="standalone-miniapp-screen" class="hidden w-full h-[100dvh] absolute top-0 left-0 bg-white dark:bg-gray-900 z-[10000] flex-col">
+    <div id="standalone-miniapp-screen" class="hidden fixed inset-0 bg-white dark:bg-gray-900 z-[10000] flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <iframe id="standalone-miniapp-frame" class="w-full h-full border-0 flex-1" sandbox="allow-scripts allow-forms allow-popups allow-same-origin"></iframe>
     </div>
 
@@ -89,6 +89,12 @@
                     </div>
                 </div>
                 <div class="flex items-center">
+                    <button id="header-shortcut-shorts" onclick="window.history.pushState(null, '', '#shorts-search'); window.dispatchEvent(new Event('popstate'));" class="hidden p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors shrink-0" title="Shorts">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    </button>
+                    <button id="header-shortcut-miniapps" onclick="window.history.pushState(null, '', '#mini-apps'); window.dispatchEvent(new Event('popstate'));" class="hidden p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors shrink-0" title="Мини-приложения">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    </button>
                     <button onclick="window.openSavedMessages()" class="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors shrink-0" title="Избранное">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
@@ -186,7 +192,7 @@
 
             <div id="bottom-controls" class="absolute bottom-0 left-0 w-full z-40 flex flex-col pointer-events-none">
                 <div class="pointer-events-auto">
-            <div class="bg-gradient-to-t from-black/5 to-transparent dark:from-black/40 border-0 p-3 pt-6 shrink-0 z-40" id="input-area" style="display: none; position: relative; padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
+            <div class="bg-gradient-to-t from-black/5 to-transparent dark:from-black/40 border-0 p-3 pt-6 shrink-0 z-40" id="input-area" style="display: none; position: relative;">
                 <div id="file-preview-area" class="hidden bg-white/60 dark:bg-gray-800/60 backdrop-blur-md shadow-sm border border-gray-200/50 dark:border-gray-700/50 py-1.5 px-3 mb-1.5 flex items-center justify-between z-20 rounded-[20px]">
                     <div class="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                         <div id="file-preview-icon" class="text-blue-500 dark:text-blue-400 shrink-0">
@@ -281,7 +287,7 @@
                     </button>
                 </div>
             </div>
-            <div id="blocked-area" class="hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-4 text-center text-sm text-gray-500 font-medium z-40 pointer-events-auto" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom));">Вы не можете писать этому пользователю</div>
+            <div id="blocked-area" class="hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-4 text-center text-sm text-gray-500 font-medium z-40 pointer-events-auto">Вы не можете писать этому пользователю</div>
             </div>
             <script>
                 // Dynamic padding to messages-list based on input-area height
@@ -447,7 +453,7 @@
         </div>
     </div>
 
-    <div id="shorts-search-overlay" class="hidden fixed inset-0 z-[120] bg-[#0f0f0f] text-white flex flex-col items-center">
+    <div id="shorts-search-overlay" class="hidden fixed inset-0 z-[120] bg-[#0f0f0f] text-white flex flex-col items-center pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div class="w-full md:w-[400px] bg-[#0f0f0f] h-full flex flex-col shadow-2xl relative">
             <div class="flex items-center gap-2 p-3 border-b border-gray-800 shrink-0">
                 <button onclick="window.closeShortsSearch()" class="p-2 text-white hover:text-gray-300 transition rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></button>
@@ -466,7 +472,7 @@
         </div>
     </div>
 
-    <div id="shorts-subscriptions-overlay" class="hidden fixed inset-0 z-[120] bg-[#0f0f0f] text-white flex flex-col items-center">
+    <div id="shorts-subscriptions-overlay" class="hidden fixed inset-0 z-[120] bg-[#0f0f0f] text-white flex flex-col items-center pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div class="w-full md:w-[400px] bg-[#0f0f0f] h-full flex flex-col shadow-2xl relative">
             <div class="flex items-center gap-2 p-3 border-b border-gray-800 shrink-0">
                 <button onclick="window.closeShortsSubscriptions()" class="p-2 text-white hover:text-gray-300 transition rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></button>
@@ -480,7 +486,7 @@
 
     <div id="shorts-screen" class="hidden fixed inset-0 z-[110] bg-black text-white flex flex-col items-center justify-center">
         <!-- Close button & Header -->
-        <div class="absolute top-0 w-full md:w-[400px] z-50 flex items-center p-4 bg-gradient-to-b from-black/60 to-transparent gap-2">
+        <div class="absolute top-0 w-full md:w-[400px] z-50 flex items-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-gradient-to-b from-black/60 to-transparent gap-2">
             <button id="shorts-back-btn" onclick="window.history.back()" class="hidden text-white hover:text-gray-300 transition p-2 -ml-2" title="Назад">
                 <svg class="w-6 h-6 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
@@ -507,14 +513,14 @@
         </div>
 
         <!-- Scrollable Container -->
-        <div id="shorts-subscriptions-bar" class="absolute top-[64px] w-full md:w-[400px] z-[45] flex gap-4 px-4 py-3 overflow-x-auto hide-scrollbar hidden pointer-events-auto bg-gradient-to-b from-black/40 to-transparent"></div>
+        <div id="shorts-subscriptions-bar" class="absolute top-[calc(64px+env(safe-area-inset-top))] w-full md:w-[400px] z-[45] flex gap-4 px-4 py-3 overflow-x-auto hide-scrollbar hidden pointer-events-auto bg-gradient-to-b from-black/40 to-transparent"></div>
 
         <div id="shorts-container" class="w-full md:w-[400px] h-full overflow-y-scroll scroll-smooth snap-y snap-mandatory hide-scrollbar relative bg-gray-900 shadow-2xl">
             <!-- Shorts will be injected here -->
         </div>
 
         <!-- Comments Modal -->
-        <div id="shorts-comments-modal" class="hidden absolute bottom-0 w-full md:w-[400px] h-[60dvh] bg-gray-900 rounded-t-3xl z-[60] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div id="shorts-comments-modal" class="hidden absolute bottom-0 w-full md:w-[400px] h-[60dvh] bg-gray-900 rounded-t-3xl z-[60] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-[env(safe-area-inset-bottom)]">
             <div class="flex justify-between items-center p-4 border-b border-gray-800 shrink-0">
                 <h3 class="font-bold text-lg" id="comments-count-title">Комментарии (0)</h3>
                 <button onclick="window.closeShortComments()" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -529,7 +535,7 @@
         </div>
 
         <!-- Description Modal -->
-        <div id="shorts-description-modal" class="hidden absolute bottom-0 w-full md:w-[400px] h-[70dvh] bg-gray-900 rounded-t-3xl z-[60] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 transform translate-y-full">
+        <div id="shorts-description-modal" class="hidden absolute bottom-0 w-full md:w-[400px] h-[70dvh] bg-gray-900 rounded-t-3xl z-[60] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 transform translate-y-full pb-[env(safe-area-inset-bottom)]">
             <div class="flex justify-between items-center p-4 border-b border-gray-800 shrink-0">
                 <h3 class="font-bold text-lg">Описание</h3>
                 <button onclick="window.closeShortDescription()" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -540,7 +546,7 @@
         </div>
         
         <!-- Upload Modal -->
-        <div id="shorts-upload-modal" class="hidden fixed z-[70] inset-0 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="shorts-upload-modal" class="hidden fixed z-[70] inset-0 bg-black/80 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
             <div class="bg-gray-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl relative border border-gray-800">
                 <button onclick="window.closeUploadShort()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 <h3 class="text-xl font-bold mb-4">Создать Short</h3>
@@ -563,7 +569,7 @@
         </div>
     </div>
         <!-- Mini Apps Modals -->
-        <div id="mini-apps-catalog-modal" class="hidden fixed inset-0 z-[160] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="mini-apps-catalog-modal" class="hidden fixed inset-0 z-[160] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] opacity-0 transition-opacity duration-300">
             <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-gray-200 dark:border-gray-800 transform scale-95 transition-transform duration-300" id="mini-apps-catalog-inner">
                 <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
                     <h3 class="font-bold text-xl dark:text-gray-100 flex items-center gap-2">
@@ -698,7 +704,7 @@
             </div>
         </div>
 
-        <div id="miniapp-details-modal" class="hidden fixed z-[170] inset-0 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="miniapp-details-modal" class="hidden fixed z-[170] inset-0 bg-black/80 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
             <div class="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md p-6 shadow-2xl relative border border-gray-200 dark:border-gray-800 flex flex-col max-h-[80vh]">
                 <button onclick="document.getElementById('miniapp-details-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 <h3 id="miniapp-details-title" class="text-xl font-bold mb-4 dark:text-gray-100 pr-8 break-words shrink-0">Название проекта</h3>
@@ -708,7 +714,7 @@
             </div>
         </div>
 
-        <div id="mini-app-run-modal" class="hidden absolute top-0 left-0 w-full h-[100dvh] bg-white dark:bg-gray-900 z-[180] flex flex-col transition-transform transform translate-y-full duration-300">
+        <div id="mini-app-run-modal" class="hidden fixed inset-0 bg-white dark:bg-gray-900 z-[180] flex flex-col transition-transform transform translate-y-full duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
             <div class="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-800 shrink-0 bg-gray-100 dark:bg-gray-800">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-sm" id="run-app-icon">A</div>
