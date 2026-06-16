@@ -288,14 +288,12 @@ async function loadMiniApps(tab: string) {
 
   try {
     let isDirectLinkSearch = false;
-    let query = supabase
-      .from("mini_apps")
-      .select(
-        `
+    let query = supabase.from("mini_apps").select(
+      `
             *,
             creator:creator_id(username, display_name, avatar_url)
         `,
-      );
+    );
 
     if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {
       query = query
@@ -842,7 +840,10 @@ async function fetchAndInjectBase(url: string): Promise<string> {
   if (!res.ok) throw new Error("Fetch failed");
   let text = await res.text();
   const urlObj = new URL(url);
-  urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+  urlObj.pathname = urlObj.pathname.substring(
+    0,
+    urlObj.pathname.lastIndexOf("/") + 1,
+  );
   const baseTag = `<base href="${urlObj.href}">`;
   if (/<head[^>]*>/i.test(text)) {
     text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
@@ -991,6 +992,28 @@ export async function runStandaloneMiniApp(id: string) {
     const iframe = document.getElementById(
       "standalone-miniapp-frame",
     ) as HTMLIFrameElement;
+
+    document.getElementById("standalone-app-title")!.textContent = data.title;
+    const iconEl = document.getElementById("standalone-app-icon")!;
+    if (data.icon_url) {
+      iconEl.innerHTML = `<img src="${data.icon_url}" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+      iconEl.textContent = data.title.substring(0, 2).toUpperCase();
+    }
+
+    const shareBtn = document.getElementById("standalone-app-share-btn");
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        if ((window as any).shareAppContent) {
+          (window as any).shareAppContent(
+            `?miniapp=${id}`,
+            data.title,
+            "ПРИЛОЖЕНИЕ",
+            data.icon_url || "",
+          );
+        }
+      };
+    }
 
     iframe.removeAttribute("srcdoc");
     iframe.removeAttribute("src");

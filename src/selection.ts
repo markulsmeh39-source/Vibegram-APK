@@ -1,53 +1,66 @@
-import { state, supabase } from './supabase';
-import { customConfirm, customToast, closeModal } from './utils';
-import { loadMessages } from './messages';
+import { state, supabase } from "./supabase";
+import { customConfirm, customToast, closeModal } from "./utils";
+import { loadMessages } from "./messages";
 
 export let isSelectionMode = false;
 export let selectedMessages = new Set<string>();
 
 export function toggleSelectionMode(enable?: boolean) {
-    isSelectionMode = enable !== undefined ? enable : !isSelectionMode;
-    if (!isSelectionMode) {
-        selectedMessages.clear();
-    }
-    updateSelectionUI();
+  isSelectionMode = enable !== undefined ? enable : !isSelectionMode;
+  if (!isSelectionMode) {
+    selectedMessages.clear();
+  }
+  updateSelectionUI();
 }
 
 export function toggleMessageSelection(msgId: string) {
+  if (selectedMessages.has(msgId)) {
+    selectedMessages.delete(msgId);
+  } else {
+    selectedMessages.add(msgId);
+  }
+  updateSelectionUI();
+
+  // Update message visual state
+  const msgEl = document.getElementById(`msg-wrapper-${msgId}`);
+  if (msgEl) {
+    const innerBubble = document.getElementById(`msg-${msgId}`);
     if (selectedMessages.has(msgId)) {
-        selectedMessages.delete(msgId);
+      msgEl.classList.add(
+        "bg-blue-500/10",
+        "dark:bg-blue-500/20",
+        "rounded-2xl",
+        "p-1",
+        "-m-1",
+      );
+      if (innerBubble) {
+        innerBubble.classList.remove("select-none");
+        innerBubble.classList.add("select-text");
+      }
     } else {
-        selectedMessages.add(msgId);
+      msgEl.classList.remove(
+        "bg-blue-500/10",
+        "dark:bg-blue-500/20",
+        "rounded-2xl",
+        "p-1",
+        "-m-1",
+      );
+      if (innerBubble) {
+        innerBubble.classList.add("select-none");
+        innerBubble.classList.remove("select-text");
+      }
     }
-    updateSelectionUI();
-    
-    // Update message visual state
-    const msgEl = document.getElementById(`msg-wrapper-${msgId}`);
-    if (msgEl) {
-        const innerBubble = document.getElementById(`msg-${msgId}`);
-        if (selectedMessages.has(msgId)) {
-            msgEl.classList.add('bg-blue-500/10', 'dark:bg-blue-500/20', 'rounded-2xl', 'p-1', '-m-1');
-            if (innerBubble) {
-                innerBubble.classList.remove('select-none');
-                innerBubble.classList.add('select-text');
-            }
-        } else {
-            msgEl.classList.remove('bg-blue-500/10', 'dark:bg-blue-500/20', 'rounded-2xl', 'p-1', '-m-1');
-            if (innerBubble) {
-                innerBubble.classList.add('select-none');
-                innerBubble.classList.remove('select-text');
-            }
-        }
-    }
+  }
 }
 
 export function updateSelectionUI() {
-    let bar = document.getElementById('selection-action-bar');
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'selection-action-bar';
-        bar.className = 'absolute top-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 p-3 flex items-center justify-between z-50 transform transition-transform duration-300 -translate-y-full';
-        bar.innerHTML = `
+  let bar = document.getElementById("selection-action-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "selection-action-bar";
+    bar.className =
+      "absolute top-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 p-3 flex items-center justify-between z-50 transform transition-transform duration-300 -translate-y-full";
+    bar.innerHTML = `
             <div class="flex items-center gap-4">
                 <button onclick="toggleSelectionMode(false)" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium">Отмена</button>
                 <span id="selection-count" class="font-bold text-gray-800 dark:text-gray-100">0</span>
@@ -61,111 +74,135 @@ export function updateSelectionUI() {
                 </button>
             </div>
         `;
-        document.getElementById('chat-container')?.appendChild(bar);
-    }
-    
-    const countEl = document.getElementById('selection-count');
-    if (countEl) countEl.textContent = selectedMessages.size.toString();
-    
-    if (isSelectionMode) {
-        bar.classList.remove('-translate-y-full');
-        
-        // Add checkboxes to all messages if not present
-        document.querySelectorAll('.msg-wrapper').forEach(wrapper => {
-            const msgId = wrapper.id.replace('msg-wrapper-', '');
-            let checkbox = wrapper.querySelector('.msg-checkbox');
-            if (!checkbox) {
-                const checkboxHtml = `
-                    <div class="msg-checkbox absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-colors ${selectedMessages.has(msgId) ? 'bg-blue-500 border-blue-500' : ''}">
-                        <svg class="w-3 h-3 text-white ${selectedMessages.has(msgId) ? 'opacity-100' : 'opacity-0'} transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+    document.getElementById("chat-container")?.appendChild(bar);
+  }
+
+  const countEl = document.getElementById("selection-count");
+  if (countEl) countEl.textContent = selectedMessages.size.toString();
+
+  if (isSelectionMode) {
+    bar.classList.remove("-translate-y-full");
+
+    // Add checkboxes to all messages if not present
+    document.querySelectorAll(".msg-wrapper").forEach((wrapper) => {
+      const msgId = wrapper.id.replace("msg-wrapper-", "");
+      let checkbox = wrapper.querySelector(".msg-checkbox");
+      if (!checkbox) {
+        const checkboxHtml = `
+                    <div class="msg-checkbox absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-colors ${selectedMessages.has(msgId) ? "bg-blue-500 border-blue-500" : ""}">
+                        <svg class="w-3 h-3 text-white ${selectedMessages.has(msgId) ? "opacity-100" : "opacity-0"} transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                 `;
-                wrapper.insertAdjacentHTML('afterbegin', checkboxHtml);
-                wrapper.classList.add('pl-8', 'cursor-pointer');
-            } else {
-                const isSelected = selectedMessages.has(msgId);
-                checkbox.className = `msg-checkbox absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'}`;
-                const svg = checkbox.querySelector('svg');
-                if (svg) svg.setAttribute('class', `w-3 h-3 text-white ${isSelected ? 'opacity-100' : 'opacity-0'} transition-opacity`);
-            }
-            
-            // Ensure click handler is set
-            (wrapper as HTMLElement).onclick = (e) => {
-                if (isSelectionMode) {
-                    const sel = window.getSelection();
-                    if (sel && sel.toString().trim() !== '') {
-                        return; // user is selecting text
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleMessageSelection(msgId);
-                }
-            };
-        });
-    } else {
-        bar.classList.add('-translate-y-full');
-        
-        // Remove checkboxes
-        document.querySelectorAll('.msg-checkbox').forEach(el => el.remove());
-        document.querySelectorAll('.msg-wrapper').forEach(wrapper => {
-            wrapper.classList.remove('pl-8', 'cursor-pointer', 'bg-blue-500/10', 'dark:bg-blue-500/20', 'rounded-2xl', 'p-1', '-m-1');
-            (wrapper as HTMLElement).onclick = null;
-        });
-    }
+        wrapper.insertAdjacentHTML("afterbegin", checkboxHtml);
+        wrapper.classList.add("pl-8", "cursor-pointer");
+      } else {
+        const isSelected = selectedMessages.has(msgId);
+        checkbox.className = `msg-checkbox absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-blue-500 border-blue-500" : "border-gray-300 dark:border-gray-600"}`;
+        const svg = checkbox.querySelector("svg");
+        if (svg)
+          svg.setAttribute(
+            "class",
+            `w-3 h-3 text-white ${isSelected ? "opacity-100" : "opacity-0"} transition-opacity`,
+          );
+      }
+
+      // Ensure click handler is set
+      (wrapper as HTMLElement).onclick = (e) => {
+        if (isSelectionMode) {
+          const sel = window.getSelection();
+          if (sel && sel.toString().trim() !== "") {
+            return; // user is selecting text
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          toggleMessageSelection(msgId);
+        }
+      };
+    });
+  } else {
+    bar.classList.add("-translate-y-full");
+
+    // Remove checkboxes
+    document.querySelectorAll(".msg-checkbox").forEach((el) => el.remove());
+    document.querySelectorAll(".msg-wrapper").forEach((wrapper) => {
+      wrapper.classList.remove(
+        "pl-8",
+        "cursor-pointer",
+        "bg-blue-500/10",
+        "dark:bg-blue-500/20",
+        "rounded-2xl",
+        "p-1",
+        "-m-1",
+      );
+      (wrapper as HTMLElement).onclick = null;
+    });
+  }
 }
 
 export async function deleteSelectedMessages() {
-    if (selectedMessages.size === 0) return;
-    
-    const confirmed = await customConfirm(`Удалить ${selectedMessages.size} сообщений?`);
-    if (confirmed) {
-        const ids = Array.from(selectedMessages);
-        try {
-            // Fetch messages to soft delete media
-            const { data: msgsToDel } = await supabase.from('messages').select('media').in('id', ids).eq('sender_id', state.currentUser.id);
-            if (msgsToDel) {
-                const utils = await import('./utils');
-                for (const msg of msgsToDel) {
-                    if (msg.media && Array.isArray(msg.media)) {
-                        for (const file of msg.media) {
-                            if (file.url) {
-                                await utils.softDeleteCloudinaryFile(file.url);
-                            }
-                        }
-                    }
-                }
-            }
+  if (selectedMessages.size === 0) return;
 
-            const { error } = await supabase.from('messages').delete().in('id', ids).eq('sender_id', state.currentUser.id);
-            if (error) throw error;
-            
-            ids.forEach(id => {
-                const el = document.getElementById(`msg-wrapper-${id}`);
-                if (el && el.classList.contains('self-end')) el.remove(); // Only remove if it was my message
-                
-                // Also remove from media grid if open
-                const mediaEl = document.querySelector(`.media-item[data-msg-id="${id}"]`);
-                if (mediaEl) mediaEl.remove();
-            });
-            
-            toggleSelectionMode(false);
-            if ((window as any).toggleMediaSelectionMode) {
-                (window as any).toggleMediaSelectionMode(false);
+  const confirmed = await customConfirm(
+    `Удалить ${selectedMessages.size} сообщений?`,
+  );
+  if (confirmed) {
+    const ids = Array.from(selectedMessages);
+    try {
+      // Fetch messages to soft delete media
+      const { data: msgsToDel } = await supabase
+        .from("messages")
+        .select("media")
+        .in("id", ids)
+        .eq("sender_id", state.currentUser.id);
+      if (msgsToDel) {
+        const utils = await import("./utils");
+        for (const msg of msgsToDel) {
+          if (msg.media && Array.isArray(msg.media)) {
+            for (const file of msg.media) {
+              if (file.url) {
+                await utils.softDeleteCloudinaryFile(file.url);
+              }
             }
-            customToast('Сообщения удалены');
-        } catch (e) {
-            console.error('Error deleting messages:', e);
-            customToast('Ошибка при удалении');
+          }
         }
+      }
+
+      const { error } = await supabase
+        .from("messages")
+        .delete()
+        .in("id", ids)
+        .eq("sender_id", state.currentUser.id);
+      if (error) throw error;
+
+      ids.forEach((id) => {
+        const el = document.getElementById(`msg-wrapper-${id}`);
+        if (el && el.classList.contains("self-end")) el.remove(); // Only remove if it was my message
+
+        // Also remove from media grid if open
+        const mediaEl = document.querySelector(
+          `.media-item[data-msg-id="${id}"]`,
+        );
+        if (mediaEl) mediaEl.remove();
+      });
+
+      toggleSelectionMode(false);
+      if ((window as any).toggleMediaSelectionMode) {
+        (window as any).toggleMediaSelectionMode(false);
+      }
+      customToast("Сообщения удалены");
+    } catch (e) {
+      console.error("Error deleting messages:", e);
+      customToast("Ошибка при удалении");
     }
+  }
 }
 
 export async function forwardSelectedMessages() {
-    if (selectedMessages.size === 0) return;
-    
-    state.forwardSelectedChats = [];
-    const modal = document.getElementById('modal-content')!;
-    modal.innerHTML = `
+  if (selectedMessages.size === 0) return;
+
+  state.forwardSelectedChats = [];
+  const modal = document.getElementById("modal-content")!;
+  modal.innerHTML = `
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Переслать ${selectedMessages.size} сообщений</h3>
@@ -179,117 +216,249 @@ export async function forwardSelectedMessages() {
             </button>
         </div>
     `;
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 
-    const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
-    if (!members || members.length === 0) {
-        document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
-        return;
+  const { data: members } = await supabase
+    .from("chat_members")
+    .select("chat_id")
+    .eq("user_id", state.currentUser.id);
+  if (!members || members.length === 0) {
+    document.getElementById("forward-chats-list")!.innerHTML =
+      '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
+    return;
+  }
+
+  const { data: rawChats } = await supabase
+    .from("chats")
+    .select(
+      "id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))",
+    )
+    .in(
+      "id",
+      members.map((m) => m.chat_id),
+    );
+
+  const chats = rawChats?.filter(c => {
+      if (c.type === 'channel') {
+          const myMember = c.chat_members.find((m: any) => m.user_id === state.currentUser.id);
+          if (myMember && myMember.role === 'member') return false;
+      }
+      return true;
+  });
+
+  let allSavedMessages = chats?.filter(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length)) || [];
+  let savedMessagesChat = allSavedMessages.length > 0 ? allSavedMessages[0] : null;
+  
+  let renderedChats = chats ? [...chats] : [];
+  
+  if (savedMessagesChat) {
+      const savedIds = allSavedMessages.map(c => c.id);
+      renderedChats = renderedChats.filter(c => !savedIds.includes(c.id));
+      renderedChats.unshift(savedMessagesChat); // put it to the front
+  }
+
+  const list = document.getElementById("forward-chats-list")!;
+  list.innerHTML = "";
+
+  renderedChats.forEach((chat: any) => {
+    const isGroup = chat.type === "group" || chat.type === "channel";
+    let chatName = chat.title;
+    let avatarUrl = chat.avatar_url;
+    let otherMember = null;
+    let isPremiumUser = false;
+
+    if (!isGroup) {
+      otherMember = chat.chat_members?.find(
+        (m: any) => m.user_id !== state.currentUser.id,
+      );
+      if (otherMember) {
+        chatName =
+          otherMember.profiles?.display_name || otherMember.profiles?.username || 'Неизвестно';
+        avatarUrl = otherMember.profiles?.avatar_url;
+        isPremiumUser = otherMember.profiles?.is_premium && (!otherMember.profiles?.premium_until || new Date(otherMember.profiles?.premium_until) > new Date());
+      } else {
+        chatName = "Избранное";
+      }
     }
-    
-    const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, profiles(username, display_name, avatar_url))').in('id', members.map(m => m.chat_id));
-    
-    const list = document.getElementById('forward-chats-list')!;
-    list.innerHTML = '';
-    
-    chats?.forEach((chat: any) => {
-        const isGroup = chat.type === 'group' || chat.type === 'channel';
-        let chatName = chat.title;
-        let avatarUrl = chat.avatar_url;
-        
-        if (!isGroup) {
-            const otherMember = chat.chat_members.find((m: any) => m.user_id !== state.currentUser.id);
-            if (otherMember) {
-                chatName = otherMember.profiles.display_name || otherMember.profiles.username;
-                avatarUrl = otherMember.profiles.avatar_url;
-            } else {
-                chatName = 'Избранное';
-            }
-        }
-        
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors';
-        div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
-        
-        div.innerHTML = `
-            <div class="relative">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
-                    ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : chatName.charAt(0).toUpperCase()}
-                </div>
+
+    const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+
+    const firstLetter = (chatName || 'C')[0].toUpperCase();
+    let avatarHtml;
+    if (!otherMember && !isGroup) {
+        avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
+    } else {
+        avatarHtml = avatarUrl 
+            ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>` 
+            : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
+    }
+
+    const div = document.createElement("div");
+    div.className =
+      "flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group";
+    div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
+
+    div.innerHTML = `
+            <div class="relative w-10 h-10 shrink-0">
+                ${avatarHtml}${premiumBadgeHtml}
                 <div id="forward-check-${chat.id}" class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center hidden scale-0 transition-transform">
                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
             </div>
             <div class="flex-1 min-w-0">
-                <div class="font-medium text-gray-900 dark:text-gray-100 truncate">${chatName}</div>
+                <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">${chatName || "Неизвестно"}</div>
+                <div class="text-xs text-gray-500 truncate">${chat.type === "channel" ? "Канал" : isGroup ? "Группа" : !otherMember ? "Избранное" : "Личный чат"}</div>
             </div>
         `;
-        list.appendChild(div);
-    });
+    list.appendChild(div);
+  });
 }
 
 export async function confirmForwardMultiple() {
-    if (state.forwardSelectedChats.length === 0 || selectedMessages.size === 0) return;
+  if (state.forwardSelectedChats.length === 0 || selectedMessages.size === 0)
+    return;
+
+  const btn = document.getElementById(
+    "confirm-forward-btn",
+  ) as HTMLButtonElement;
+  btn.disabled = true;
+  btn.innerHTML =
+    '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>';
+
+  try {
+    const ids = Array.from(selectedMessages);
+    // Fetch original messages to get their content, media, and sender info
+    const { data: originalMsgs, error: fetchError } = await supabase
+      .from("messages")
+      .select(
+        "id, content, media, message_type, profiles(display_name, username)",
+      )
+      .in("id", ids)
+      .order("created_at", { ascending: true }); // Keep chronological order
+
+    if (fetchError) throw fetchError;
+    if (!originalMsgs || originalMsgs.length === 0)
+      throw new Error("Messages not found");
+
+    const promises = state.forwardSelectedChats.map(async (chatId) => {
+      // Insert messages one by one to maintain order
+      for (const msg of originalMsgs) {
+        const profiles = msg.profiles as any;
+        const senderName =
+          profiles?.display_name || profiles?.username || "User";
+
+        // Construct forward media object
+        const forwardMedia = {
+          type: "forward",
+          original_id: msg.id,
+          original_content: msg.content,
+          original_sender: senderName,
+        };
+
+        // Combine existing media with forward info
+        let newMedia = msg.media ? JSON.parse(JSON.stringify(msg.media)) : [];
+        if (!Array.isArray(newMedia)) newMedia = [];
+        newMedia.push(forwardMedia);
+
+        await supabase.from("messages").insert({
+          chat_id: chatId,
+          sender_id: state.currentUser.id,
+          content: msg.content,
+          media: newMedia,
+          message_type: msg.message_type,
+        });
+      }
+    });
+
+    await Promise.all(promises);
+
+    closeModal();
+    toggleSelectionMode(false);
+    if ((window as any).toggleMediaSelectionMode) {
+      (window as any).toggleMediaSelectionMode(false);
+    }
+    customToast("Сообщения пересланы");
+
+    let forwardSenderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name;
+    if (!forwardSenderName) {
+        const { data: p } = await supabase.from('profiles').select('display_name, username').eq('id', state.currentUser.id).single();
+        if (p) forwardSenderName = p.display_name || p.username;
+    }
+    forwardSenderName = forwardSenderName || "Vibegram";
     
-    const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
-    btn.disabled = true;
-    btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>';
+    const rawBodyContent = '🔄 Пересланные сообщения';
 
-    try {
-        const ids = Array.from(selectedMessages);
-        // Fetch original messages to get their content, media, and sender info
-        const { data: originalMsgs, error: fetchError } = await supabase
-            .from('messages')
-            .select('id, content, media, message_type, profiles(display_name, username)')
-            .in('id', ids)
-            .order('created_at', { ascending: true }); // Keep chronological order
-            
-        if (fetchError) throw fetchError;
-        if (!originalMsgs || originalMsgs.length === 0) throw new Error('Messages not found');
-
-        const promises = state.forwardSelectedChats.map(async chatId => {
-            // Insert messages one by one to maintain order
-            for (const msg of originalMsgs) {
-                const profiles = msg.profiles as any;
-                const senderName = profiles?.display_name || profiles?.username || 'User';
+    state.forwardSelectedChats.forEach(chatId => {
+        // Push notification
+        supabase.from('chats').select('is_group, type, title, username, user1_id, user2_id').eq('id', chatId).single().then(({ data: chatData }) => {
+            if (chatData) {
+                const pushData = { chatId: String(chatId) };
                 
-                // Construct forward media object
-                const forwardMedia = {
-                    type: 'forward',
-                    original_id: msg.id,
-                    original_content: msg.content,
-                    original_sender: senderName
-                };
-                
-                // Combine existing media with forward info
-                let newMedia = msg.media ? JSON.parse(JSON.stringify(msg.media)) : [];
-                if (!Array.isArray(newMedia)) newMedia = [];
-                newMedia.push(forwardMedia);
-
-                await supabase.from('messages').insert({
-                    chat_id: chatId,
-                    sender_id: state.currentUser.id,
-                    content: msg.content,
-                    media: newMedia,
-                    message_type: msg.message_type
-                });
+                if (!chatData.is_group) {
+                    const pushTitle = forwardSenderName;
+                    const pushBody = rawBodyContent;
+                    
+                    const pushPayloadBase = { 
+                        title: pushTitle, 
+                        body: pushBody,
+                        chat_id: String(chatId),
+                        text: rawBodyContent,
+                        sender_name: forwardSenderName,
+                        data: pushData
+                    };
+                    
+                    const otherUserId = chatData.user1_id === state.currentUser.id ? chatData.user2_id : chatData.user1_id;
+                    if (otherUserId) {
+                        supabase.from('profiles').select('push_token').eq('id', otherUserId).single().then(({ data: profile }) => {
+                            if (profile?.push_token) {
+                                supabase.functions.invoke('send-push', {
+                                    body: { token: profile.push_token, ...pushPayloadBase }
+                                }).catch(e => console.warn('Push error', e));
+                            }
+                        });
+                    }
+                } else {
+                    const isChannel = chatData.type === 'channel';
+                    const groupName = chatData.title || chatData.username || 'Группа';
+                    const pushTitle = groupName;
+                    const pushBody = isChannel ? rawBodyContent : `${forwardSenderName}: ${rawBodyContent}`;
+                    
+                    const pushPayloadBase = { 
+                        title: pushTitle, 
+                        body: pushBody,
+                        chat_id: String(chatId),
+                        text: rawBodyContent,
+                        sender_name: forwardSenderName,
+                        data: pushData
+                    };
+                    
+                    supabase.from('chat_members').select('user_id').eq('chat_id', chatId).then(({ data: members }) => {
+                        if (members) {
+                            const memberIds = members.map((m: any) => m.user_id).filter((id: string) => id !== state.currentUser?.id);
+                            if (memberIds.length > 0) {
+                                supabase.from('profiles').select('push_token').in('id', memberIds).then(({ data: profiles }) => {
+                                    if (profiles) {
+                                        const tokens = profiles.map((p: any) => p.push_token).filter((t: any) => t);
+                                        if (tokens.length > 0) {
+                                            supabase.functions.invoke('send-push', {
+                                                body: { tokens: tokens, ...pushPayloadBase }
+                                            }).catch(e => console.warn('Group Push error', e));
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
             }
         });
-
-        await Promise.all(promises);
-        
-        closeModal();
-        toggleSelectionMode(false);
-        if ((window as any).toggleMediaSelectionMode) {
-            (window as any).toggleMediaSelectionMode(false);
-        }
-        customToast('Сообщения пересланы');
-    } catch (e) {
-        console.error('Error forwarding messages:', e);
-        customToast('Ошибка при пересылке');
-        btn.disabled = false;
-        btn.innerHTML = 'Отправить';
-    }
+    });
+  } catch (e) {
+    console.error("Error forwarding messages:", e);
+    customToast("Ошибка при пересылке");
+    btn.disabled = false;
+    btn.innerHTML = "Отправить";
+  }
 }
 
 (window as any).toggleSelectionMode = toggleSelectionMode;
