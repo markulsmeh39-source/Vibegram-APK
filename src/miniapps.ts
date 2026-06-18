@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { state, supabase } from "./supabase";
 import { customToast, uploadToCloudinary } from "./utils";
 
@@ -878,6 +879,14 @@ export async function runMiniApp(id: string) {
       iconEl.textContent = data.title.substring(0, 2).toUpperCase();
     }
 
+    if (Capacitor.isNativePlatform()) {
+      document.getElementById("app-copy-link-btn")?.classList.add("hidden");
+      document.getElementById("app-shortcut-btn")?.classList.remove("hidden");
+    } else {
+      document.getElementById("app-copy-link-btn")?.classList.remove("hidden");
+      document.getElementById("app-shortcut-btn")?.classList.add("hidden");
+    }
+
     const runModal = document.getElementById("mini-app-run-modal")!;
     const iframe = document.getElementById(
       "mini-app-frame",
@@ -963,6 +972,28 @@ export function copyMiniAppLink(appId?: string) {
   });
 }
 
+export async function addAppShortcut() {
+  if (!currentRunningAppId || !miniAppContentData) return;
+  if (Capacitor.isPluginAvailable("AppShortcut")) {
+    const AppShortcut = Capacitor.Plugins.AppShortcut as any;
+    try {
+      await AppShortcut.createShortcut({
+        id: currentRunningAppId,
+        title: miniAppContentData.title,
+        icon: miniAppContentData.icon_url || "",
+        data: currentRunningAppId
+      });
+      customToast("Ярлык добавлен на рабочий стол!");
+    } catch (e) {
+      console.error(e);
+      customToast("Не удалось добавить ярлык");
+    }
+  } else {
+    customToast("Добавление ярлыков не поддерживается");
+  }
+}
+(window as any).addAppShortcut = addAppShortcut;
+
 export async function runStandaloneMiniApp(id: string) {
   try {
     currentRunningAppId = id;
@@ -992,28 +1023,6 @@ export async function runStandaloneMiniApp(id: string) {
     const iframe = document.getElementById(
       "standalone-miniapp-frame",
     ) as HTMLIFrameElement;
-
-    document.getElementById("standalone-app-title")!.textContent = data.title;
-    const iconEl = document.getElementById("standalone-app-icon")!;
-    if (data.icon_url) {
-      iconEl.innerHTML = `<img src="${data.icon_url}" class="w-full h-full object-cover rounded-lg">`;
-    } else {
-      iconEl.textContent = data.title.substring(0, 2).toUpperCase();
-    }
-
-    const shareBtn = document.getElementById("standalone-app-share-btn");
-    if (shareBtn) {
-      shareBtn.onclick = () => {
-        if ((window as any).shareAppContent) {
-          (window as any).shareAppContent(
-            `?miniapp=${id}`,
-            data.title,
-            "ПРИЛОЖЕНИЕ",
-            data.icon_url || "",
-          );
-        }
-      };
-    }
 
     iframe.removeAttribute("srcdoc");
     iframe.removeAttribute("src");

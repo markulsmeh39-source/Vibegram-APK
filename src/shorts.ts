@@ -1694,13 +1694,22 @@ window.addEventListener("popstate", (e) => {
   }
 
   // Main Shorts
-  if (hash === "#shorts") {
+  if (hash === "#shorts" || hash.startsWith("#shorts?id=")) {
     const screen = document.getElementById("shorts-screen");
+    let targetShortId = state?.shortId;
+    if (hash.startsWith("#shorts?id=")) {
+        targetShortId = hash.split("?id=")[1];
+    }
+    
     if (screen && screen.classList.contains("hidden")) {
       screen.classList.remove("hidden");
       if (activeVideo) activeVideo.play().catch((ex) => console.log(ex));
-    } else if (!screen) {
-      openShorts(state?.shortId, state?.authorId); // load it
+      if (targetShortId && targetShortId !== activeVideo?.parentElement?.getAttribute('data-id')) {
+          // Force reload to specific short
+          openShorts(targetShortId);
+      }
+    } else if (!screen || (targetShortId && targetShortId !== activeVideo?.parentElement?.getAttribute('data-id'))) {
+      openShorts(targetShortId, state?.authorId); // load it
     }
   } else {
     const screen = document.getElementById("shorts-screen");
