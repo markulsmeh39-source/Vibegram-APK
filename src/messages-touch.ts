@@ -42,6 +42,26 @@ document.addEventListener('click', (e) => {
 
 (window as any).handleMessageTouchEnd = (e: TouchEvent | MouseEvent) => {
     clearTimeout(touchTimer);
+    if (touchTarget) {
+        const el = document.getElementById(`msg-${touchTarget}`);
+        if (el) {
+            const transform = el.style.transform;
+            if (transform && transform.includes('translateX')) {
+                const match = transform.match(/translateX\(-(\d+(?:\.\d+)?)px\)/);
+                if (match && parseFloat(match[1]) > 40) {
+                    const replyContent = decodeURIComponent(el.getAttribute('data-reply-content') || '');
+                    const senderName = decodeURIComponent(el.getAttribute('data-sender-name') || '');
+                    import('./messages-actions').then(m => m.replyToMessage(touchTarget!, replyContent, senderName));
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(25); } catch(err){}
+                    }
+                }
+                el.style.transition = 'transform 0.2s ease-out';
+                el.style.transform = '';
+                setTimeout(() => el.style.transition = '', 200);
+            }
+        }
+    }
     touchTarget = null;
     if (ignoreNextClick) {
         setTimeout(() => { ignoreNextClick = false; }, 300);
@@ -59,9 +79,25 @@ document.addEventListener('click', (e) => {
         currentX = (e as MouseEvent).clientX;
         currentY = (e as MouseEvent).clientY;
     }
+    
     if (Math.abs(currentX - touchStartX) > 10 || Math.abs(currentY - touchStartY) > 10) {
         clearTimeout(touchTimer);
-        touchTarget = null;
+        // Only clear target if we are not swiping left to reply
+        if (touchStartX - currentX < 10 || Math.abs(currentY - touchStartY) > 30) {
+            touchTarget = null;
+        }
+    }
+    
+    if (touchTarget) {
+        const diffX = touchStartX - currentX;
+        const diffY = Math.abs(currentY - touchStartY);
+        if (diffY < 30 && diffX > 0) {
+            const el = document.getElementById(`msg-${touchTarget}`);
+            if (el) {
+                const move = Math.min(diffX, 50);
+                el.style.transform = `translateX(-${move}px)`;
+            }
+        }
     }
 };
 

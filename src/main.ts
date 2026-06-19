@@ -300,17 +300,15 @@ if (Capacitor.isPluginAvailable('App')) {
         App.addListener('appUrlOpen', async (data) => {
             console.log('App opened with URL:', data.url);
             
-            // Check for miniapp parameter in deep link
             try {
-                const url = new URL(data.url.replace('#', '?'));
-                const miniappId = url.searchParams.get('miniapp');
-                if (miniappId) {
-                    isStandaloneMiniAppMode = true;
-                    runStandaloneMiniApp(miniappId);
+                const urlObj = new URL(data.url);
+                const miniAppId = urlObj.searchParams.get('miniapp');
+                if (miniAppId) {
+                    import('./miniapps').then(m => m.runStandaloneMiniApp(miniAppId));
                     return;
                 }
             } catch(e) {}
-
+            
             if (data.url.includes('com.vibegram.app://auth') && data.url.includes('id_token')) {
                 if (Capacitor.isPluginAvailable('Browser')) {
                     import('@capacitor/browser').then(({ Browser }) => Browser.close());
@@ -334,19 +332,6 @@ if (Capacitor.isPluginAvailable('App')) {
                         document.getElementById('auth-loading-indicator')?.classList.add('hidden');
                     }
                 }
-            }
-        });
-        
-        App.getLaunchUrl().then(url => {
-            if (url && url.url) {
-                try {
-                    const parsedUrl = new URL(url.url.replace('#', '?'));
-                    const miniappId = parsedUrl.searchParams.get('miniapp');
-                    if (miniappId) {
-                        isStandaloneMiniAppMode = true;
-                        runStandaloneMiniApp(miniappId);
-                    }
-                } catch(e) {}
             }
         });
     });

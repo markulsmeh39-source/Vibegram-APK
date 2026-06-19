@@ -1,6 +1,8 @@
-import { Capacitor } from "@capacitor/core";
 import { state, supabase } from "./supabase";
 import { customToast, uploadToCloudinary } from "./utils";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+const ShortcutPlugin = registerPlugin<any>("Shortcut");
 
 export function setupMiniApps() {
   (window as any).openMiniAppsCatalog = openMiniAppsCatalog;
@@ -12,6 +14,7 @@ export function setupMiniApps() {
   (window as any).runMiniApp = runMiniApp;
   (window as any).closeMiniApp = closeMiniApp;
   (window as any).copyMiniAppLink = copyMiniAppLink;
+  (window as any).addMiniAppShortcut = addMiniAppShortcut;
   (window as any).deleteMiniApp = deleteMiniApp;
   (window as any).searchMiniApps = searchMiniApps;
   (window as any).toggleLikeMiniApp = toggleLikeMiniApp;
@@ -289,12 +292,14 @@ async function loadMiniApps(tab: string) {
 
   try {
     let isDirectLinkSearch = false;
-    let query = supabase.from("mini_apps").select(
-      `
+    let query = supabase
+      .from("mini_apps")
+      .select(
+        `
             *,
             creator:creator_id(username, display_name, avatar_url)
         `,
-    );
+      );
 
     if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {
       query = query
@@ -477,6 +482,9 @@ async function loadMiniApps(tab: string) {
                 </div>
                 <div class="mt-4 flex gap-2">
                     <button onclick="window.runMiniApp('${app.id}')" class="flex-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm">Запустить</button>
+                    <button onclick="if(window.forwardText) window.forwardText('${window.location.origin}${window.location.pathname}?miniapp=${app.id}')" class="px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-xl text-sm transition-colors shadow-sm" title="Направить">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    </button>
                     ${
                       app.visibility === "unlisted" &&
                       app.creator_id === state.currentUser?.id
@@ -841,10 +849,7 @@ async function fetchAndInjectBase(url: string): Promise<string> {
   if (!res.ok) throw new Error("Fetch failed");
   let text = await res.text();
   const urlObj = new URL(url);
-  urlObj.pathname = urlObj.pathname.substring(
-    0,
-    urlObj.pathname.lastIndexOf("/") + 1,
-  );
+  urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
   const baseTag = `<base href="${urlObj.href}">`;
   if (/<head[^>]*>/i.test(text)) {
     text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
@@ -877,14 +882,6 @@ export async function runMiniApp(id: string) {
       iconEl.innerHTML = `<img src="${data.icon_url}" class="w-full h-full object-cover rounded-lg">`;
     } else {
       iconEl.textContent = data.title.substring(0, 2).toUpperCase();
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      document.getElementById("app-copy-link-btn")?.classList.add("hidden");
-      document.getElementById("app-shortcut-btn")?.classList.remove("hidden");
-    } else {
-      document.getElementById("app-copy-link-btn")?.classList.remove("hidden");
-      document.getElementById("app-shortcut-btn")?.classList.add("hidden");
     }
 
     const runModal = document.getElementById("mini-app-run-modal")!;
@@ -972,27 +969,32 @@ export function copyMiniAppLink(appId?: string) {
   });
 }
 
-export async function addAppShortcut() {
-  if (!currentRunningAppId || !miniAppContentData) return;
-  if (Capacitor.isPluginAvailable("AppShortcut")) {
-    const AppShortcut = Capacitor.Plugins.AppShortcut as any;
-    try {
-      await AppShortcut.createShortcut({
-        id: currentRunningAppId,
-        title: miniAppContentData.title,
-        icon: miniAppContentData.icon_url || "",
-        data: currentRunningAppId
+export async function addMiniAppShortcut(appId?: string) {
+  const id = appId || currentRunningAppId;
+  if (!id) return;
+  
+  if (!Capacitor.isNativePlatform()) {
+      customToast("Добавление ярлыка доступно только в мобильном приложении");
+      return;
+  }
+  
+  try {
+      const { data: appData, error } = await supabase.from("mini_apps").select("*").eq("id", id).single();
+      if (error || !appData) throw error;
+      
+      const url = `${window.location.origin}${window.location.pathname}?miniapp=${id}`;
+      
+      await ShortcutPlugin.addShortcut({
+          id: id,
+          title: appData.title,
+          url: url,
+          iconUrl: appData.icon_url || ''
       });
       customToast("Ярлык добавлен на рабочий стол!");
-    } catch (e) {
-      console.error(e);
-      customToast("Не удалось добавить ярлык");
-    }
-  } else {
-    customToast("Добавление ярлыков не поддерживается");
+  } catch(err: any) {
+      customToast("Не удалось добавить ярлык: " + (err.message || 'Ошибка'));
   }
 }
-(window as any).addAppShortcut = addAppShortcut;
 
 export async function runStandaloneMiniApp(id: string) {
   try {

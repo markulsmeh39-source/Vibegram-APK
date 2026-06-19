@@ -30,6 +30,13 @@ export async function loadChats() {
       }
     }
 
+    const { data: verifiedSettings } = await supabase.from('admin_settings').select('value').eq('key', 'verified_channels').single();
+    if (verifiedSettings) {
+        (window as any)._verifiedChannels = verifiedSettings.value || [];
+    } else {
+        (window as any)._verifiedChannels = [];
+    }
+
     const list = document.getElementById("chats-list")!;
 
     if (chatIds.length === 0) {
@@ -356,6 +363,11 @@ export async function loadChats() {
         ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>`
         : "";
 
+      const isVerifiedChannel = chat.type === 'channel' && ((window as any)._verifiedChannels || []).includes(chat.id);
+      const verifiedBadgeListHtml = isVerifiedChannel
+        ? `<span class="inline-flex items-center justify-center ml-1 shrink-0 text-blue-500 scale-90" title="Официальный канал"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.1 15.6l-4.9-4.9 1.4-1.4 3.5 3.5 8.1-8.1 1.4 1.4-9.5 9.5z"></path></svg></span>`
+        : "";
+
       div.innerHTML = `
                 <div class="relative shrink-0 w-12 h-12 pointer-events-none">
                     <div class="w-full h-full rounded-full overflow-hidden relative">
@@ -369,6 +381,7 @@ export async function loadChats() {
                             <div class="font-bold text-gray-900 dark:text-gray-100 text-[15px] flex items-center min-w-0 flex-1 max-w-full">
                                 <div class="truncate shrink">${chatName || "Неизвестно"}</div>
                                 ${premiumBadgeListHtml}
+                                ${verifiedBadgeListHtml}
                             </div>
                             ${muteBadge}
                         </div>
@@ -885,8 +898,12 @@ export async function openChat(
   const premiumBadgeListHtml = isPremiumUser
     ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-4 h-4 object-contain" alt="Premium"></span>`
     : "";
+  const isVerifiedChannel = chatType === 'channel' && ((window as any)._verifiedChannels || []).includes(chatId);
+  const verifiedBadgeHeaderHtml = isVerifiedChannel
+    ? `<span class="inline-flex items-center justify-center ml-1 shrink-0 text-blue-500" title="Официальный канал"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.1 15.6l-4.9-4.9 1.4-1.4 3.5 3.5 8.1-8.1 1.4 1.4-9.5 9.5z"></path></svg></span>`
+    : "";
   document.getElementById("current-chat-name")!.innerHTML =
-    `<span class="truncate shrink">${chatName}</span>${premiumBadgeListHtml}`;
+    `<span class="truncate shrink">${chatName}</span>${premiumBadgeListHtml}${verifiedBadgeHeaderHtml}`;
 
   const backBtn = document.querySelector("#chat-header-container button");
   if (backBtn) {

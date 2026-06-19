@@ -440,7 +440,12 @@ function renderChatsList(chats: any[]) {
 
     const nonPrivate = chats.filter(c => c.type !== 'private' && c.type !== 'direct');
 
-    list.innerHTML = nonPrivate.map(c => `
+    list.innerHTML = nonPrivate.map(c => {
+        const isVerified = ((window as any)._verifiedChannels || []).includes(c.id);
+        const verifyBtn = c.type === 'channel' ? 
+            `<button onclick="window.adminToggleVerifyChat('${c.id}')" class="px-3 py-1 ${isVerified ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 border-blue-500/30' : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/40 border-gray-500/30'} rounded text-xs font-medium tracking-wider border shrink-0">✔</button>` : '';
+
+        return `
         <div class="flex items-center justify-between p-3 border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
             <div class="flex items-center gap-3 min-w-0 w-1/2">
                 <div class="w-10 h-10 rounded-full bg-gray-700 shrink-0 overflow-hidden flex items-center justify-center text-xl font-bold text-gray-300">
@@ -452,11 +457,13 @@ function renderChatsList(chats: any[]) {
                 </div>
             </div>
             <div class="flex gap-2 shrink-0">
+                ${verifyBtn}
                 <button onclick="window.adminOpenChat('${c.id}')" class="px-3 py-1 bg-green-500/20 text-green-400 hover:bg-green-500/40 rounded text-xs font-medium uppercase tracking-wider border border-green-500/30">Enter</button>
                 <button onclick="window.adminDeleteChat('${c.id}')" class="px-3 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded text-xs font-medium uppercase tracking-wider border border-red-500/30 shrink-0">PURGE</button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
     
     if (nonPrivate.length === 0) {
         list.innerHTML = '<div class="text-center text-gray-500 p-4">No groups or channels</div>';
@@ -760,5 +767,30 @@ function renderChatsList(chats: any[]) {
         loadAdminData();
     } catch(e: any) {
         alert('Ошибка при аннулировании VIB: ' + e.message);
+    }
+};
+
+(window as any).adminToggleVerifyChat = async (chatId: string) => {
+    try {
+        let currentVerifiedList = (window as any)._verifiedChannels || [];
+        if (currentVerifiedList.includes(chatId)) {
+            currentVerifiedList = currentVerifiedList.filter((id: string) => id !== chatId);
+        } else {
+            currentVerifiedList.push(chatId);
+        }
+        
+        const { error } = await supabase.from('admin_settings').upsert({
+            key: 'verified_channels',
+            value: currentVerifiedList
+        });
+        
+        if (error) throw error;
+        
+        (window as any)._verifiedChannels = currentVerifiedList;
+        import('./utils').then(m => m.customToast('Статус канала обновлен'));
+        loadAdminData();
+        import('./chat').then(m => m.loadChats());
+    } catch (e: any) {
+        alert('Ошибка обновления статуса канала: ' + e.message);
     }
 };

@@ -18,7 +18,7 @@ import java.util.List;
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        registerPlugin(AppShortcutPlugin.class);
+        registerPlugin(ShortcutPlugin.class);
         super.onCreate(savedInstanceState);
         
         List<String> permissionsToRequest = new ArrayList<>();
