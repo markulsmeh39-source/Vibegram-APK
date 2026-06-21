@@ -1124,8 +1124,8 @@ export async function deleteMiniApp(id: string) {
               avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
           } else {
               avatarHtml = avatarUrl 
-                  ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="\${avatarUrl}" class="w-full h-full object-cover"></div>` 
-                  : `<div class="w-full h-full bg-gradient-to-br \${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">\${firstLetter}</div>`;
+                  ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>` 
+                  : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
           }
 
           const div = document.createElement('div');
@@ -1133,12 +1133,12 @@ export async function deleteMiniApp(id: string) {
           div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
           
           div.innerHTML = `
-              <div class="w-10 h-10 shrink-0 relative">\${avatarHtml}\${premiumBadgeHtml}</div>
+              <div class="w-10 h-10 shrink-0 relative">${avatarHtml}${premiumBadgeHtml}</div>
               <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">\${chatName || 'Неизвестно'}</div>
-                  <div class="text-xs text-gray-500">\${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
+                  <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">${chatName || 'Неизвестно'}</div>
+                  <div class="text-xs text-gray-500">${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
               </div>
-              <div id="forward-check-\${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all shadow-sm bg-white dark:bg-gray-900">
+              <div id="forward-check-${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all shadow-sm bg-white dark:bg-gray-900">
                   <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
               </div>
           `;
@@ -1244,10 +1244,26 @@ ${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ''}
         }
         
         const blob = new Blob([html], { type: 'text/html' });
+        
+        try {
+            const fileName = `${(data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_')}.html`;
+            const file = new File([blob], fileName, { type: 'text/html' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: data.title || 'App'
+                });
+                import('./utils').then(m => m.customToast("Игра успешно сохранена!"));
+                return;
+            }
+        } catch (e) {
+            console.log("Share API error:", e);
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${data.title || 'miniapp'}.html`;
+        a.download = `${(data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_')}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

@@ -416,10 +416,11 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                     ${transcriptionText}
                 </div>
             `;
-        } else if (actualMedia.length === 1 && actualMedia[0].type === 'short') {
+        } else if (actualMedia.length === 1 && (actualMedia[0].type === 'short' || actualMedia[0].short_id)) {
             const file = actualMedia[0];
+            const shortId = file.short_id || file.id || file.url;
             fileHtml = `
-                <div class="rounded-xl overflow-hidden shadow-sm border border-black/5 bg-gray-900 group cursor-pointer w-48 relative aspect-[9/16] mb-1 shrink-0" onclick="window.location.hash='#shorts'; setTimeout(() => window.openShorts('${file.short_id}'), 100);">
+                <div class="rounded-xl overflow-hidden shadow-sm border border-black/5 bg-gray-900 group cursor-pointer w-48 relative aspect-[9/16] mb-1 shrink-0" onclick="window.location.hash='#shorts'; setTimeout(() => window.openShorts('${shortId}'), 100);">
                     ${file.cover_url ? `<img src="${file.cover_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center text-gray-500"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`}
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                     <div class="absolute bottom-0 left-0 p-3 w-full pointer-events-none">
@@ -431,10 +432,11 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                     </div>
                 </div>
             `;
-        } else if (actualMedia.length === 1 && actualMedia[0].type === 'miniapp') {
+        } else if (actualMedia.length === 1 && (actualMedia[0].type === 'miniapp' || actualMedia[0].miniapp_id)) {
             const file = actualMedia[0];
+            const appId = file.miniapp_id || file.id || file.url;
             fileHtml = `
-                <div class="rounded-2xl overflow-hidden shadow-sm border border-black/5 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 group cursor-pointer w-64 p-3 mb-1 flex items-center gap-3 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50" onclick="window.runMiniApp('${file.miniapp_id}')">
+                <div class="rounded-2xl overflow-hidden shadow-sm border border-black/5 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 group cursor-pointer w-64 p-3 mb-1 flex items-center gap-3 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50" onclick="window.runMiniApp('${appId}')">
                     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner shrink-0 truncate px-1">
                         ${file.icon_url ? `<img src="${file.icon_url}" class="w-full h-full object-cover rounded-xl">` : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>`}
                     </div>
