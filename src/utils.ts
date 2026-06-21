@@ -796,11 +796,20 @@ export async function shareAppContent(chatIds: string[], mediaPayload: any, noti
             chat_id: chatId,
             sender_id: state.currentUser.id,
             content: '',
-            media: [mediaPayload]
+            media: [mediaPayload],
+            message_type: 'document'
         });
     });
     
     await Promise.all(promises);
+
+    import('./chat').then(m => m.loadChats());
+    chatIds.forEach(chatId => {
+        if (state.activeChatId === chatId) {
+             import('./messages-core').then(m => m.loadMessages(chatId));
+        }
+        import('./supabase').then(s => s.broadcastUpdate(chatId, 'message'));
+    });
 
     // 2. Fetch sender profile
     let senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name;

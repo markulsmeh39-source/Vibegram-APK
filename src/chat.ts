@@ -1148,42 +1148,26 @@ export async function openChat(
   if (wrapperEl && innerEl) {
     wrapperEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    innerEl.classList.remove("jump-highlight");
-    innerEl.classList.remove(
-      "!ring-4",
-      "!ring-blue-500",
-      "!bg-blue-500/40",
-      "!scale-[1.02]",
-      "transition-all",
-      "duration-300",
-      "duration-1000",
-    );
+    innerEl.classList.remove("jump-highlight", "!ring-4", "!ring-blue-500", "!bg-blue-500/40", "!scale-[1.02]", "transition-all", "duration-300", "duration-1000");
     void innerEl.offsetWidth;
 
-    innerEl.classList.add(
-      "!ring-4",
-      "!ring-blue-500",
-      "!bg-blue-500/40",
-      "!scale-[1.02]",
-      "transition-all",
-      "duration-300",
-    );
+    innerEl.classList.add("!ring-4", "!ring-blue-500", "!bg-blue-500/40", "!scale-[1.02]", "transition-all", "duration-300");
     setTimeout(() => {
       innerEl.classList.replace("duration-300", "duration-1000");
-      innerEl.classList.remove(
-        "!ring-4",
-        "!ring-blue-500",
-        "!bg-blue-500/40",
-        "!scale-[1.02]",
-      );
+      innerEl.classList.remove("!ring-4", "!ring-blue-500", "!bg-blue-500/40", "!scale-[1.02]");
     }, 1500);
   } else {
-    import("./messages").then((m) => {
+    import("./messages-core").then((m) => {
       if (typeof m.loadMessagesUntil === 'function' && state.activeChatId) {
         m.loadMessagesUntil(state.activeChatId, msgId).then((success: boolean) => {
           if (success) {
             setTimeout(() => {
-              (window as any).highlightMessage(msgId);
+              const el = document.getElementById(`msg-${msgId}`);
+              if (el) {
+                (window as any).highlightMessage(msgId);
+              } else {
+                import("./utils").then((u) => u.customToast("Сообщение скрыто или удалено."));
+              }
             }, 300);
           } else {
             import("./utils").then((u) => u.customToast("Сообщение не найдено."));
