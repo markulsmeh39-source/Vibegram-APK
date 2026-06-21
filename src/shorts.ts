@@ -1880,10 +1880,11 @@ export async function deleteUserShorts(userId: string) {
             await m.shareAppContent(
                 state.forwardSelectedChats,
                 {
-                    type: 'short',
-                    short_id: short.id,
+                    type: 'share_app_content',
+                    content_type_label: 'ШОРТС',
+                    url_hash: '#shorts?id=' + short.id,
                     title: short.title,
-                    cover_url: short.thumbnail_url || short.video_url
+                    thumbnail_url: short.thumbnail_url || short.video_url
                 },
                 'Отправил(а) шортс'
             );

@@ -1178,10 +1178,22 @@ export async function openChat(
       );
     }, 1500);
   } else {
-    import("./utils").then((m) =>
-      m.customToast(
-        "Сообщение не найдено на экране (может потребоваться прокрутка).",
-      ),
-    );
+    import("./messages").then((m) => {
+      if (typeof m.loadMessagesUntil === 'function' && state.activeChatId) {
+        m.loadMessagesUntil(state.activeChatId, msgId).then((success: boolean) => {
+          if (success) {
+            setTimeout(() => {
+              (window as any).highlightMessage(msgId);
+            }, 300);
+          } else {
+            import("./utils").then((u) => u.customToast("Сообщение не найдено."));
+          }
+        });
+      } else {
+        import("./utils").then((u) =>
+          u.customToast("Сообщение не найдено.")
+        );
+      }
+    });
   }
 };

@@ -1165,10 +1165,11 @@ export async function deleteMiniApp(id: string) {
                 await m.shareAppContent(
                     state.forwardSelectedChats,
                     {
-                        type: 'miniapp',
-                        miniapp_id: app.id,
+                        type: 'share_app_content',
+                        content_type_label: 'ПРИЛОЖЕНИЕ',
+                        url_hash: '?miniapp=' + app.id,
                         title: app.title,
-                        icon_url: app.icon_url
+                        thumbnail_url: app.icon_url
                     },
                     'Отправил(а) мини-приложение'
                 );
@@ -1196,6 +1197,22 @@ export async function downloadMiniApp() {
 
     try {
         import('./utils').then(m => m.customToast("Подготовка к скачиванию..."));
+
+        if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
+            if (data.html_url) {
+                const { Browser } = await import('@capacitor/browser');
+                await Browser.open({ url: data.html_url });
+                import('./utils').then(m => m.customToast("Игра открыта в браузере! Добавьте её через меню браузера 'На экран Домой'."));
+            } else if (data.html_content && data.html_content.startsWith("https://")) {
+                const { Browser } = await import('@capacitor/browser');
+                await Browser.open({ url: data.html_content });
+                import('./utils').then(m => m.customToast("Игра открыта в браузере! Добавьте её через меню браузера 'На экран Домой'."));
+            } else {
+                 import('./utils').then(m => m.showError("Не удалось получить ссылку на эту игру для открытия в браузере."));
+            }
+            return;
+        }
+
         let html = "";
         if (data.html_content && data.html_content.trim().startsWith("<")) {
             html = data.html_content;
