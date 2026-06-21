@@ -870,24 +870,21 @@ function appendShortsFromQueue(count: number) {
                         <span class="text-xs font-bold" id="short-comments-count-${short.id}">${short.comments_count || 0}</span>
                     </button>
 
-                    <button class="flex flex-col items-center gap-1 text-white drop-shadow-md transition-transform hover:scale-110 group" onclick="if(window.forwardText) window.forwardText('${window.location.origin}${window.location.pathname}?short=${short.id}')">
+                    ${short.author_id !== state.currentUser?.id ? `
+                    <button class="flex flex-col items-center gap-1 text-yellow-400 drop-shadow-md transition-transform hover:scale-110 group" onclick="window.sendVibToUserModal('${short.profiles?.username || ''}')">
+                        <div class="p-2 rounded-full bg-black/20 group-hover:bg-black/40 backdrop-blur-sm transition-colors">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="text-[10px] font-bold text-white uppercase tracking-wider">VIB</span>
+                    </button>
+                    ` : ''}
+
+                    <button class="flex flex-col items-center gap-1 text-white drop-shadow-md transition-transform hover:scale-110 group" onclick="window.forwardShortModal('${short.id}')">
                         <div class="p-2 rounded-full bg-black/20 group-hover:bg-black/40 backdrop-blur-sm transition-colors">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                         </div>
-                        <span class="text-xs font-bold">Направить</span>
+                        <span class="text-xs font-bold">Share</span>
                     </button>
-
-                    ${short.author?.username ? `
-                    <button class="flex flex-col items-center gap-1 text-yellow-500 drop-shadow-md transition-transform hover:scale-110 group" onclick="if(window.sendVibModal) { window.sendVibModal(); setTimeout(() => { const el = document.getElementById('vib-transfer-username'); if(el) el.value = '${short.author.username}'; }, 100); }">
-                        <div class="p-2 rounded-full bg-black/20 group-hover:bg-black/40 backdrop-blur-sm transition-colors relative overflow-hidden flex items-center justify-center">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-inner flex items-center justify-center relative border border-yellow-200">
-                                <span class="text-white font-black text-xs mix-blend-overlay">V</span>
-                                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-30"></div>
-                            </div>
-                        </div>
-                        <span class="text-[10px] font-bold tracking-wider">VIB</span>
-                    </button>
-                    ` : ''}
 
                     <div class="flex flex-col items-center gap-1 text-white drop-shadow-md group">
                         <div class="p-2 rounded-full bg-black/20 backdrop-blur-sm transition-colors">
@@ -1764,3 +1761,146 @@ export async function deleteUserShorts(userId: string) {
 
   await supabase.from("shorts").delete().in("id", shortIds);
 }
+
+// Forwarding functionality for Shorts
+(window as any).forwardShortModal = async (shortId: string) => {
+  const short = shortsList.find(s => s.id === shortId);
+  if (!short) return;
+
+  state.forwardSelectedChats = [];
+  const modal = document.getElementById('modal-content')!;
+  modal.innerHTML = `
+      <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Поделиться Shorts</h3>
+              <button onclick="window.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-full transition-colors">✕</button>
+          </div>
+          <div id="forward-chats-list" class="max-h-80 overflow-y-auto space-y-1 mb-6">
+              <div class="flex justify-center p-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div></div>
+          </div>
+          <button id="confirm-forward-btn" onclick="window.confirmForwardShort('${shortId}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md opacity-50 cursor-not-allowed" disabled>
+              Отправить
+          </button>
+      </div>
+  `;
+  document.getElementById('modal-overlay')!.classList.remove('hidden');
+
+  const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
+  if (!members || members.length === 0) {
+      document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
+      return;
+  }
+  
+  const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))').in('id', members.map(m => m.chat_id));
+  
+  let savedMessagesChat = chats?.find(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length));
+  let renderedChats = chats ? [...chats] : [];
+  
+  // Filter out phantom chats and channels where user is not admin
+  renderedChats = renderedChats.filter(c => {
+      if (c.type === 'channel') {
+          const myRole = c.chat_members?.find((m: any) => m.user_id === state.currentUser.id)?.role;
+          if (myRole !== 'admin' && myRole !== 'creator') return false;
+      }
+      return c.type.includes('group') || c.type.includes('channel') || (c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length);
+  });
+  
+  if (savedMessagesChat) {
+      renderedChats.unshift(savedMessagesChat);
+  }
+  
+  const list = document.getElementById('forward-chats-list')!;
+  list.innerHTML = '';
+  
+  renderedChats.forEach((chat: any) => {
+      const isGroup = chat.type === 'group' || chat.type === 'channel';
+      let isSavedMessages = false;
+      let chatName = chat.title;
+      let avatarUrl = chat.avatar_url;
+      let isPremiumUser = false;
+      
+      if (!isGroup) {
+          const others = chat.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id);
+          if (!others || others.length === 0) {
+              isSavedMessages = true;
+              chatName = 'Избранное';
+          } else {
+              const other = others[0];
+              if (other?.profiles) {
+                  chatName = other.profiles.display_name || other.profiles.username;
+                  avatarUrl = other.profiles.avatar_url;
+                  isPremiumUser = other.profiles.is_premium && (!other.profiles.premium_until || new Date(other.profiles.premium_until) > new Date());
+              }
+          }
+      }
+      
+      const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain"></div>` : '';
+      const firstLetter = (chatName || 'C')[0].toUpperCase();
+      
+      let avatarHtml;
+      if (isSavedMessages) {
+          avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
+      } else {
+          avatarHtml = avatarUrl 
+              ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="\${avatarUrl}" class="w-full h-full object-cover"></div>` 
+              : `<div class="w-full h-full bg-gradient-to-br \${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">\${firstLetter}</div>`;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group';
+      div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
+      
+      div.innerHTML = `
+          <div class="w-10 h-10 shrink-0 relative">\${avatarHtml}\${premiumBadgeHtml}</div>
+          <div class="flex-1 min-w-0">
+              <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">\${chatName || 'Неизвестно'}</div>
+              <div class="text-xs text-gray-500">\${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
+          </div>
+          <div id="forward-check-\${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all shadow-sm bg-white dark:bg-gray-900">
+              <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+      `;
+      list.appendChild(div);
+  });
+};
+
+(window as any).confirmForwardShort = async (shortId: string) => {
+    if (state.forwardSelectedChats.length === 0) return;
+    
+    const short = shortsList.find(s => s.id === shortId);
+    if (!short) return;
+    
+    const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
+    const originalText = btn.innerText;
+    btn.innerText = 'Отправка...';
+    btn.disabled = true;
+
+    try {
+        import('./utils').then(async m => {
+            await m.shareAppContent(
+                state.forwardSelectedChats,
+                {
+                    type: 'short',
+                    short_id: short.id,
+                    title: short.title,
+                    cover_url: short.thumbnail_url || short.video_url
+                },
+                'Отправил(а) шортс'
+            );
+            m.closeModal();
+            m.customToast(`Шортс отправлен (${state.forwardSelectedChats.length})`);
+            
+            // If we are currently in that chat, reload messages
+            if (state.forwardSelectedChats.includes(state.activeChatId!)) {
+                import('./messages-core').then(mc => mc.loadMessages(state.activeChatId!));
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        btn.innerText = 'Ошибка';
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }, 2000);
+    }
+};

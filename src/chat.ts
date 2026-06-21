@@ -30,13 +30,6 @@ export async function loadChats() {
       }
     }
 
-    const { data: verifiedSettings } = await supabase.from('admin_settings').select('value').eq('key', 'verified_channels').single();
-    if (verifiedSettings) {
-        (window as any)._verifiedChannels = verifiedSettings.value || [];
-    } else {
-        (window as any)._verifiedChannels = [];
-    }
-
     const list = document.getElementById("chats-list")!;
 
     if (chatIds.length === 0) {
@@ -47,7 +40,7 @@ export async function loadChats() {
     const { data: chats, error: chatsError } = await supabase
       .from("chats")
       .select(
-        `id, created_at, type, title, avatar_url, description, is_public, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id)`,
+        `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id)`,
       )
       .in("id", chatIds);
     if (chatsError) throw chatsError;
@@ -363,9 +356,9 @@ export async function loadChats() {
         ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>`
         : "";
 
-      const isVerifiedChannel = chat.type === 'channel' && ((window as any)._verifiedChannels || []).includes(chat.id);
-      const verifiedBadgeListHtml = isVerifiedChannel
-        ? `<span class="inline-flex items-center justify-center ml-1 shrink-0 text-blue-500 scale-90" title="Официальный канал"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.1 15.6l-4.9-4.9 1.4-1.4 3.5 3.5 8.1-8.1 1.4 1.4-9.5 9.5z"></path></svg></span>`
+      const isVerified = Boolean(chat.is_verified);
+      const verifiedBadgeListHtml = isVerified
+        ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
         : "";
 
       div.innerHTML = `
@@ -380,8 +373,8 @@ export async function loadChats() {
                         <div class="flex items-center gap-1 min-w-0 flex-1">
                             <div class="font-bold text-gray-900 dark:text-gray-100 text-[15px] flex items-center min-w-0 flex-1 max-w-full">
                                 <div class="truncate shrink">${chatName || "Неизвестно"}</div>
-                                ${premiumBadgeListHtml}
                                 ${verifiedBadgeListHtml}
+                                ${premiumBadgeListHtml}
                             </div>
                             ${muteBadge}
                         </div>
@@ -895,15 +888,25 @@ export async function openChat(
       });
   }
 
+  let isVerified = false;
+  try {
+    const { data } = await supabase
+      .from("chats")
+      .select("is_verified")
+      .eq("id", chatId)
+      .single();
+    if (data) isVerified = !!data.is_verified;
+  } catch (e) {}
+
+  const verifiedBadgeListHtml = isVerified
+    ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
+    : "";
+
   const premiumBadgeListHtml = isPremiumUser
     ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-4 h-4 object-contain" alt="Premium"></span>`
     : "";
-  const isVerifiedChannel = chatType === 'channel' && ((window as any)._verifiedChannels || []).includes(chatId);
-  const verifiedBadgeHeaderHtml = isVerifiedChannel
-    ? `<span class="inline-flex items-center justify-center ml-1 shrink-0 text-blue-500" title="Официальный канал"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.1 15.6l-4.9-4.9 1.4-1.4 3.5 3.5 8.1-8.1 1.4 1.4-9.5 9.5z"></path></svg></span>`
-    : "";
   document.getElementById("current-chat-name")!.innerHTML =
-    `<span class="truncate shrink">${chatName}</span>${premiumBadgeListHtml}${verifiedBadgeHeaderHtml}`;
+    `<span class="truncate shrink">${chatName}</span>${verifiedBadgeListHtml}${premiumBadgeListHtml}`;
 
   const backBtn = document.querySelector("#chat-header-container button");
   if (backBtn) {

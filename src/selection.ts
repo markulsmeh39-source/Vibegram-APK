@@ -181,31 +181,27 @@ export async function forwardSelectedMessages() {
     `;
     document.getElementById('modal-overlay')!.classList.remove('hidden');
 
-    const { data: members } = await supabase.from('chat_members').select('chat_id, role').eq('user_id', state.currentUser.id);
+    const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
     if (!members || members.length === 0) {
         document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
         return;
     }
     
-    const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, profiles(username, display_name, avatar_url))').in('id', members.map(m => m.chat_id));
+    const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))').in('id', members.map(m => m.chat_id));
     
-    let validChats = chats?.filter(c => {
+    let savedMessagesChat = chats?.find(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length));
+    
+    let renderedChats = chats ? [...chats] : [];
+    
+    // Filter out phantom chats and channels where user is not admin
+    renderedChats = renderedChats.filter(c => {
         if (c.type === 'channel') {
-            const memberInfo = members.find(m => m.chat_id === c.id);
-            if (memberInfo && (memberInfo.role === 'creator' || memberInfo.role === 'admin')) return true;
-            return false;
+            const myRole = c.chat_members?.find((m: any) => m.user_id === state.currentUser.id)?.role;
+            if (myRole !== 'admin' && myRole !== 'creator') return false;
         }
-        return true;
+        return c.type.includes('group') || c.type.includes('channel') || (c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length);
     });
-
-    let savedMessagesChat = validChats?.find((c: any) => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length));
     
-    let renderedChats = validChats ? validChats.filter((c: any) => {
-        const isGroupOrChannel = c.type.includes('group') || c.type.includes('channel');
-        const hasOthers = c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length > 0;
-        return isGroupOrChannel || hasOthers;
-    }) : [];
-
     if (savedMessagesChat) {
         renderedChats.unshift(savedMessagesChat);
     }
@@ -213,24 +209,21 @@ export async function forwardSelectedMessages() {
     const list = document.getElementById('forward-chats-list')!;
     list.innerHTML = '';
     
-    renderedChats?.forEach((chat: any) => {
-        const isGroup = chat.type === 'group';
-        const isChannel = chat.type === 'channel';
+    renderedChats.forEach((chat: any) => {
+        const isGroup = chat.type === 'group' || chat.type === 'channel';
         let chatName = chat.title;
         let avatarUrl = chat.avatar_url;
-        let isSavedMessages = false;
         
-        if (!isGroup && !isChannel) {
+        if (!isGroup) {
             const otherMember = chat.chat_members.find((m: any) => m.user_id !== state.currentUser.id);
             if (otherMember) {
-                chatName = otherMember.profiles?.display_name || otherMember.profiles?.username || 'Unknown';
-                avatarUrl = otherMember.profiles?.avatar_url;
+                chatName = otherMember.profiles.display_name || otherMember.profiles.username;
+                avatarUrl = otherMember.profiles.avatar_url;
             } else {
                 chatName = 'Избранное';
-                isSavedMessages = true;
             }
         }
-
+        
         const div = document.createElement('div');
         div.className = 'flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors';
         div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
@@ -238,7 +231,7 @@ export async function forwardSelectedMessages() {
         div.innerHTML = `
             <div class="relative">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
-                    ${isSavedMessages ? 'И' : (avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : chatName.charAt(0).toUpperCase())}
+                    ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover">` : chatName.charAt(0).toUpperCase()}
                 </div>
                 <div id="forward-check-${chat.id}" class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center hidden scale-0 transition-transform">
                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -246,6 +239,7 @@ export async function forwardSelectedMessages() {
             </div>
             <div class="flex-1 min-w-0">
                 <div class="font-medium text-gray-900 dark:text-gray-100 truncate">${chatName}</div>
+                <div class="text-xs text-gray-500">${chatName === 'Избранное' ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
             </div>
         `;
         list.appendChild(div);

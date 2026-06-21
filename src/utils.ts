@@ -786,3 +786,64 @@ export async function sendPushNotification(
         console.warn('Push error', e);
     }
 }
+
+export async function shareAppContent(chatIds: string[], mediaPayload: any, notificationText: string) {
+    const { supabase, state } = await import('./supabase');
+    
+    // 1. Send messages
+    const promises = chatIds.map(chatId => {
+        return supabase.from('messages').insert({
+            chat_id: chatId,
+            sender_id: state.currentUser.id,
+            content: '',
+            media: [mediaPayload]
+        });
+    });
+    
+    await Promise.all(promises);
+
+    // 2. Fetch sender profile
+    let senderName = state.currentProfile?.display_name || state.currentProfile?.username || state.currentUser?.user_metadata?.full_name;
+    if (!senderName) {
+        const { data: p } = await supabase.from('profiles').select('display_name, username').eq('id', state.currentUser.id).single();
+        if (p) senderName = p.display_name || p.username;
+    }
+    senderName = senderName || "Vibegram";
+
+    // 3. Send Push Notifications
+    const { data: chatsData } = await supabase.from('chats')
+        .select('id, type, title, chat_members(user_id)')
+        .in('id', chatIds);
+
+    if (chatsData) {
+        for (const chat of chatsData) {
+            const isGroup = chat.type === 'group' || chat.type === 'channel';
+            let title = senderName;
+            let finalBody = notificationText;
+
+            if (chat.type === 'channel') {
+                title = chat.title || title;
+                finalBody = notificationText;
+            } else if (isGroup) {
+                title = chat.title || title;
+                finalBody = `${senderName}: ${notificationText}`;
+            }
+
+            const targetUserIds = chat.chat_members
+                ?.map((m: any) => m.user_id)
+                .filter((id: string) => id !== state.currentUser.id);
+
+            if (targetUserIds && targetUserIds.length > 0) {
+                await sendPushNotification(
+                    targetUserIds,
+                    title,
+                    finalBody,
+                    chat.id,
+                    notificationText,
+                    senderName
+                );
+            }
+        }
+    }
+}
+

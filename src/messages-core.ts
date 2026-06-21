@@ -12,20 +12,6 @@ let isSendingMessage = false;
 export let isLoadingMore = false;
 export let hasMoreMessages = true;
 export let messageScrollListener: any = null;
-
-(window as any).scrollToMessageAndHighlight = (id: string) => {
-    const el = document.getElementById(`msg-${id}`) || document.getElementById(`msg-wrapper-${id}`);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50', 'transition-all', 'duration-500');
-        const oldBg = el.style.backgroundColor;
-        el.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-        setTimeout(() => {
-            el.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
-            el.style.backgroundColor = oldBg;
-        }, 2000);
-    }
-};
 export let typingTimeout: any = null;
 
 export async function markMessagesAsRead(chatId: string) {
@@ -320,7 +306,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
 
         if (replyData) {
             replyHtml = `
-                <div class="flex items-center gap-2 mb-1.5 pl-2 border-l-2 border-blue-500 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-r transition-colors" onclick="window.scrollToMessageAndHighlight('${replyData.original_id}')">
+                <div class="flex items-center gap-2 mb-1.5 pl-2 border-l-2 border-blue-500 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-r transition-colors" onclick="if(window.highlightMessage) window.highlightMessage('${replyData.original_id}')">
                     <div class="flex-1 min-w-0">
                         <div class="text-[13px] font-medium text-blue-500 dark:text-blue-400">${replyData.original_sender}</div>
                         <div class="text-[13px] text-gray-500 dark:text-gray-400 truncate">${replyData.original_content}</div>
@@ -430,6 +416,34 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                     ${transcriptionText}
                 </div>
             `;
+        } else if (actualMedia.length === 1 && actualMedia[0].type === 'short') {
+            const file = actualMedia[0];
+            fileHtml = `
+                <div class="rounded-xl overflow-hidden shadow-sm border border-black/5 bg-gray-900 group cursor-pointer w-48 relative aspect-[9/16] mb-1 shrink-0" onclick="window.location.hash='#shorts'; setTimeout(() => window.openShorts('${file.short_id}'), 100);">
+                    ${file.cover_url ? `<img src="${file.cover_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center text-gray-500"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 p-3 w-full pointer-events-none">
+                        <div class="font-bold text-white text-sm line-clamp-2 leading-tight">${file.title || 'Vibegram Shorts'}</div>
+                        <div class="text-xs text-gray-300 mt-1 uppercase font-bold tracking-widest text-[10px]">Shorts</div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                </div>
+            `;
+        } else if (actualMedia.length === 1 && actualMedia[0].type === 'miniapp') {
+            const file = actualMedia[0];
+            fileHtml = `
+                <div class="rounded-2xl overflow-hidden shadow-sm border border-black/5 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 group cursor-pointer w-64 p-3 mb-1 flex items-center gap-3 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50" onclick="window.runMiniApp('${file.miniapp_id}')">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner shrink-0 truncate px-1">
+                        ${file.icon_url ? `<img src="${file.icon_url}" class="w-full h-full object-cover rounded-xl">` : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-gray-900 dark:text-white truncate text-sm leading-tight">${file.title || 'Mini App'}</div>
+                        <div class="text-[10px] uppercase font-bold text-blue-500 tracking-wider mt-0.5">Mini App</div>
+                    </div>
+                </div>
+            `;
         } else if (actualMedia.length === 1 && actualMedia[0].type?.startsWith('audio/')) {
             const file = actualMedia[0];
             fileHtml = `
@@ -532,28 +546,24 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             }
         }
 
-        let displayContent = msg.content;
-        if (!displayContent || displayContent.trim() === '') {
-            if (msg.message_type === 'poll') displayContent = '📊 Опрос';
-            else if (msg.message_type === 'text') displayContent = '💬 Сообщение';
-            else if (actualMedia && actualMedia.length > 0) {
-                const m = actualMedia[0];
-                if (m.type === 'image') displayContent = '📷 Фотография';
-                else if (m.type === 'video') displayContent = '🎥 Видео';
-                else if (m.type === 'audio') displayContent = '🎵 ГС / Аудио';
-                else if (m.type === 'file') displayContent = '📁 Файл';
-                else if (m.type === 'video_note') displayContent = '📹 Видео кружок';
-                else if (m.type === 'app') displayContent = 'App / Вложение';
-                else if (m.type === 'short') displayContent = '🎥 Shorts';
-                else displayContent = 'Вложение';
-            } else {
-                displayContent = 'Вложение';
-            }
-        }
-        const encodedContent = encodeURIComponent(displayContent || '').replace(/'/g, "%27");
+        const encodedContent = encodeURIComponent(msg.content || '').replace(/'/g, "%27");
         
         // Reactions HTML
         let reactionsHtml = generateReactionsHtml(msg.id, msg.reactions);
+
+        let contentLabel = msg.content || '';
+        if (!contentLabel && actualMedia.length > 0) {
+            if (msg.message_type === 'poll') contentLabel = '📊 Опрос';
+            else if (msg.message_type === 'voice_message') contentLabel = '🎵 ГС / Аудио';
+            else if (msg.message_type === 'video_circle') contentLabel = '📹 Видео кружок';
+            else if (actualMedia[0].type === 'short') contentLabel = 'ШОРТС';
+            else if (actualMedia[0].type === 'miniapp') contentLabel = 'App / Вложение';
+            else if (actualMedia[0].type?.startsWith('image/')) contentLabel = '📷 Фотография';
+            else if (actualMedia[0].type?.startsWith('video/')) contentLabel = '🎥 Видеосообщение';
+            else if (actualMedia[0].type?.startsWith('audio/')) contentLabel = '🎵 ГС / Аудио';
+            else contentLabel = '📁 Файл';
+        }
+        const encodedContentLabel = encodeURIComponent(contentLabel);
 
         let avatarHtml = '';
         if (!isMe && state.activeChatType === 'group') {
@@ -591,7 +601,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                         Копировать
                     </button>
                     ${document.getElementById('input-area')?.style.display !== 'none' ? `
-                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); replyToMessage('${msg.id}', decodeURIComponent('${encodedContent}'), '${displaySenderName}')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); replyToMessage('${msg.id}', decodeURIComponent('${encodedContentLabel}'), '${displaySenderName}')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                         Ответить
                     </button>
@@ -638,7 +648,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         const innerHTML = `
             <div class="flex items-end max-w-full">
                 ${avatarHtml}
-                <div class="relative group select-none ${isMe ? 'bg-[#e3f2fd] dark:bg-blue-900/40 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-br-[4px]' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-bl-[4px]'} p-2 px-3 shadow-sm border border-gray-200/60 dark:border-gray-700/60 max-w-full flex-1 min-w-0" id="msg-${msg.id}" data-reply-content="${encodedContent}" data-sender-name="${encodeURIComponent(displaySenderName).replace(/'/g, "%27")}" ontouchstart="handleMessageTouchStart(event, '${msg.id}')" ontouchend="handleMessageTouchEnd(event)" ontouchmove="handleMessageTouchMove(event)" onmousedown="handleMessageTouchStart(event, '${msg.id}')" onmouseup="handleMessageTouchEnd(event)" onmousemove="handleMessageTouchMove(event)" onmouseleave="handleMessageTouchEnd(event)">
+                <div class="relative group select-none ${isMe ? 'bg-[#e3f2fd] dark:bg-blue-900/40 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-br-[4px]' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-bl-[4px]'} p-2 px-3 shadow-sm border border-gray-200/60 dark:border-gray-700/60 max-w-full flex-1 min-w-0" id="msg-${msg.id}" data-reply-content="${encodedContentLabel}" data-reply-sender="${encodeURIComponent(displaySenderName)}" ontouchstart="handleMessageTouchStart(event, '${msg.id}')" ontouchend="handleMessageTouchEnd(event)" ontouchmove="handleMessageTouchMove(event)" onmousedown="handleMessageTouchStart(event, '${msg.id}')" onmouseup="handleMessageTouchEnd(event)" onmousemove="handleMessageTouchMove(event)" onmouseleave="handleMessageTouchEnd(event)">
                     ${forwardHtml}
                     ${replyHtml}
                     ${senderNameHtml} ${fileHtml}

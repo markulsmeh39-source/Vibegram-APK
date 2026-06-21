@@ -1,8 +1,5 @@
 import { state, supabase } from "./supabase";
 import { customToast, uploadToCloudinary } from "./utils";
-import { Capacitor, registerPlugin } from "@capacitor/core";
-
-const ShortcutPlugin = registerPlugin<any>("Shortcut");
 
 export function setupMiniApps() {
   (window as any).openMiniAppsCatalog = openMiniAppsCatalog;
@@ -14,7 +11,7 @@ export function setupMiniApps() {
   (window as any).runMiniApp = runMiniApp;
   (window as any).closeMiniApp = closeMiniApp;
   (window as any).copyMiniAppLink = copyMiniAppLink;
-  (window as any).addMiniAppShortcut = addMiniAppShortcut;
+  (window as any).downloadMiniApp = downloadMiniApp;
   (window as any).deleteMiniApp = deleteMiniApp;
   (window as any).searchMiniApps = searchMiniApps;
   (window as any).toggleLikeMiniApp = toggleLikeMiniApp;
@@ -482,9 +479,6 @@ async function loadMiniApps(tab: string) {
                 </div>
                 <div class="mt-4 flex gap-2">
                     <button onclick="window.runMiniApp('${app.id}')" class="flex-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm">Запустить</button>
-                    <button onclick="if(window.forwardText) window.forwardText('${window.location.origin}${window.location.pathname}?miniapp=${app.id}')" class="px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-xl text-sm transition-colors shadow-sm" title="Направить">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                    </button>
                     ${
                       app.visibility === "unlisted" &&
                       app.creator_id === state.currentUser?.id
@@ -969,107 +963,6 @@ export function copyMiniAppLink(appId?: string) {
   });
 }
 
-export async function addMiniAppShortcut(appId?: string) {
-  const id = appId || currentRunningAppId;
-  if (!id) return;
-  
-  if (!Capacitor.isNativePlatform()) {
-      customToast("Добавление ярлыка доступно только в мобильном приложении");
-      return;
-  }
-  
-  try {
-      const { data: appData, error } = await supabase.from("mini_apps").select("*").eq("id", id).single();
-      if (error || !appData) throw error;
-      
-      const url = `${window.location.origin}${window.location.pathname}?miniapp=${id}`;
-      
-      await ShortcutPlugin.addShortcut({
-          id: id,
-          title: appData.title,
-          url: url,
-          iconUrl: appData.icon_url || ''
-      });
-      customToast("Ярлык добавлен на рабочий стол!");
-  } catch(err: any) {
-      customToast("Не удалось добавить ярлык: " + (err.message || 'Ошибка'));
-  }
-}
-
-export async function runStandaloneMiniApp(id: string) {
-  try {
-    currentRunningAppId = id;
-    const { data, error } = await supabase
-      .from("mini_apps")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error || !data) throw error || new Error("App Not Found");
-
-    const screens = [
-      "auth-screen",
-      "lock-screen",
-      "app-screen",
-      "initial-loader",
-    ];
-    screens.forEach((sId) =>
-      document.getElementById(sId)?.classList.add("hidden"),
-    );
-
-    const standaloneScreen = document.getElementById(
-      "standalone-miniapp-screen",
-    )!;
-    standaloneScreen.classList.remove("hidden");
-    standaloneScreen.classList.add("flex");
-
-    const iframe = document.getElementById(
-      "standalone-miniapp-frame",
-    ) as HTMLIFrameElement;
-
-    iframe.removeAttribute("srcdoc");
-    iframe.removeAttribute("src");
-
-    if (data.html_content && data.html_content.trim().startsWith("<")) {
-      iframe.srcdoc = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      if (data.html_content.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
-        } catch (err) {
-          iframe.src = data.html_content;
-        }
-      } else {
-        iframe.src = data.html_content;
-      }
-    } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
-        } catch (err) {
-          iframe.src = data.html_url;
-        }
-      } else {
-        iframe.src = data.html_url;
-      }
-    } else if (data.html_content) {
-      iframe.srcdoc = data.html_content;
-    }
-
-    supabase.rpc("increment_miniapp_view", { app_id: id }).then((res) => {
-      if (res.error)
-        supabase
-          .from("mini_apps")
-          .update({ views_count: (data.views_count || 0) + 1 })
-          .eq("id", id)
-          .then();
-    });
-
-    window.addEventListener("message", handleMiniAppMessage);
-  } catch (e: any) {
-    document.body.innerHTML = `<div class="h-full w-full flex items-center justify-center text-red-500 font-bold bg-white dark:bg-gray-900">Ошибка загрузки приложения: ${e.message}</div>`;
-  }
-}
-
 function handleMiniAppMessage(event: MessageEvent) {
   if (!event.data || !currentRunningAppId) return;
 
@@ -1080,12 +973,7 @@ function handleMiniAppMessage(event: MessageEvent) {
   }
 
   if (event.data.type === "vibe_get_user") {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isStandalone = urlParams.has("miniapp");
-    const iframeId = isStandalone
-      ? "standalone-miniapp-frame"
-      : "mini-app-frame";
-    const iframe = document.getElementById(iframeId) as HTMLIFrameElement;
+    const iframe = document.getElementById("mini-app-frame") as HTMLIFrameElement;
 
     if (iframe && iframe.contentWindow) {
       iframe.contentWindow.postMessage(
@@ -1148,4 +1036,226 @@ export async function deleteMiniApp(id: string) {
   } catch (e: any) {
     customToast(`Ошибка: ${e.message}`);
   }
+}
+
+// Forwarding functionality for Mini Apps
+(window as any).forwardMiniAppModal = async (appId?: string) => {
+  const id = appId || currentRunningAppId;
+  if (!id) return;
+
+  const app = loadedMiniAppsData?.find(a => a.id === id) || miniAppContentData;
+  if (!app) return;
+
+  // We could have imported state, but let's just make sure type checking is fine
+  import('./supabase').then(async (m) => {
+      const state = m.state;
+      state.forwardSelectedChats = [];
+      const modal = document.getElementById('modal-content')!;
+      modal.innerHTML = `
+          <div class="p-6">
+              <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Поделиться Mini App</h3>
+                  <button onclick="window.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-full transition-colors">✕</button>
+              </div>
+              <div id="forward-chats-list" class="max-h-80 overflow-y-auto space-y-1 mb-6">
+                  <div class="flex justify-center p-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div></div>
+              </div>
+              <button id="confirm-forward-btn" onclick="window.confirmForwardMiniApp('${id}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md opacity-50 cursor-not-allowed" disabled>
+                  Отправить
+              </button>
+          </div>
+      `;
+      document.getElementById('modal-overlay')!.classList.remove('hidden');
+
+      const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
+      if (!members || members.length === 0) {
+          document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
+          return;
+      }
+      
+      const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))').in('id', members.map(member => member.chat_id));
+      
+      let savedMessagesChat = chats?.find(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((member: any) => member.user_id !== state.currentUser.id)?.length));
+      let renderedChats = chats ? [...chats] : [];
+      
+      // Filter out phantom chats and channels where user is not admin
+      renderedChats = renderedChats.filter(c => {
+          if (c.type === 'channel') {
+              const myRole = c.chat_members?.find((m: any) => m.user_id === state.currentUser.id)?.role;
+              if (myRole !== 'admin' && myRole !== 'creator') return false;
+          }
+          return c.type.includes('group') || c.type.includes('channel') || (c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length);
+      });
+      
+      if (savedMessagesChat) {
+          renderedChats.unshift(savedMessagesChat);
+      }
+      
+      const list = document.getElementById('forward-chats-list')!;
+      list.innerHTML = '';
+      
+      renderedChats.forEach((chat: any) => {
+          const isGroup = chat.type === 'group' || chat.type === 'channel';
+          let isSavedMessages = false;
+          let chatName = chat.title;
+          let avatarUrl = chat.avatar_url;
+          let isPremiumUser = false;
+          
+          if (!isGroup) {
+              const others = chat.chat_members?.filter((member: any) => member.user_id !== state.currentUser.id);
+              if (!others || others.length === 0) {
+                  isSavedMessages = true;
+                  chatName = 'Избранное';
+              } else {
+                  const other = others[0];
+                  if (other?.profiles) {
+                      chatName = other.profiles.display_name || other.profiles.username;
+                      avatarUrl = other.profiles.avatar_url;
+                      isPremiumUser = other.profiles.is_premium && (!other.profiles.premium_until || new Date(other.profiles.premium_until) > new Date());
+                  }
+              }
+          }
+          
+          const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain"></div>` : '';
+          const firstLetter = (chatName || 'C')[0].toUpperCase();
+          
+          let avatarHtml;
+          if (isSavedMessages) {
+              avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
+          } else {
+              avatarHtml = avatarUrl 
+                  ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="\${avatarUrl}" class="w-full h-full object-cover"></div>` 
+                  : `<div class="w-full h-full bg-gradient-to-br \${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">\${firstLetter}</div>`;
+          }
+
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group';
+          div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
+          
+          div.innerHTML = `
+              <div class="w-10 h-10 shrink-0 relative">\${avatarHtml}\${premiumBadgeHtml}</div>
+              <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">\${chatName || 'Неизвестно'}</div>
+                  <div class="text-xs text-gray-500">\${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
+              </div>
+              <div id="forward-check-\${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all shadow-sm bg-white dark:bg-gray-900">
+                  <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+              </div>
+          `;
+          list.appendChild(div);
+      });
+  });
+};
+
+(window as any).confirmForwardMiniApp = async (appId: string) => {
+    import('./supabase').then(async (m) => {
+        const state = m.state;
+        if (state.forwardSelectedChats.length === 0) return;
+        
+        let app = loadedMiniAppsData?.find(a => a.id === appId) || miniAppContentData;
+        if (!app) return;
+        
+        const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
+        const originalText = btn.innerText;
+        btn.innerText = 'Отправка...';
+        btn.disabled = true;
+
+        try {
+            import('./utils').then(async m => {
+                await m.shareAppContent(
+                    state.forwardSelectedChats,
+                    {
+                        type: 'miniapp',
+                        miniapp_id: app.id,
+                        title: app.title,
+                        icon_url: app.icon_url
+                    },
+                    'Отправил(а) мини-приложение'
+                );
+                m.closeModal();
+                m.customToast(`Mini App отправлено (${state.forwardSelectedChats.length})`);
+                
+                if (state.forwardSelectedChats.includes(state.activeChatId!)) {
+                    import('./messages-core').then(mc => mc.loadMessages(state.activeChatId!));
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            btn.innerText = 'Ошибка';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+    });
+};
+
+export async function downloadMiniApp() {
+    const data = miniAppContentData;
+    if (!data) return;
+
+    try {
+        import('./utils').then(m => m.customToast("Подготовка к скачиванию..."));
+        let html = "";
+        if (data.html_content && data.html_content.trim().startsWith("<")) {
+            html = data.html_content;
+        } else if (data.html_content && data.html_content.startsWith("https://")) {
+            html = await fetchAndInjectBase(data.html_content);
+        } else if (data.html_url) {
+            html = await fetchAndInjectBase(data.html_url);
+        } else if (data.html_content) {
+            html = data.html_content;
+        }
+        
+        if (!html) throw new Error("Нет HTML содержимого");
+        
+        const iconUrl = data.icon_url || '';
+        const appTitle = (data.title || 'App').replace(/"/g, '&quot;');
+        const manifest = {
+            name: appTitle,
+            short_name: appTitle,
+            display: "fullscreen",
+            start_url: ".",
+            icons: iconUrl ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }] : []
+        };
+        const manifestStr = "data:application/manifest+json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
+
+        const pwaTags = `
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="application-name" content="${appTitle}">
+<meta name="apple-mobile-web-app-title" content="${appTitle}">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="${manifestStr}">
+${iconUrl ? `<link rel="icon" href="${iconUrl}">` : ''}
+${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ''}
+<title>${appTitle}</title>
+<style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+</style>
+`;
+        if (/<head[^>]*>/i.test(html)) {
+            html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
+        } else if (/<html[^>]*>/i.test(html)) {
+            html = html.replace(/(<html[^>]*>)/i, `$1\n<head>\n${pwaTags}\n</head>\n`);
+        } else {
+            html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
+        }
+        
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.title || 'miniapp'}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        import('./utils').then(m => m.customToast("Игра скачана! Можете добавить её на рабочий стол."));
+    } catch(e: any) {
+        console.error(e);
+        import('./utils').then(m => m.showError("Не удалось скачать игру: " + e.message));
+    }
 }

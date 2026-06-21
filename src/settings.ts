@@ -1,34 +1,51 @@
-import { supabase, state } from './supabase';
-import { closeModal } from './utils';
-import { loadChats } from './chat';
-import { logout } from './auth';
+import { supabase, state } from "./supabase";
+import { closeModal } from "./utils";
+import { loadChats } from "./chat";
+import { logout } from "./auth";
 
 let bonusTimerInterval: any = null;
 
-export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', skipPushStateArg = false) {
-    let mode = 'full';
-    let skipPushState = false;
-    
-    if (typeof modeOrSkip === 'boolean') {
-        skipPushState = modeOrSkip;
-    } else {
-        mode = modeOrSkip;
-        skipPushState = skipPushStateArg;
-    }
+export function openSettings(
+  modeOrSkip: "full" | "profile" | boolean = "full",
+  skipPushStateArg = false,
+) {
+  let mode = "full";
+  let skipPushState = false;
 
-    if (!skipPushState && window.location.hash !== '#settings') {
-        window.history.pushState({ screen: 'settings' }, '', '#settings');
-    }
-    const modal = document.getElementById('modal-content')!;
-    const nickname = state.currentProfile?.display_name || state.currentProfile?.username || 'User';
-    const avatarUrl = state.currentProfile?.avatar_url ? state.currentProfile?.avatar_url || '' : '';
-    const bio = state.currentProfile?.bio || '';
-    const settings = state.currentProfile?.settings || { notifications: true, privacy: 'everyone', theme: 'light', textSize: 15, chatBg: '#ffffff' };
-    const isDark = document.documentElement.classList.contains('dark');
+  if (typeof modeOrSkip === "boolean") {
+    skipPushState = modeOrSkip;
+  } else {
+    mode = modeOrSkip;
+    skipPushState = skipPushStateArg;
+  }
 
-    const isMyPremium = state.currentProfile?.is_premium && (!state.currentProfile.premium_until || new Date(state.currentProfile.premium_until) > new Date());
-    
-    modal.innerHTML = `
+  if (!skipPushState && window.location.hash !== "#settings") {
+    window.history.pushState({ screen: "settings" }, "", "#settings");
+  }
+  const modal = document.getElementById("modal-content")!;
+  const nickname =
+    state.currentProfile?.display_name ||
+    state.currentProfile?.username ||
+    "User";
+  const avatarUrl = state.currentProfile?.avatar_url
+    ? state.currentProfile?.avatar_url || ""
+    : "";
+  const bio = state.currentProfile?.bio || "";
+  const settings = state.currentProfile?.settings || {
+    notifications: true,
+    privacy: "everyone",
+    theme: "light",
+    textSize: 15,
+    chatBg: "#ffffff",
+  };
+  const isDark = document.documentElement.classList.contains("dark");
+
+  const isMyPremium =
+    state.currentProfile?.is_premium &&
+    (!state.currentProfile.premium_until ||
+      new Date(state.currentProfile.premium_until) > new Date());
+
+  modal.innerHTML = `
         <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Настройки</h3>
@@ -42,16 +59,16 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     </div>
                 </div>
-                ${isMyPremium ? `<div class="absolute top-[80px] ml-20 bg-white dark:bg-gray-800 text-white w-8 h-8 rounded-full flex justify-center items-center font-bold shadow-lg border-2 border-white dark:border-gray-900" title="Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-5 h-5 object-contain" alt="Premium"></div>` : ''}
+                ${isMyPremium ? `<div class="absolute top-[80px] ml-20 bg-white dark:bg-gray-800 text-white w-8 h-8 rounded-full flex justify-center items-center font-bold shadow-lg border-2 border-white dark:border-gray-900" title="Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-5 h-5 object-contain" alt="Premium"></div>` : ""}
                 <input type="file" id="avatar-upload" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">Изменить фото</div>
-                <div class="text-xs text-blue-500 dark:text-blue-400 mt-2 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 transition-colors select-all" onclick="navigator.clipboard.writeText('@${state.currentProfile?.username || ''}'); const old=this.innerHTML; this.innerHTML='✅ Скопировано'; setTimeout(()=>this.innerHTML=old, 2000);" title="Копировать ID">@${state.currentProfile?.username || ''}</div>
-                ${state.currentUser?.email ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">${state.currentUser.email}</div>` : ''}
-                ${settings.is_tech_support ? '<div class="mt-2 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-200 dark:border-purple-800/30 inline-block">Техническая поддержка</div>' : ''}
+                <div class="text-xs text-blue-500 dark:text-blue-400 mt-2 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 transition-colors select-all" onclick="navigator.clipboard.writeText('@${state.currentProfile?.username || ""}'); const old=this.innerHTML; this.innerHTML='✅ Скопировано'; setTimeout(()=>this.innerHTML=old, 2000);" title="Копировать ID">@${state.currentProfile?.username || ""}</div>
+                ${state.currentUser?.email ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">${state.currentUser.email}</div>` : ""}
+                ${settings.is_tech_support ? '<div class="mt-2 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-200 dark:border-purple-800/30 inline-block">Техническая поддержка</div>' : ""}
             </div>
 
         <div class="space-y-3 mb-6 mt-4">
-            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === 'profile' ? 'hidden' : ''}">
+            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === "profile" ? "hidden" : ""}">
                 <summary class="flex justify-between items-center p-4 cursor-pointer select-none font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/50 flex items-center justify-center text-yellow-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
@@ -92,19 +109,19 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
 
                         <div class="mt-4 sm:mt-6 pt-4 border-t border-white/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-2 relative z-10">
                             <div class="w-full sm:w-auto">
-                                ${isMyPremium ? 
-                                    `<div class="flex items-center gap-3">
+                                ${
+                                  isMyPremium
+                                    ? `<div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center p-1.5 shrink-0"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>
                                         <div class="min-w-0 flex-1">
                                             <div class="font-bold text-yellow-300 tracking-wide text-xs sm:text-sm truncate">VIBEGRAM PREMIUM</div>
-                                            <div class="text-[10px] sm:text-xs text-white/70 truncate">Активно до ${state.currentProfile.premium_until ? new Date(state.currentProfile.premium_until).toLocaleDateString() : '∞'}</div>
+                                            <div class="text-[10px] sm:text-xs text-white/70 truncate">Активно до ${state.currentProfile.premium_until ? new Date(state.currentProfile.premium_until).toLocaleDateString() : "∞"}</div>
                                         </div>
-                                    </div>` 
-                                    : 
-                                    `<div class="text-xs sm:text-sm font-medium text-white/90">Получите VIBEGRAM PREMIUM</div>`
+                                    </div>`
+                                    : `<div class="text-xs sm:text-sm font-medium text-white/90">Получите VIBEGRAM PREMIUM</div>`
                                 }
                             </div>
-                            ${!isMyPremium ? `<button onclick="window.buyPremiumModal()" class="w-full sm:w-auto bg-gradient-to-r from-yellow-400 to-orange-500 text-yellow-900 px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-orange-500/20 transition-all hover:-translate-y-0.5 whitespace-nowrap">Купить</button>` : ''}
+                            ${!isMyPremium ? `<button onclick="window.buyPremiumModal()" class="w-full sm:w-auto bg-gradient-to-r from-yellow-400 to-orange-500 text-yellow-900 px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-orange-500/20 transition-all hover:-translate-y-0.5 whitespace-nowrap">Купить</button>` : ""}
                         </div>
                     </div>
                     
@@ -115,7 +132,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                 </div>
             </details>
 
-            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === 'profile' ? 'hidden' : ''}">
+            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === "profile" ? "hidden" : ""}">
                 <summary class="flex justify-between items-center p-4 cursor-pointer select-none font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 flex items-center justify-center text-pink-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg></div>
@@ -170,7 +187,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                             <span class="font-medium text-gray-700 dark:text-gray-200">Темная тема</span>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="settings-theme" class="sr-only peer" ${isDark ? 'checked' : ''} onchange="document.documentElement.classList.toggle('dark', this.checked); saveSettings()">
+                            <input type="checkbox" id="settings-theme" class="sr-only peer" ${isDark ? "checked" : ""} onchange="document.documentElement.classList.toggle('dark', this.checked); saveSettings()">
                             <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                         </label>
                     </div>
@@ -178,28 +195,82 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                         <span class="font-medium text-gray-700 dark:text-gray-200 mb-2">Фон чата</span>
                         <div class="flex gap-3 overflow-x-auto p-1 py-3 font-sans custom-scrollbar scroll-smooth">
                             ${[
-                                { id: 'default', class: 'chat-bg', isPremium: false },
-                                { id: 'bg-anim-1', class: 'bg-anim-1', isPremium: false },
-                                { id: 'bg-anim-2', class: 'bg-anim-2', isPremium: false },
-                                { id: 'bg-anim-3', class: 'bg-anim-3', isPremium: false },
-                                { id: 'bg-anim-4', class: 'bg-anim-4', isPremium: false },
-                                { id: 'bg-anim-5', class: 'bg-anim-5', isPremium: false },
-                                { id: 'bg-anim-6', class: 'bg-anim-6', isPremium: false },
-                                { id: 'bg-anim-7', class: 'bg-anim-7', isPremium: false },
-                                { id: 'bg-pattern-dots', class: 'bg-pattern-dots', isPremium: false },
-                                { id: 'bg-premium-1', class: 'bg-premium-1', isPremium: true },
-                                { id: 'bg-premium-2', class: 'bg-premium-2', isPremium: true },
-                                { id: 'bg-premium-3', class: 'bg-premium-3', isPremium: true }
-                            ].map(bg => `
+                              {
+                                id: "default",
+                                class: "chat-bg",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-1",
+                                class: "bg-anim-1",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-2",
+                                class: "bg-anim-2",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-3",
+                                class: "bg-anim-3",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-4",
+                                class: "bg-anim-4",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-5",
+                                class: "bg-anim-5",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-6",
+                                class: "bg-anim-6",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-anim-7",
+                                class: "bg-anim-7",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-pattern-dots",
+                                class: "bg-pattern-dots",
+                                isPremium: false,
+                              },
+                              {
+                                id: "bg-premium-1",
+                                class: "bg-premium-1",
+                                isPremium: true,
+                              },
+                              {
+                                id: "bg-premium-2",
+                                class: "bg-premium-2",
+                                isPremium: true,
+                              },
+                              {
+                                id: "bg-premium-3",
+                                class: "bg-premium-3",
+                                isPremium: true,
+                              },
+                            ]
+                              .map(
+                                (bg) => `
                                 <div onclick="if(${bg.isPremium} && !${isMyPremium}) { window.buyPremiumModal(); return; } document.getElementById('settings-chat-bg').value = '${bg.id}'; document.querySelectorAll('.bg-preview').forEach(el => el.classList.remove('ring-2', 'ring-inset', 'ring-blue-500')); this.classList.add('ring-2', 'ring-inset', 'ring-blue-500'); saveSettings();" 
-                                     class="relative bg-preview shrink-0 w-14 h-14 rounded-xl cursor-pointer ${bg.class} ${settings.chatBg === bg.id || (!settings.chatBg && bg.id === 'default') ? 'ring-2 ring-inset ring-blue-500' : ''} shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform active:scale-95">
-                                     ${bg.isPremium ? '<img src="./image/Google-Gemini-Logo-Transparent.png" class="w-5 h-5 absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 p-0.5 shadow-sm" alt="Premium">' : ''}
+                                     class="relative bg-preview shrink-0 w-14 h-14 rounded-xl cursor-pointer ${bg.class} ${settings.chatBg === bg.id || (!settings.chatBg && bg.id === "default") ? "ring-2 ring-inset ring-blue-500" : ""} shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-transform active:scale-95">
+                                     ${bg.isPremium ? '<img src="./image/Google-Gemini-Logo-Transparent.png" class="w-5 h-5 absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 p-0.5 shadow-sm" alt="Premium">' : ""}
                                 </div>
-                            `).join('')}
+                            `,
+                              )
+                              .join("")}
                         </div>
-                        <input type="hidden" id="settings-chat-bg" value="${settings.chatBg || 'default'}">
+                        <input type="hidden" id="settings-chat-bg" value="${settings.chatBg || "default"}">
                     </div>
-                    ${isMyPremium ? `
+                    ${
+                      isMyPremium
+                        ? `
                     <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 border-dashed">
                         <div class="flex flex-col">
                             <span class="font-medium text-gray-700 dark:text-gray-200">Цена сообщения</span>
@@ -210,7 +281,9 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                             <span class="text-[10px] font-bold text-yellow-500 mr-1">VIB</span>
                         </div>
                     </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     <div class="p-3">
                         <div class="flex justify-between items-center mb-2">
                             <span class="font-medium text-gray-700 dark:text-gray-200">Размер текста</span>
@@ -221,7 +294,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                 </div>
             </details>
 
-            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === 'profile' ? 'hidden' : ''}">
+            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === "profile" ? "hidden" : ""}">
                 <summary class="flex justify-between items-center p-4 cursor-pointer select-none font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
@@ -236,7 +309,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                             <span class="text-xs text-gray-500">Показывать кнопку Shorts слева от настроек</span>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="settings-show-header-shorts" class="sr-only peer" ${settings.show_header_shorts ? 'checked' : ''} onchange="saveSettings()">
+                            <input type="checkbox" id="settings-show-header-shorts" class="sr-only peer" ${settings.show_header_shorts ? "checked" : ""} onchange="saveSettings()">
                             <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                         </label>
                     </div>
@@ -246,14 +319,14 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                             <span class="text-xs text-gray-500">Показывать кнопку Мини-приложения слева от настроек</span>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="settings-show-header-miniapps" class="sr-only peer" ${settings.show_header_miniapps ? 'checked' : ''} onchange="saveSettings()">
+                            <input type="checkbox" id="settings-show-header-miniapps" class="sr-only peer" ${settings.show_header_miniapps ? "checked" : ""} onchange="saveSettings()">
                             <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                         </label>
                     </div>
                 </div>
             </details>
 
-            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === 'profile' ? 'hidden' : ''}">
+            <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all ${mode === "profile" ? "hidden" : ""}">
                 <summary class="flex justify-between items-center p-4 cursor-pointer select-none font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
@@ -268,7 +341,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                         </div>
                         <p class="text-xs text-gray-500 mb-2">Запрашивается при входе через Google</p>
                         <button onclick="promptForPasswordSetting('2fa')" class="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 p-2 rounded-lg outline-none transition-colors text-left uppercase text-[11px] font-bold tracking-wider text-center">
-                            ${settings.twoStepPasscode ? 'Сменить пароль' : 'Установить пароль'}
+                            ${settings.twoStepPasscode ? "Сменить пароль" : "Установить пароль"}
                         </button>
                     </div>
                     <div class="flex flex-col p-3 border-b border-gray-200 dark:border-gray-700 border-dashed">
@@ -277,14 +350,14 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                         </div>
                         <p class="text-xs text-gray-500 mb-2">Запрашивается при каждом открытии (локально)</p>
                         <button onclick="promptForPasswordSetting('applock')" class="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 p-2 rounded-lg outline-none transition-colors text-left uppercase text-[11px] font-bold tracking-wider text-center">
-                            ${localStorage.getItem('vibegram_app_lock_' + state.currentUser?.id) ? 'Сменить PIN-код' : 'Установить PIN-код'}
+                            ${localStorage.getItem("vibegram_app_lock_" + state.currentUser?.id) ? "Сменить PIN-код" : "Установить PIN-код"}
                         </button>
                     </div>
                     <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 border-dashed">
                         <span class="font-medium text-gray-700 dark:text-gray-200">Кто видит время захода</span>
                         <select id="settings-privacy" class="bg-transparent text-blue-500 font-medium outline-none text-right appearance-none cursor-pointer" onchange="saveSettings()">
-                            <option value="everyone" ${settings.privacy === 'everyone' ? 'selected' : ''}>Все</option>
-                            <option value="nobody" ${settings.privacy === 'nobody' ? 'selected' : ''}>Никто</option>
+                            <option value="everyone" ${settings.privacy === "everyone" ? "selected" : ""}>Все</option>
+                            <option value="nobody" ${settings.privacy === "nobody" ? "selected" : ""}>Никто</option>
                         </select>
                     </div>
                     <div class="flex items-center justify-between p-3">
@@ -292,7 +365,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                             <span class="font-medium text-gray-700 dark:text-gray-200">Уведомления</span>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="settings-notif" class="sr-only peer" ${settings.notifications ? 'checked' : ''} onchange="saveSettings()">
+                            <input type="checkbox" id="settings-notif" class="sr-only peer" ${settings.notifications ? "checked" : ""} onchange="saveSettings()">
                             <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                         </label>
                     </div>
@@ -300,7 +373,7 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
             </details>
         </div>
         
-        <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all mb-4 ${mode === 'profile' ? 'hidden' : ''}">
+        <details class="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 open:shadow-sm transition-all mb-4 ${mode === "profile" ? "hidden" : ""}">
             <summary class="flex justify-between items-center p-4 cursor-pointer select-none font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg></div>
@@ -315,34 +388,52 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
                         Полноэкранный режим
                     </div>
                     <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                        <input type="checkbox" id="settings-fullscreen" class="sr-only peer" ${localStorage.getItem('vibegram_fullscreen') === 'true' ? 'checked' : ''} onchange="window.toggleFullscreenApp(this.checked)">
+                        <input type="checkbox" id="settings-fullscreen" class="sr-only peer" ${localStorage.getItem("vibegram_fullscreen") === "true" ? "checked" : ""} onchange="window.toggleFullscreenApp(this.checked)">
                         <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-blue-500 transition-colors"></div>
                         <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
                     </div>
                 </label>
-                ${state.isAdminStatus || (window as any).originalAdminUser ? '' : `
+                ${
+                  state.isAdminStatus || (window as any).originalAdminUser
+                    ? ""
+                    : `
                 <button onclick="logout()" class="w-full py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-red-600 dark:text-red-400 rounded-xl font-semibold flex items-center gap-3 px-4">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3-3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     Выйти из аккаунта
                 </button>
-                ${settings.is_tech_support ? '' : `
+                ${
+                  settings.is_tech_support
+                    ? ""
+                    : `
                 <button onclick="deleteAccount()" class="w-full py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-red-600 dark:text-red-400 rounded-xl font-semibold flex items-center gap-3 px-4">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     Удалить аккаунт
                 </button>
-                `}
-                `}
-                ${state.isAdminStatus || (window as any).originalAdminUser ? '' : settings.is_tech_support ? (settings.support_permissions && (settings.support_permissions.analytics || settings.support_permissions.reset_auth) ? `
+                `
+                }
+                `
+                }
+                ${
+                  state.isAdminStatus || (window as any).originalAdminUser
+                    ? ""
+                    : settings.is_tech_support
+                      ? settings.support_permissions &&
+                        (settings.support_permissions.analytics ||
+                          settings.support_permissions.reset_auth)
+                        ? `
                 <button onclick="window.openTechSupportPanel()" class="w-full py-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors text-purple-600 dark:text-purple-400 rounded-xl font-semibold flex items-center gap-3 px-4">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     Панель тех. поддержки
                 </button>
-                ` : '') : `
+                `
+                        : ""
+                      : `
                 <button onclick="window.contactTechSupport()" class="w-full py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-blue-600 dark:text-blue-400 rounded-xl font-semibold flex items-center gap-3 px-4">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     Техническая поддержка
                 </button>
-                `}
+                `
+                }
                 <div class="mt-4 flex flex-col items-center justify-center space-y-1 pb-2">
                     <button onclick="window.openTermsModal()" class="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline-offset-4 hover:underline transition-all group outline-none">
                         Правила пользования<span class="group-hover:opacity-100 opacity-0 transition-opacity ml-1">→</span>
@@ -355,192 +446,299 @@ export function openSettings(modeOrSkip: 'full' | 'profile' | boolean = 'full', 
         </details>
         </div>
     `;
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 
-    if (bonusTimerInterval) clearInterval(bonusTimerInterval);
-    bonusTimerInterval = setInterval(() => {
-        if (document.getElementById('modal-overlay')?.classList.contains('hidden')) {
-            clearInterval(bonusTimerInterval);
-            return;
-        }
-        updateBonusProgress();
-    }, 1000);
+  if (bonusTimerInterval) clearInterval(bonusTimerInterval);
+  bonusTimerInterval = setInterval(() => {
+    if (
+      document.getElementById("modal-overlay")?.classList.contains("hidden")
+    ) {
+      clearInterval(bonusTimerInterval);
+      return;
+    }
     updateBonusProgress();
+  }, 1000);
+  updateBonusProgress();
 
-    let clickCount = 0;
-    document.getElementById('version-text')?.addEventListener('click', () => {
-        if (state.isAdminStatus || (window as any).originalAdminUser) return;
-        
-        // Disable on phones
-        if (window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent)) {
-            return;
-        }
+  let clickCount = 0;
+  document.getElementById("version-text")?.addEventListener("click", () => {
+    if (state.isAdminStatus || (window as any).originalAdminUser) return;
 
-        clickCount++;
-        if (clickCount >= 7) {
-            clickCount = 0;
-            import('./admin').then(m => m.promptCreatorAccess());
-        }
+    // Disable on phones
+    if (window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent)) {
+      return;
+    }
+
+    clickCount++;
+    if (clickCount >= 7) {
+      clickCount = 0;
+      import("./admin").then((m) => m.promptCreatorAccess());
+    }
+  });
+
+  (window as any).contactTechSupport = async () => {
+    if (state.isAdminStatus || (window as any).originalAdminUser) return;
+    closeModal();
+    const { data: myChats } = await supabase
+      .from("chat_members")
+      .select("chat_id")
+      .eq("user_id", state.currentUser!.id);
+    const myChatIds = myChats?.map((c) => c.chat_id) || [];
+
+    let existingChatId = null;
+    if (myChatIds.length > 0) {
+      const { data: existingSupport } = await supabase
+        .from("chats")
+        .select("id")
+        .in("id", myChatIds)
+        .eq("description", "TECH_SUPPORT_CHAT")
+        .limit(1);
+      if (existingSupport && existingSupport.length > 0) {
+        existingChatId = existingSupport[0].id;
+      }
+    }
+
+    if (existingChatId) {
+      import("./chat").then((m) =>
+        m.openChat(
+          existingChatId,
+          "Служба поддержки",
+          "С",
+          true,
+          "private",
+          [],
+          "",
+          "TECH_SUPPORT_CHAT",
+          false,
+        ),
+      );
+      return;
+    }
+
+    const newId = crypto.randomUUID();
+    const { error } = await supabase.from("chats").insert({
+      id: newId,
+      type: "private",
+      description: "TECH_SUPPORT_CHAT",
+      title: "Служба поддержки - " + state.currentProfile!.display_name,
     });
 
-    (window as any).contactTechSupport = async () => {
-        if (state.isAdminStatus || (window as any).originalAdminUser) return;
-        closeModal();
-        const { data: myChats } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser!.id);
-        const myChatIds = myChats?.map(c => c.chat_id) || [];
-        
-        let existingChatId = null;
-        if (myChatIds.length > 0) {
-            const { data: existingSupport } = await supabase.from('chats').select('id').in('id', myChatIds).eq('description', 'TECH_SUPPORT_CHAT').limit(1);
-            if (existingSupport && existingSupport.length > 0) {
-                existingChatId = existingSupport[0].id;
-            }
-        }
-
-        if (existingChatId) {
-            import('./chat').then(m => m.openChat(existingChatId, 'Служба поддержки', 'С', true, 'private', [], '', 'TECH_SUPPORT_CHAT', false));
-            return;
-        }
-
-        const newId = crypto.randomUUID();
-        const { error } = await supabase.from('chats').insert({
-            id: newId, type: 'private', description: 'TECH_SUPPORT_CHAT', title: 'Служба поддержки - ' + state.currentProfile!.display_name
+    if (!error) {
+      await supabase
+        .from("chat_members")
+        .insert({
+          chat_id: newId,
+          user_id: state.currentUser!.id,
+          role: "member",
         });
-        
-        if (!error) {
-            await supabase.from('chat_members').insert({ chat_id: newId, user_id: state.currentUser!.id, role: 'member' });
-            import('./chat').then(m => {
-                m.loadChats();
-                m.openChat(newId, 'Служба поддержки', 'С', true, 'private', [], '', 'TECH_SUPPORT_CHAT', false);
-            });
-        }
-    };
+      import("./chat").then((m) => {
+        m.loadChats();
+        m.openChat(
+          newId,
+          "Служба поддержки",
+          "С",
+          true,
+          "private",
+          [],
+          "",
+          "TECH_SUPPORT_CHAT",
+          false,
+        );
+      });
+    }
+  };
 }
 
 export async function uploadAvatar(e: any) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    try {
-        const { uploadToCloudinary } = await import('./utils');
-        const url = await uploadToCloudinary(file, true);
-        await supabase.from('profiles').update({ avatar_url: url }).eq('id', state.currentUser.id);
-        state.currentProfile.avatar_url = url;
-        openSettings(); // Refresh modal
-        
-        // Update main UI
-        const myAvatar = document.getElementById('my-avatar');
-        if(myAvatar) {
-            const nickname = state.currentProfile?.display_name || state.currentProfile?.username || 'U';
-            myAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-full"> <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>`;
-        }
-    } catch(err) {
-        console.error(err);
-        alert('Ошибка загрузки аватара');
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const { uploadToCloudinary } = await import("./utils");
+    const url = await uploadToCloudinary(file, true);
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: url })
+      .eq("id", state.currentUser.id);
+    state.currentProfile.avatar_url = url;
+    openSettings(); // Refresh modal
+
+    // Update main UI
+    const myAvatar = document.getElementById("my-avatar");
+    if (myAvatar) {
+      const nickname =
+        state.currentProfile?.display_name ||
+        state.currentProfile?.username ||
+        "U";
+      myAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-full"> <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>`;
     }
+  } catch (err) {
+    console.error(err);
+    alert("Ошибка загрузки аватара");
+  }
 }
 
 export async function saveSettings() {
-    const newName = (document.getElementById('settings-name') as HTMLInputElement).value.trim();
-    const newBio = (document.getElementById('settings-bio') as HTMLTextAreaElement).value.trim();
-    const notif = (document.getElementById('settings-notif') as HTMLInputElement).checked;
-    const theme = (document.getElementById('settings-theme') as HTMLInputElement).checked ? 'dark' : 'light';
-    const textSize = parseInt((document.getElementById('settings-text-size') as HTMLInputElement).value) || 15;
-    const privacy = (document.getElementById('settings-privacy') as HTMLSelectElement).value;
-    const chatBg = (document.getElementById('settings-chat-bg') as HTMLInputElement).value;
-    
-    // Read new interface settings
-    const show_header_shorts = (document.getElementById('settings-show-header-shorts') as HTMLInputElement)?.checked || false;
-    const show_header_miniapps = (document.getElementById('settings-show-header-miniapps') as HTMLInputElement)?.checked || false;
+  const newName = (
+    document.getElementById("settings-name") as HTMLInputElement
+  ).value.trim();
+  const newBio = (
+    document.getElementById("settings-bio") as HTMLTextAreaElement
+  ).value.trim();
+  const notif = (document.getElementById("settings-notif") as HTMLInputElement)
+    .checked;
+  const theme = (document.getElementById("settings-theme") as HTMLInputElement)
+    .checked
+    ? "dark"
+    : "light";
+  const textSize =
+    parseInt(
+      (document.getElementById("settings-text-size") as HTMLInputElement).value,
+    ) || 15;
+  const privacy = (
+    document.getElementById("settings-privacy") as HTMLSelectElement
+  ).value;
+  const chatBg = (
+    document.getElementById("settings-chat-bg") as HTMLInputElement
+  ).value;
 
-    // Parse paid message price if it exists
-    const paidPriceInput = document.getElementById('settings-paid-message-price') as HTMLInputElement;
-    const paid_message_price = paidPriceInput ? parseInt(paidPriceInput.value) || 0 : undefined;
-    
-    if(!newName || newName.length < 3 || newName.length > 35) return alert('Имя должно быть от 3 до 35 символов');
-    
-    const oldSettings = state.currentProfile?.settings || {};
-    const newSettings: any = { ...oldSettings, notifications: notif, privacy, theme, textSize, chatBg, show_header_shorts, show_header_miniapps };
-    
-    try {
-        localStorage.setItem('chatBg', chatBg);
-    } catch(e) {}
-    if (paid_message_price !== undefined) {
-        newSettings.paid_message_price = paid_message_price < 0 ? 0 : paid_message_price;
-    }
-    
-    await supabase.from('profiles').update({ 
-        display_name: newName, 
-        bio: newBio,
-        settings: newSettings
-    }).eq('id', state.currentUser.id);
-    
-    state.currentProfile.display_name = newName; 
-    state.currentProfile.bio = newBio;
-    state.currentProfile.settings = newSettings;
-    
-    const isPremium = state.currentProfile?.is_premium && (!state.currentProfile.premium_until || new Date(state.currentProfile.premium_until) > new Date());
-    const badge = isPremium ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
-    document.getElementById('my-nickname')!.innerHTML = `<span class="flex items-center">${newName}${badge}</span>`;
-    
-    if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-    
-    // Apply text size to messages using a CSS variable
-    document.documentElement.style.setProperty('--msg-text-size', `${textSize}px`);
-    
-    if (chatBg && chatBg !== 'default') {
-        const chatContainer = document.getElementById('chat-area');
-        if (chatContainer) {
-            chatContainer.className = chatContainer.className.replace(/bg-premium-\d|bg-anim-\d|bg-pattern-dots|chat-bg/g, '').trim();
-            chatContainer.classList.add(chatBg);
-        }
-    } else {
-        const chatContainer = document.getElementById('chat-area');
-        if (chatContainer) {
-            chatContainer.className = chatContainer.className.replace(/bg-premium-\d|bg-anim-\d|bg-pattern-dots|chat-bg/g, '').trim();
-            chatContainer.classList.add('chat-bg');
-        }
-    }
-    
-    // Setup header shortcuts instantly
-    const shortsBtn = document.getElementById('header-shortcut-shorts');
-    const miniAppsBtn = document.getElementById('header-shortcut-miniapps');
-    if (shortsBtn) {
-        if (show_header_shorts) shortsBtn.classList.remove('hidden');
-        else shortsBtn.classList.add('hidden');
-    }
-    if (miniAppsBtn) {
-        if (show_header_miniapps) miniAppsBtn.classList.remove('hidden');
-        else miniAppsBtn.classList.add('hidden');
-    }
+  // Read new interface settings
+  const show_header_shorts =
+    (document.getElementById("settings-show-header-shorts") as HTMLInputElement)
+      ?.checked || false;
+  const show_header_miniapps =
+    (
+      document.getElementById(
+        "settings-show-header-miniapps",
+      ) as HTMLInputElement
+    )?.checked || false;
 
-    loadChats();
+  // Parse paid message price if it exists
+  const paidPriceInput = document.getElementById(
+    "settings-paid-message-price",
+  ) as HTMLInputElement;
+  const paid_message_price = paidPriceInput
+    ? parseInt(paidPriceInput.value) || 0
+    : undefined;
+
+  if (!newName || newName.length < 3 || newName.length > 35)
+    return alert("Имя должно быть от 3 до 35 символов");
+
+  const oldSettings = state.currentProfile?.settings || {};
+  const newSettings: any = {
+    ...oldSettings,
+    notifications: notif,
+    privacy,
+    theme,
+    textSize,
+    chatBg,
+    show_header_shorts,
+    show_header_miniapps,
+  };
+
+  try {
+    localStorage.setItem("chatBg", chatBg);
+  } catch (e) {}
+  if (paid_message_price !== undefined) {
+    newSettings.paid_message_price =
+      paid_message_price < 0 ? 0 : paid_message_price;
+  }
+
+  await supabase
+    .from("profiles")
+    .update({
+      display_name: newName,
+      bio: newBio,
+      settings: newSettings,
+    })
+    .eq("id", state.currentUser.id);
+
+  state.currentProfile.display_name = newName;
+  state.currentProfile.bio = newBio;
+  state.currentProfile.settings = newSettings;
+
+  const isPremium =
+    state.currentProfile?.is_premium &&
+    (!state.currentProfile.premium_until ||
+      new Date(state.currentProfile.premium_until) > new Date());
+  const badge = isPremium
+    ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>`
+    : "";
+  document.getElementById("my-nickname")!.innerHTML =
+    `<span class="flex items-center">${newName}${badge}</span>`;
+
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+
+  // Apply text size to messages using a CSS variable
+  document.documentElement.style.setProperty(
+    "--msg-text-size",
+    `${textSize}px`,
+  );
+
+  if (chatBg && chatBg !== "default") {
+    const chatContainer = document.getElementById("chat-area");
+    if (chatContainer) {
+      chatContainer.className = chatContainer.className
+        .replace(/bg-premium-\d|bg-anim-\d|bg-pattern-dots|chat-bg/g, "")
+        .trim();
+      chatContainer.classList.add(chatBg);
+    }
+  } else {
+    const chatContainer = document.getElementById("chat-area");
+    if (chatContainer) {
+      chatContainer.className = chatContainer.className
+        .replace(/bg-premium-\d|bg-anim-\d|bg-pattern-dots|chat-bg/g, "")
+        .trim();
+      chatContainer.classList.add("chat-bg");
+    }
+  }
+
+  // Setup header shortcuts instantly
+  const shortsBtn = document.getElementById("header-shortcut-shorts");
+  const miniAppsBtn = document.getElementById("header-shortcut-miniapps");
+  if (shortsBtn) {
+    if (show_header_shorts) shortsBtn.classList.remove("hidden");
+    else shortsBtn.classList.add("hidden");
+  }
+  if (miniAppsBtn) {
+    if (show_header_miniapps) miniAppsBtn.classList.remove("hidden");
+    else miniAppsBtn.classList.add("hidden");
+  }
+
+  loadChats();
 }
 
 export function saveAppLock(pin: string) {
-    if (!state.currentUser) return;
-    if (pin.trim()) {
-        localStorage.setItem('vibegram_app_lock_' + state.currentUser.id, pin.trim());
-        import('./utils').then(m => m.customToast('PIN-код установлен. Он будет запрашиваться при входе.'));
-    } else {
-        localStorage.removeItem('vibegram_app_lock_' + state.currentUser.id);
-        import('./utils').then(m => m.customToast('PIN-код отключен.'));
-    }
-    openSettings(); // refresh UI
+  if (!state.currentUser) return;
+  if (pin.trim()) {
+    localStorage.setItem(
+      "vibegram_app_lock_" + state.currentUser.id,
+      pin.trim(),
+    );
+    import("./utils").then((m) =>
+      m.customToast("PIN-код установлен. Он будет запрашиваться при входе."),
+    );
+  } else {
+    localStorage.removeItem("vibegram_app_lock_" + state.currentUser.id);
+    import("./utils").then((m) => m.customToast("PIN-код отключен."));
+  }
+  openSettings(); // refresh UI
 }
 
-export async function promptForPasswordSetting(type: '2fa' | 'applock') {
-    const is2FA = type === '2fa';
-    const title = is2FA ? 'Двухэтапный пароль' : 'Локальный PIN-код';
-    const desc = is2FA ? 'Оставьте пустым, чтобы отключить' : 'Оставьте пустым, чтобы отключить';
-    
-    // Create custom password prompt via DOM
-    const modal = document.getElementById('modal-content')!;
-    modal.innerHTML = `
+export async function promptForPasswordSetting(type: "2fa" | "applock") {
+  const is2FA = type === "2fa";
+  const title = is2FA ? "Двухэтапный пароль" : "Локальный PIN-код";
+  const desc = is2FA
+    ? "Оставьте пустым, чтобы отключить"
+    : "Оставьте пустым, чтобы отключить";
+
+  // Create custom password prompt via DOM
+  const modal = document.getElementById("modal-content")!;
+  modal.innerHTML = `
         <div class="p-6">
             <div class="mb-4 text-center">
                 <div class="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-300 rounded-full flex items-center justify-center mb-4">
@@ -560,128 +758,146 @@ export async function promptForPasswordSetting(type: '2fa' | 'applock') {
             </div>
         </div>
     `;
-    
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
-    
-    document.getElementById('pass-cancel')!.onclick = () => {
-        closeModal();
-    };
-    
-    document.getElementById('pass-save')!.onclick = async () => {
-        const p1 = (document.getElementById('pass-input-1') as HTMLInputElement).value;
-        const p2 = (document.getElementById('pass-input-2') as HTMLInputElement).value;
-        
-        if (p1 !== p2) {
-            document.getElementById('pass-error')!.innerText = 'Пароли не совпадают';
-            return;
-        }
-        
-        closeModal();
-        
-        if (is2FA) {
-            const oldSettings = state.currentProfile?.settings || {};
-            const newSettings = { ...oldSettings };
-            if (p1.trim()) {
-                newSettings.twoStepPasscode = p1;
-                import('./utils').then(m => m.customToast('Двухэтапный пароль установлен'));
-            } else {
-                delete newSettings.twoStepPasscode;
-                import('./utils').then(m => m.customToast('Двухэтапный пароль отключен'));
-            }
-            if (state.currentProfile) state.currentProfile.settings = newSettings;
-            await supabase.from('profiles').update({ settings: newSettings }).eq('id', state.currentUser!.id);
-            openSettings(); // refresh UI
-        } else {
-            saveAppLock(p1);
-        }
-    };
+
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
+
+  document.getElementById("pass-cancel")!.onclick = () => {
+    closeModal();
+  };
+
+  document.getElementById("pass-save")!.onclick = async () => {
+    const p1 = (document.getElementById("pass-input-1") as HTMLInputElement)
+      .value;
+    const p2 = (document.getElementById("pass-input-2") as HTMLInputElement)
+      .value;
+
+    if (p1 !== p2) {
+      document.getElementById("pass-error")!.innerText = "Пароли не совпадают";
+      return;
+    }
+
+    closeModal();
+
+    if (is2FA) {
+      const oldSettings = state.currentProfile?.settings || {};
+      const newSettings = { ...oldSettings };
+      if (p1.trim()) {
+        newSettings.twoStepPasscode = p1;
+        import("./utils").then((m) =>
+          m.customToast("Двухэтапный пароль установлен"),
+        );
+      } else {
+        delete newSettings.twoStepPasscode;
+        import("./utils").then((m) =>
+          m.customToast("Двухэтапный пароль отключен"),
+        );
+      }
+      if (state.currentProfile) state.currentProfile.settings = newSettings;
+      await supabase
+        .from("profiles")
+        .update({ settings: newSettings })
+        .eq("id", state.currentUser!.id);
+      openSettings(); // refresh UI
+    } else {
+      saveAppLock(p1);
+    }
+  };
 }
 
 export function closeSettings() {
-    closeModal();
-    if (bonusTimerInterval) clearInterval(bonusTimerInterval);
+  closeModal();
+  if (bonusTimerInterval) clearInterval(bonusTimerInterval);
 }
 
 let lastStateTodaySeconds = -1;
 let localBonusSecondsOffset = 0;
 
 function updateBonusProgress() {
-    const weekly = state.currentProfile?.settings?.vib_weekly || {};
-    const todayStr = new Date().toISOString().split('T')[0];
-    
-    // If local state still has yesterday's date, treat it as 0 to avoid "13 minutes" bug
-    let dbSeconds = weekly.todaySeconds || 0;
-    if (weekly.todayDate && weekly.todayDate !== todayStr) {
-        dbSeconds = 0;
+  const weekly = state.currentProfile?.settings?.vib_weekly || {};
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // If local state still has yesterday's date, treat it as 0 to avoid "13 minutes" bug
+  let dbSeconds = weekly.todaySeconds || 0;
+  if (weekly.todayDate && weekly.todayDate !== todayStr) {
+    dbSeconds = 0;
+  }
+
+  if (dbSeconds !== lastStateTodaySeconds) {
+    lastStateTodaySeconds = dbSeconds;
+    localBonusSecondsOffset = 0;
+  } else if (dbSeconds < 900) {
+    localBonusSecondsOffset++;
+  }
+
+  let todaySeconds = dbSeconds + localBonusSecondsOffset;
+
+  // Cap visual progress at 899s (00:01 left) if server hasn't confirmed the 900s limit yet.
+  // This prevents showing "Получен!" while actually waiting for the background heartbeat to sync.
+  if (todaySeconds >= 900 && dbSeconds < 900) {
+    todaySeconds = 899;
+  }
+  todaySeconds = Math.min(900, todaySeconds);
+
+  const progress = Math.min(100, (todaySeconds / 900) * 100);
+  const timeLeft = Math.max(0, 900 - todaySeconds);
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+
+  const display = document.getElementById("bonus-timer-display");
+  const bar = document.getElementById("bonus-progress-bar");
+  const streak = document.getElementById("bonus-streak-display");
+
+  if (display) {
+    if (dbSeconds >= 900) {
+      display.innerText = "Получен!";
+      display.classList.add("text-green-300");
+      display.classList.remove("text-white/90");
+      if (bar) {
+        bar.classList.add("from-green-400", "to-emerald-500");
+        bar.classList.remove("from-yellow-300", "to-yellow-500");
+      }
+    } else {
+      // Visual text while waiting for server sync
+      if (todaySeconds === 899) {
+        display.innerText = "Синхронизация...";
+      } else {
+        display.innerText = `${mins}:${secs.toString().padStart(2, "0")}`;
+      }
+      display.classList.remove("text-green-300");
+      display.classList.add("text-white/90");
+      if (bar) {
+        bar.classList.remove("from-green-400", "to-emerald-500");
+        bar.classList.add("from-yellow-300", "to-yellow-500");
+      }
     }
-    
-    if (dbSeconds !== lastStateTodaySeconds) {
-        lastStateTodaySeconds = dbSeconds;
-        localBonusSecondsOffset = 0;
-    } else if (dbSeconds < 900) {
-        localBonusSecondsOffset++;
-    }
-    
-    let todaySeconds = dbSeconds + localBonusSecondsOffset;
-    
-    // Cap visual progress at 899s (00:01 left) if server hasn't confirmed the 900s limit yet.
-    // This prevents showing "Получен!" while actually waiting for the background heartbeat to sync.
-    if (todaySeconds >= 900 && dbSeconds < 900) {
-        todaySeconds = 899; 
-    }
-    todaySeconds = Math.min(900, todaySeconds);
-    
-    const progress = Math.min(100, (todaySeconds / 900) * 100);
-    const timeLeft = Math.max(0, 900 - todaySeconds);
-    const mins = Math.floor(timeLeft / 60);
-    const secs = timeLeft % 60;
-    
-    const display = document.getElementById('bonus-timer-display');
-    const bar = document.getElementById('bonus-progress-bar');
-    const streak = document.getElementById('bonus-streak-display');
-    
-    if (display) {
-        if (dbSeconds >= 900) {
-            display.innerText = 'Получен!';
-            display.classList.add('text-green-300');
-            display.classList.remove('text-white/90');
-            if (bar) {
-                bar.classList.add('from-green-400', 'to-emerald-500');
-                bar.classList.remove('from-yellow-300', 'to-yellow-500');
-            }
-        } else {
-            // Visual text while waiting for server sync
-            if (todaySeconds === 899) {
-                display.innerText = 'Синхронизация...';
-            } else {
-                display.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-            }
-            display.classList.remove('text-green-300');
-            display.classList.add('text-white/90');
-            if (bar) {
-                bar.classList.remove('from-green-400', 'to-emerald-500');
-                bar.classList.add('from-yellow-300', 'to-yellow-500');
-            }
-        }
-    }
-    if (bar) bar.style.width = `${progress}%`;
-    if (streak) {
-        streak.innerHTML = `Серия: <strong>${weekly.daysMet || 0} дней</strong> <span>Из 7 для бонуса</span>`;
-    }
+  }
+  if (bar) bar.style.width = `${progress}%`;
+  if (streak) {
+    streak.innerHTML = `Серия: <strong>${weekly.daysMet || 0} дней</strong> <span>Из 7 для бонуса</span>`;
+  }
 }
 
 (window as any).buyPremiumModal = async () => {
-    const modal = document.getElementById('modal-content')!;
-    modal.innerHTML = '<div class="p-8 text-center text-gray-500">Загрузка цен...</div>';
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  const modal = document.getElementById("modal-content")!;
+  modal.innerHTML =
+    '<div class="p-8 text-center text-gray-500">Загрузка цен...</div>';
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 
-    const { data: s30 } = await supabase.from('admin_settings').select('value').eq('key', 'premium_30d_price').single();
-    const { data: s365 } = await supabase.from('admin_settings').select('value').eq('key', 'premium_365d_price').single();
-    
-    const p30 = s30 ? parseInt(s30.value) || 50 : 50;
-    const p365 = s365 ? parseInt(s365.value) || 300 : 300;
+  const { data: s30 } = await supabase
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "premium_30d_price")
+    .single();
+  const { data: s365 } = await supabase
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "premium_365d_price")
+    .single();
 
-    modal.innerHTML = `
+  const p30 = s30 ? parseInt(s30.value) || 50 : 50;
+  const p365 = s365 ? parseInt(s365.value) || 300 : 300;
+
+  modal.innerHTML = `
         <div class="p-6 relative">
             <button onclick="window.showPremiumBenefits()" class="absolute top-4 right-4 text-gray-400 hover:text-indigo-500 transition-colors p-2 bg-gray-50 dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700" title="О премиуме">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -721,8 +937,8 @@ function updateBonusProgress() {
 };
 
 (window as any).showPremiumBenefits = () => {
-    const modal = document.getElementById('modal-content')!;
-    modal.innerHTML = `
+  const modal = document.getElementById("modal-content")!;
+  modal.innerHTML = `
         <div class="p-6 relative">
             <h3 class="text-2xl font-bold dark:text-white mb-6 pr-8">Преимущества Premium</h3>
             <ul class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
@@ -744,43 +960,52 @@ function updateBonusProgress() {
 
 let isBuyPremiumProcessing = false;
 (window as any).confirmBuyPremium = async (cost: number, days: number) => {
-    if (isBuyPremiumProcessing) return;
-    const { customConfirm, customAlert, customToast } = await import('./utils');
-    const bal = state.currentProfile?.vib_balance || 0;
-    if (bal < cost) {
-        customAlert('У вас недостаточно VIB для покупки.');
-        return;
+  if (isBuyPremiumProcessing) return;
+  const { customConfirm, customAlert, customToast } = await import("./utils");
+  const bal = state.currentProfile?.vib_balance || 0;
+  if (bal < cost) {
+    customAlert("У вас недостаточно VIB для покупки.");
+    return;
+  }
+  const yes = await customConfirm(
+    `Списать ${cost} VIB за подписку на ${days} дней?`,
+  );
+  if (!yes) return;
+
+  isBuyPremiumProcessing = true;
+  try {
+    const { error } = await supabase.rpc("buy_premium", {
+      cost: cost,
+      duration_days: days,
+    });
+    if (error) throw error;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("vib_balance, is_premium, premium_until")
+      .eq("id", state.currentUser!.id)
+      .single();
+    if (data && state.currentProfile) {
+      state.currentProfile.vib_balance = data.vib_balance;
+      state.currentProfile.is_premium = data.is_premium;
+      state.currentProfile.premium_until = data.premium_until;
     }
-    const yes = await customConfirm(`Списать ${cost} VIB за подписку на ${days} дней?`);
-    if (!yes) return;
-    
-    isBuyPremiumProcessing = true;
-    try {
-        const { error } = await supabase.rpc('buy_premium', { cost: cost, duration_days: days });
-        if (error) throw error;
-        
-        const { data } = await supabase.from('profiles').select('vib_balance, is_premium, premium_until').eq('id', state.currentUser!.id).single();
-        if (data && state.currentProfile) {
-            state.currentProfile.vib_balance = data.vib_balance;
-            state.currentProfile.is_premium = data.is_premium;
-            state.currentProfile.premium_until = data.premium_until;
-        }
-        
-        customToast('Premium успешно активирован! 🎉');
-        // Need to call openSettings but since it's inside this file, we can just call it
-        openSettings();
-    } catch (e: any) {
-        console.error(e);
-        customAlert('Ошибка при покупке: ' + e.message);
-    } finally {
-        isBuyPremiumProcessing = false;
-    }
+
+    customToast("Premium успешно активирован! 🎉");
+    // Need to call openSettings but since it's inside this file, we can just call it
+    openSettings();
+  } catch (e: any) {
+    console.error(e);
+    customAlert("Ошибка при покупке: " + e.message);
+  } finally {
+    isBuyPremiumProcessing = false;
+  }
 };
 
 (window as any).sendVibToUserModal = (targetUsername: string) => {
-    const modal = document.getElementById('modal-content')!;
-    modal.setAttribute('data-prevent-bg-close', 'true');
-    modal.innerHTML = `
+  const modal = document.getElementById("modal-content")!;
+  modal.setAttribute("data-prevent-bg-close", "true");
+  modal.innerHTML = `
         <div class="p-6">
             <h3 class="text-xl font-bold dark:text-white mb-4">Отправить VIB</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Кому: <strong>@${targetUsername}</strong></p>
@@ -798,13 +1023,13 @@ let isBuyPremiumProcessing = false;
             </div>
         </div>
     `;
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 };
 
 (window as any).sendVibModal = () => {
-    const modal = document.getElementById('modal-content')!;
-    modal.setAttribute('data-prevent-bg-close', 'true');
-    modal.innerHTML = `
+  const modal = document.getElementById("modal-content")!;
+  modal.setAttribute("data-prevent-bg-close", "true");
+  modal.innerHTML = `
         <div class="p-6">
             <h3 class="text-xl font-bold dark:text-white mb-4">Отправить VIB</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Введите имя пользователя и сумму для перевода.</p>
@@ -822,117 +1047,168 @@ let isBuyPremiumProcessing = false;
             </div>
         </div>
     `;
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 };
 
 let isSendVibProcessing = false;
 (window as any).confirmSendVib = async () => {
-    if (isSendVibProcessing) return;
-    let rawUsername = (document.getElementById('vib-transfer-username') as HTMLInputElement).value.trim();
-    const username = rawUsername.replace(/^@/, ''); // Remove starting @ if typed string
-    const amount = parseInt((document.getElementById('vib-transfer-amount') as HTMLInputElement).value.trim());
-    const note = (document.getElementById('vib-transfer-note') as HTMLInputElement)?.value.trim() || '';
-    
-    const { customAlert, customToast } = await import('./utils');
-    
-    if (!username || isNaN(amount) || amount < 10) {
-        customAlert('Пожалуйста, введите корректные данные. Минимальная сумма 10 VIB.');
-        isSendVibProcessing = false;
-        return;
+  if (isSendVibProcessing) return;
+  let rawUsername = (
+    document.getElementById("vib-transfer-username") as HTMLInputElement
+  ).value.trim();
+  const username = rawUsername.replace(/^@/, ""); // Remove starting @ if typed string
+  const amount = parseInt(
+    (
+      document.getElementById("vib-transfer-amount") as HTMLInputElement
+    ).value.trim(),
+  );
+  const note =
+    (
+      document.getElementById("vib-transfer-note") as HTMLInputElement
+    )?.value.trim() || "";
+
+  const { customAlert, customToast } = await import("./utils");
+
+  if (!username || isNaN(amount) || amount < 10) {
+    customAlert(
+      "Пожалуйста, введите корректные данные. Минимальная сумма 10 VIB.",
+    );
+    isSendVibProcessing = false;
+    return;
+  }
+
+  if (amount > 10000) {
+    customAlert("Максимум 10000 VIB за один перевод.");
+    return;
+  }
+
+  const bal = state.currentProfile?.vib_balance || 0;
+  if (bal < amount) {
+    customAlert("Недостаточно VIB на балансе.");
+    return;
+  }
+
+  isSendVibProcessing = true;
+  try {
+    const { data: targetUser } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("username", username)
+      .single();
+    if (!targetUser) {
+      customAlert("Пользователь с таким username не найден.");
+      isSendVibProcessing = false;
+      return;
     }
 
-    if (amount > 10000) {
-        customAlert('Максимум 10000 VIB за один перевод.');
-        return;
+    if (targetUser.id === state.currentUser?.id) {
+      customAlert("Нельзя отправить VIB самому себе.");
+      isSendVibProcessing = false;
+      return;
     }
-    
-    const bal = state.currentProfile?.vib_balance || 0;
-    if (bal < amount) {
-        customAlert('Недостаточно VIB на балансе.');
-        return;
-    }
-    
-    isSendVibProcessing = true;
-    try {
-        const { data: targetUser } = await supabase.from('profiles').select('id, display_name').eq('username', username).single();
-        if (!targetUser) {
-            customAlert('Пользователь с таким username не найден.');
-            isSendVibProcessing = false;
-            return;
-        }
-        
-        if (targetUser.id === state.currentUser?.id) {
-            customAlert('Нельзя отправить VIB самому себе.');
-            isSendVibProcessing = false;
-            return;
-        }
-        
-        // Второе подтверждение (хотя UI предупреждает, можно еще раз)
-        if (!confirm(`Вы действительно хотите отправить ${amount} VIB пользователю @${username}? Это действие необратимо!`)) {
-            isSendVibProcessing = false;
-            return;
-        }
-        
-        const { error } = await supabase.rpc('transfer_vib', { receiver_id: targetUser.id, amount: amount, note: note });
-        if (error) {
-            // Если функция со старой сигнатурой
-            if (error.message.includes('Function transfer_vib') && error.message.includes('does not exist')) {
-                 const { error: error2 } = await supabase.rpc('transfer_vib', { receiver_id: targetUser.id, amount: amount });
-                 if (error2) throw error2;
-                 
-                 // Попытка записать в историю ручками (если нет функции)
-                 try {
-                     await supabase.from('vib_transfers').insert({ sender_id: state.currentUser?.id, receiver_id: targetUser.id, amount, message: note });
-                 } catch(e) {}
-            } else {
-                 throw error;
-            }
-        }
-        
-        const { data } = await supabase.from('profiles').select('vib_balance').eq('id', state.currentUser!.id).single();
-        if (data && state.currentProfile) {
-            state.currentProfile.vib_balance = data.vib_balance;
-        }
 
-        // Отправка автоматического сообщения в чат
-        const { data: myChats } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser!.id);
-        const { data: commonChats } = await supabase.from('chat_members').select('chat_id, chats!inner(type)').in('chat_id', myChats?.map((c: any) => c.chat_id) || []).eq('user_id', targetUser.id).in('chats.type', ['direct', 'private']);
-        
-        let chatIdToUse;
-        if (commonChats && commonChats.length > 0) {
-            chatIdToUse = commonChats[0].chat_id;
-        } else {
-            const newChatId = crypto.randomUUID();
-            await supabase.from('chats').insert({ id: newChatId, type: 'private' });
-            await supabase.from('chat_members').insert([
-                { chat_id: newChatId, user_id: state.currentUser!.id },
-                { chat_id: newChatId, user_id: targetUser.id }
-            ]);
-            chatIdToUse = newChatId;
-        }
-    
-        const messageNotePart = note ? `\n\n💬 "${note}"` : '';
-        await supabase.from('messages').insert({
-            chat_id: chatIdToUse,
-            sender_id: state.currentUser!.id,
-            content: `💎 Я перевел(а) тебе ${amount} VIB!${messageNotePart}`,
-            message_type: 'text'
+    // Второе подтверждение (хотя UI предупреждает, можно еще раз)
+    if (
+      !confirm(
+        `Вы действительно хотите отправить ${amount} VIB пользователю @${username}? Это действие необратимо!`,
+      )
+    ) {
+      isSendVibProcessing = false;
+      return;
+    }
+
+    const { error } = await supabase.rpc("transfer_vib", {
+      receiver_id: targetUser.id,
+      amount: amount,
+      note: note,
+    });
+    if (error) {
+      // Если функция со старой сигнатурой
+      if (
+        error.message.includes("Function transfer_vib") &&
+        error.message.includes("does not exist")
+      ) {
+        const { error: error2 } = await supabase.rpc("transfer_vib", {
+          receiver_id: targetUser.id,
+          amount: amount,
         });
-        
-        customToast(`${amount} VIB успешно отправлено ${targetUser.display_name}!`);
-        openSettings();
-    } catch (e: any) {
-        console.error(e);
-        customAlert('Ошибка при отправке. Возможно, база данных еще не обновлена. Подробнее: ' + e.message);
-    } finally {
-        isSendVibProcessing = false;
+        if (error2) throw error2;
+
+        // Попытка записать в историю ручками (если нет функции)
+        try {
+          await supabase
+            .from("vib_transfers")
+            .insert({
+              sender_id: state.currentUser?.id,
+              receiver_id: targetUser.id,
+              amount,
+              message: note,
+            });
+        } catch (e) {}
+      } else {
+        throw error;
+      }
     }
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("vib_balance")
+      .eq("id", state.currentUser!.id)
+      .single();
+    if (data && state.currentProfile) {
+      state.currentProfile.vib_balance = data.vib_balance;
+    }
+
+    // Отправка автоматического сообщения в чат
+    const { data: myChats } = await supabase
+      .from("chat_members")
+      .select("chat_id")
+      .eq("user_id", state.currentUser!.id);
+    const { data: commonChats } = await supabase
+      .from("chat_members")
+      .select("chat_id, chats!inner(type)")
+      .in("chat_id", myChats?.map((c: any) => c.chat_id) || [])
+      .eq("user_id", targetUser.id)
+      .in("chats.type", ["direct", "private"]);
+
+    let chatIdToUse;
+    if (commonChats && commonChats.length > 0) {
+      chatIdToUse = commonChats[0].chat_id;
+    } else {
+      const newChatId = crypto.randomUUID();
+      await supabase.from("chats").insert({ id: newChatId, type: "private" });
+      await supabase.from("chat_members").insert([
+        { chat_id: newChatId, user_id: state.currentUser!.id },
+        { chat_id: newChatId, user_id: targetUser.id },
+      ]);
+      chatIdToUse = newChatId;
+    }
+
+    const messageNotePart = note ? `\n\n💬 "${note}"` : "";
+    await supabase.from("messages").insert({
+      chat_id: chatIdToUse,
+      sender_id: state.currentUser!.id,
+      content: `💎 Я перевел(а) тебе ${amount} VIB!${messageNotePart}`,
+      message_type: "text",
+    });
+
+    customToast(`${amount} VIB успешно отправлено ${targetUser.display_name}!`);
+    openSettings();
+  } catch (e: any) {
+    console.error(e);
+    customAlert(
+      "Ошибка при отправке. Возможно, база данных еще не обновлена. Подробнее: " +
+        e.message,
+    );
+  } finally {
+    isSendVibProcessing = false;
+  }
 };
 
 (window as any).openVibHistory = async () => {
-    const modal = document.getElementById('modal-content')!;
-    modal.setAttribute('data-prevent-bg-close', 'true');
-    modal.innerHTML = `
+  const modal = document.getElementById("modal-content")!;
+  modal.setAttribute("data-prevent-bg-close", "true");
+  modal.innerHTML = `
         <div class="p-6 h-full flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6 shrink-0">
                 <div class="flex gap-2 items-center">
@@ -948,53 +1224,66 @@ let isSendVibProcessing = false;
             </div>
         </div>
     `;
-    document.getElementById('modal-overlay')!.classList.remove('hidden');
+  document.getElementById("modal-overlay")!.classList.remove("hidden");
 
-    try {
-        const { data, error } = await supabase
-            .from('vib_transfers')
-            .select('amount, created_at, message, sender_id, receiver_id, sender:profiles!sender_id(display_name, username), receiver:profiles!receiver_id(display_name, username)')
-            .or(`sender_id.eq.${state.currentUser!.id},receiver_id.eq.${state.currentUser!.id}`)
-            .order('created_at', { ascending: false })
-            .limit(50);
-            
-        if (error) {
-            console.error(error);
-            // It could be that vib_transfers doesn't exist yet, hide error
-            document.getElementById('vib-history-list')!.innerHTML = '<div class="text-center text-sm text-red-500 p-4">История пока недоступна (попросите создателя запустить SQL-скрипт).</div>';
-            return;
+  try {
+    const { data, error } = await supabase
+      .from("vib_transfers")
+      .select(
+        "amount, created_at, message, sender_id, receiver_id, sender:profiles!sender_id(display_name, username), receiver:profiles!receiver_id(display_name, username)",
+      )
+      .or(
+        `sender_id.eq.${state.currentUser!.id},receiver_id.eq.${state.currentUser!.id}`,
+      )
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error(error);
+      // It could be that vib_transfers doesn't exist yet, hide error
+      document.getElementById("vib-history-list")!.innerHTML =
+        '<div class="text-center text-sm text-red-500 p-4">История пока недоступна (попросите создателя запустить SQL-скрипт).</div>';
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      document.getElementById("vib-history-list")!.innerHTML =
+        '<div class="text-center text-sm text-gray-500 dark:text-gray-400 p-4">История пуста.</div>';
+      return;
+    }
+
+    document.getElementById("vib-history-list")!.innerHTML = data
+      .map((t: any) => {
+        let isSent = t.sender_id === state.currentUser!.id;
+        const otherUser = isSent ? t.receiver : t.sender;
+
+        let titleStr = `${isSent ? "Перевод пользователю" : "От пользователя"} <strong>@${otherUser?.username || "Unknown"}</strong>`;
+        let amountStr = isSent ? "-" : "+";
+        let colorCls = isSent ? "text-red-500" : "text-green-500";
+
+        // Exception for admin grants
+        if (
+          t.message?.includes("Выдача Создателем") ||
+          t.message?.includes("Баланс аннулирован Создателем")
+        ) {
+          if (isSent) {
+            titleStr = `Начислено пользователю <strong>@${otherUser?.username || "Unknown"}</strong> (Система)`;
+            amountStr = ""; // Don't show minus for the admin
+            colorCls = "text-blue-500";
+          } else {
+            titleStr = `От Создателя`;
+          }
+        } else if (
+          t.message === "Ежедневный бонус" ||
+          t.message?.includes("Бонус за 7 дней")
+        ) {
+          titleStr = `Системное начисление`;
+          amountStr = "+";
+          colorCls = "text-green-500";
+          isSent = false;
         }
 
-        if (!data || data.length === 0) {
-            document.getElementById('vib-history-list')!.innerHTML = '<div class="text-center text-sm text-gray-500 dark:text-gray-400 p-4">История пуста.</div>';
-            return;
-        }
-
-        document.getElementById('vib-history-list')!.innerHTML = data.map((t: any) => {
-            let isSent = t.sender_id === state.currentUser!.id;
-            const otherUser = isSent ? t.receiver : t.sender;
-            
-            let titleStr = `${isSent ? 'Перевод пользователю' : 'От пользователя'} <strong>@${otherUser?.username || 'Unknown'}</strong>`;
-            let amountStr = isSent ? '-' : '+';
-            let colorCls = isSent ? 'text-red-500' : 'text-green-500';
-
-            // Exception for admin grants
-            if (t.message?.includes('Выдача Создателем') || t.message?.includes('Баланс аннулирован Создателем')) {
-                if (isSent) {
-                    titleStr = `Начислено пользователю <strong>@${otherUser?.username || 'Unknown'}</strong> (Система)`;
-                    amountStr = ''; // Don't show minus for the admin
-                    colorCls = 'text-blue-500';
-                } else {
-                    titleStr = `От Создателя`;
-                }
-            } else if (t.message === 'Ежедневный бонус' || t.message?.includes('Бонус за 7 дней')) {
-                titleStr = `Системное начисление`;
-                amountStr = '+';
-                colorCls = 'text-green-500';
-                isSent = false;
-            }
-
-            return `
+        return `
                 <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
                     <div class="flex justify-between items-center mb-1">
                         <div class="font-medium text-sm text-gray-800 dark:text-gray-200">
@@ -1004,148 +1293,147 @@ let isSendVibProcessing = false;
                             ${amountStr}${t.amount} VIB
                         </div>
                     </div>
-                    ${t.message ? `<div class="text-xs text-gray-600 dark:text-gray-400 italic mb-1">"${t.message}"</div>` : ''}
+                    ${t.message ? `<div class="text-xs text-gray-600 dark:text-gray-400 italic mb-1">"${t.message}"</div>` : ""}
                     <div class="text-[10px] text-gray-400">
                         ${new Date(t.created_at).toLocaleString()}
                     </div>
                 </div>
             `;
-        }).join('');
-    } catch (e) {
-        console.error(e);
-        document.getElementById('vib-history-list')!.innerHTML = '<div class="text-center text-sm text-red-500 p-4">Ошибка загрузки.</div>';
-    }
+      })
+      .join("");
+  } catch (e) {
+    console.error(e);
+    document.getElementById("vib-history-list")!.innerHTML =
+      '<div class="text-center text-sm text-red-500 p-4">Ошибка загрузки.</div>';
+  }
 };
 
 (window as any).openTermsModal = () => {
-    const overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 modal-enter';
-    
-    // Smooth, professional UI for terms
-    overlay.innerHTML = `
-        <div class="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all ring-1 ring-gray-200 dark:ring-gray-800">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+  const overlay = document.createElement("div");
+  overlay.className =
+    "fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 modal-enter";
+
+  // Smooth, professional UI for terms
+  overlay.innerHTML = `
+        <div class="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transform transition-all">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md border border-blue-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">Пользовательское соглашение</h2>
-                        <div class="text-sm text-blue-600 dark:text-blue-400 font-semibold tracking-wide uppercase mt-0.5">Vibegram Messenger</div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">Пользовательское соглашение</h2>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-0.5">Vibegram Messenger &middot; Официальный документ</div>
                     </div>
                 </div>
-                <button id="close-terms-btn" class="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors outline-none focus:ring-2 ring-blue-500 bg-gray-100 dark:bg-gray-800/50">
+                <button id="close-terms-btn" class="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors outline-none focus:ring-2 ring-blue-500">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8 text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8 text-gray-700 dark:text-gray-300">
                 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-sm">1</div>
-                        Общие положения и введение
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                        1. История и архитектура
                     </h3>
-                    <p class="text-sm mb-3">
-                        Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между платформой <b>Vibegram</b> и вами, конечным пользователем. Начиная использовать встроенные сервисы, обмениваться сообщениями, просматривать медиаконтент, вы подтверждаете свое полное безоговорочное согласие с условиями настоящего документа.
-                    </p>
-                    <p class="text-sm mb-3">
-                        Vibegram — это мультифункциональная платформа, объединяющая классический обмен зашифрованными сообщениями с открытыми мини-приложениями, бесконечной лентой видео (Shorts) и внутренней безопасной экономикой (VIB).
+                    <p class="text-[15px] leading-relaxed mb-3 ml-4 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-800/30">
+                        Vibegram был спроектирован и разработан на платформе <b>Google AI Studio</b>. Ядром архитектурного проектирования и написания кода выступил агент <b>Antigravity</b> на базе мультимодальной нейросети <b>Gemini</b> от компании <b>Google DeepMind</b>.
                     </p>
                 </section>
 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-sm">2</div>
-                        История и Разработка (Создание)
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
+                        2. Технологическая инфраструктура
                     </h3>
-                    <p class="text-sm mb-3">
-                        Vibegram был создан с нуля искусственным интеллектом, передовым кодинг-агентом студии <b>Google AI Studio Build</b>. Разработка велась в диалоге с архитектором, чей вижн и идеи непрерывно транслировались в рабочий код.
+                    <p class="text-[15px] leading-relaxed mb-3 ml-4">
+                        Данное приложение предоставляет пользователям доступ к передовым технологиям связи и автоматизации:
                     </p>
-                    <p class="text-sm mb-3">
-                        С самого первого прототипа закладывалась архитектура, выдерживающая сложную систему прав доступа (RLS), интегрированная с облачным хранилищем <i>Supabase</i> для обеспечения персистентной и быстрой работы. В процессе эволюции проект оброс уникальным функционалом: разработчиком ИИ была написана кастомная инфраструктура поддержки <b>социального видеохостинга Shorts</b>, песочница <b>Mini-Apps</b> с возможностью написания и запуска пользовательского кода прямо в рамках приложения, а также <b>экономика VIB Coins</b> для вознаграждения авторов контента. 
-                    </p>
-                    <p class="text-sm">
-                        <i>Миссия Vibegram</i> — демонстрация безграничных возможностей симбиоза человека и ИИ, воплощенная в чистом, стабильном, технологически сложном и визуально безупречном коммуникационном продукте.
-                    </p>
-                </section>
-
-                <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-sm">3</div>
-                        VIB Coins и Цифровая Экономика
-                    </h3>
-                    <p class="text-sm mb-3">
-                        <b>VIB</b> является виртуальной внутренней валютой платформы Vibegram. Валюта используется ИСКЛЮЧИТЕЛЬНО для взаимодействия участников внутренней экосистемы.
-                    </p>
-                    <ul class="list-disc text-sm ml-6 space-y-2">
-                        <li><b>Переводы:</b> Пользователи вправе безвозмездно осуществлять транзакции VIB в адрес друг друга через интерфейс перевода в чатах или профиле. Все транзакции необратимы и фиксируются в криптографически защищенных логах.</li>
-                        <li><b>Поддержка авторов:</b> При просмотре коротких роликов в разделе Shorts вы можете в один клик направлять VIB создателям для их поддержки.</li>
-                        <li><b>Никаких фиатных обязательств:</b> Валюта VIB не может быть обменена платформой на реальные денежные средства.</li>
+                    <ul class="list-none text-[15px] ml-4 space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="text-xl">🤖</span>
+                            <div><b>Генеративный ИИ (@ai)</b> — встроенный ассистент, доступный во всех чатах, способный отвечать на вопросы, писать код и генерировать изображения по текстовому запросу.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-xl">🎙️</span>
+                            <div><b>Машинная транскрипция</b> — автоматическое распознавание речи, превращающее голосовые сообщения в структурированный текст.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-xl">📹</span>
+                            <div><b>Система Shorts</b> — платформа для публикации и алгоритмического просмотра коротких видеороликов сообщества.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-xl">🧩</span>
+                            <div><b>Mini-Apps</b> — интегрируемая среда для запуска сторонних мини-приложений без выхода из мессенджера.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-xl">🤙</span>
+                            <div><b>P2P-вызовы (WebRTC)</b> — децентрализованная технология безопасных аудио- и видеозвонков.</div>
+                        </li>
                     </ul>
                 </section>
 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-sm">4</div>
-                        Экосистема: Mini Apps и Shorts
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                        3. Экономика VIB Coins
                     </h3>
-                    <p class="text-sm mb-3">
-                        Vibegram предоставляет площадку для публикации пользовательского кода и видео. Загружая контент, вы сохраняете авторские права, но предоставляете платформе лицензию на его показ и распространение внутри сети.
+                    <p class="text-[15px] leading-relaxed ml-4">
+                        <b>VIB Coin</b> — официальная внутренняя валюта цифровой платформы Vibegram. 
+                        VIB Coins не являются фиатными деньгами и не подлежат обналичиванию. Они предназначены для переводов между пользователями, оплаты цифровых услуг (Premium) и поддержки креаторов. Администрация оставляет за собой право регулировать эмиссию и техническую архитектуру кошельков.
                     </p>
-                    <ul class="list-disc text-sm ml-6 space-y-2">
-                        <li><b>Mini Apps:</b> Изолированные веб-приложения исполняются в безопасных фреймах (iframes). Создатели несут полную ответственность за функционал и безопасность своих приложений. Запрещено внедрять вредоносный код или осуществлять фишинг.</li>
-                        <li><b>Shorts:</b> Бесконечная лента видеороликов предназначена для развлекательного и образовательного контента. Делитесь интересным, пересылайте видео друзьям, зарабатывайте VIB и накапливайте аудиторию.</li>
-                    </ul>
                 </section>
 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 font-black text-sm">5</div>
-                        Ограничения и Обязанности
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
+                        4. Ограничения и ответственность
                     </h3>
-                    <p class="text-sm mb-3">В рамках использования платформы строго установлены следующие ограничения:</p>
-                    <ul class="list-disc text-sm ml-6 space-y-2">
-                        <li><b>Мультиаккаунтинг и регистрация:</b> Администрация платформы оставляет за собой право применять технические ограничения на массовое создание новых аккаунтов (лимитирование по IP/Устройству) с целью защиты экосистемы от спама.</li>
-                        <li><b>Запрещенный контент:</b> Строго запрещено распространение порнографии, пропаганда противозаконных действий, торговля запрещенными веществами, а также призывы к насилию или разжигание ненависти.</li>
-                        <li><b>Спам и флуд:</b> Автоматизированная и назойливая рассылка любых материалов без согласия получателей карается блокировкой учетной записи.</li>
+                    <p class="text-[15px] leading-relaxed mb-3 ml-4">В рамках платформы Vibegram строго запрещено:</p>
+                    <ul class="list-disc text-[15px] ml-9 space-y-1.5 marker:text-red-400">
+                        <li>Создание множества новых аккаунтов на одном устройстве (авторизация в существующие профили разрешена).</li>
+                        <li>Распространение вредоносного, нарушающего закон или фишингового контента.</li>
+                        <li>Использование платформы для спам-рассылок и навязчивой рекламы.</li>
                     </ul>
                 </section>
                 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-black text-sm">6</div>
-                        Заключительные положения и Конфиденциальность
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        5. Конфиденциальность
                     </h3>
-                    <p class="text-sm mb-3">
-                        Мы обязуемся принимать все необходимые организационные и технические меры для защиты данных пользователей от неправомерного доступа. Переписки надежно хранятся во внутренней инфраструктуре облачной БД. Администрация может рассмотреть жалобы на пользователей с выдачей предупреждений, удалением профилей и обнулением балансов. Настоящее соглашение может быть изменено в одностороннем порядке в связи с выпуском новых обновлений продукта.
-                    </p>
-                    <p class="text-sm font-semibold text-gray-500 mt-6 text-center italic">
-                        Редакция от ${new Date().toLocaleDateString('ru-RU')}. Спасибо, что выбираете Vibegram!
+                    <p class="text-[15px] leading-relaxed ml-4 mb-2">
+                        Личные переписки шифруются и не подлежат передаче третьим лицам. Доступ к профилю может быть защищен локальным ПИН-кодом на устройстве. Администрация вправе ограничивать доступ к аккаунтам исключительно в случаях нарушения пункта 4 настоящего соглашения.
                     </p>
                 </section>
 
             </div>
             
-            <div class="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                <button id="accept-terms-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transition-all focus:ring-4 ring-blue-500/30 outline-none transform active:scale-[0.98]">
-                    Прочитал(а) и принимаю условия
+            <div class="p-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 flex justify-end">
+                <button id="accept-terms-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all focus:ring-4 ring-blue-500/30 outline-none">
+                    Я принимаю условия
                 </button>
             </div>
         </div>
     `;
 
-    document.body.appendChild(overlay);
+  document.body.appendChild(overlay);
 
-    const closeModal = () => {
-        overlay.classList.add('opacity-0');
-        overlay.querySelector('div')?.classList.add('scale-95');
-        setTimeout(() => overlay.remove(), 250);
-    };
+  const closeModal = () => {
+    overlay.classList.add("opacity-0");
+    overlay.querySelector("div")?.classList.add("scale-95");
+    setTimeout(() => overlay.remove(), 200);
+  };
 
-    overlay.querySelector('#close-terms-btn')?.addEventListener('click', closeModal);
-    overlay.querySelector('#accept-terms-btn')?.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal();
-    });
+  overlay
+    .querySelector("#close-terms-btn")
+    ?.addEventListener("click", closeModal);
+  overlay
+    .querySelector("#accept-terms-btn")
+    ?.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal();
+  });
 };

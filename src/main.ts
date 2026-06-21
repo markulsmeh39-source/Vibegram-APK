@@ -3,7 +3,7 @@ import { supabase, state } from './supabase';
 import * as logic from './logic';
 import './ai';
 import './shorts'; // Add Shorts support
-import { setupMiniApps, runStandaloneMiniApp } from './miniapps';
+import { setupMiniApps } from './miniapps';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 
@@ -246,12 +246,6 @@ window.addEventListener('popstate', (e) => {
 
 const urlParams = new URLSearchParams(window.location.search);
 const standaloneMiniAppId = urlParams.get('miniapp');
-let isStandaloneMiniAppMode = false;
-
-if (standaloneMiniAppId) {
-    isStandaloneMiniAppMode = true;
-    runStandaloneMiniApp(standaloneMiniAppId);
-}
 
 // Initialize app
 const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -299,16 +293,6 @@ if (Capacitor.isPluginAvailable('App')) {
     import('@capacitor/app').then(({ App }) => {
         App.addListener('appUrlOpen', async (data) => {
             console.log('App opened with URL:', data.url);
-            
-            try {
-                const urlObj = new URL(data.url);
-                const miniAppId = urlObj.searchParams.get('miniapp');
-                if (miniAppId) {
-                    import('./miniapps').then(m => m.runStandaloneMiniApp(miniAppId));
-                    return;
-                }
-            } catch(e) {}
-            
             if (data.url.includes('com.vibegram.app://auth') && data.url.includes('id_token')) {
                 if (Capacitor.isPluginAvailable('Browser')) {
                     import('@capacitor/browser').then(({ Browser }) => Browser.close());
@@ -347,7 +331,6 @@ else if (!idToken && hashError) {
 }
 
 supabase.auth.getSession().then(({ data: { session }, error }) => {
-    if (isStandaloneMiniAppMode) return;
     if (error) {
         import('./utils').then(m => m.showError('Session error: ' + error.message));
     }
@@ -363,12 +346,18 @@ supabase.auth.getSession().then(({ data: { session }, error }) => {
 
 supabase.auth.onAuthStateChange((event, session) => {
     console.log("Auth State Changed:", event, "Session exists?", !!session);
-    if (isStandaloneMiniAppMode) return;
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session?.user) {
             state.currentUser = session.user;
             logic.checkUser(event);
             setupRealtime();
+            if (standaloneMiniAppId) {
+                setTimeout(() => {
+                    if ((window as any).runMiniApp) {
+                        (window as any).runMiniApp(standaloneMiniAppId);
+                    }
+                }, 500);
+            }
         } else if (event === 'INITIAL_SESSION' && !isHandlingIdToken) {
             document.getElementById('auth-screen')!.classList.remove('hidden');
             const loader = document.getElementById('initial-loader');
@@ -394,6 +383,9 @@ function setupRealtime() {
     supabase.channel('public:messages')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async payload => {
             if (payload.eventType === 'INSERT') {
+                const { data: isMember } = await supabase.from('chat_members').select('id').eq('chat_id', payload.new.chat_id).eq('user_id', state.currentUser.id).single();
+                if (!isMember) return;
+
                 if (payload.new.chat_id === state.activeChatId) {
                     if ((window as any).logic?.loadMessages) {
                         (window as any).logic.loadMessages(state.activeChatId);
