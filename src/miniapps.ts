@@ -1200,6 +1200,7 @@ export async function downloadMiniApp() {
         if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
             let urlToOpen = data.html_url;
             if (!urlToOpen && data.html_content && (data.html_content.startsWith("http://") || data.html_content.startsWith("https://"))) urlToOpen = data.html_content.trim();
+            if (!urlToOpen) urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
 
             if (urlToOpen) {
                 // _system forces the URL to be handled by the OS default browser (e.g. Chrome) instead of in-app WebView

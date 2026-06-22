@@ -1166,16 +1166,16 @@ export async function openChat(
               if (el) {
                 (window as any).highlightMessage(msgId);
               } else {
-                import("./utils").then((u) => u.customToast("Сообщение скрыто или удалено."));
+                import("./utils").then((u) => u.customToast("Исходное сообщение недоступно (возможно, удалено)."));
               }
             }, 300);
           } else {
-            import("./utils").then((u) => u.customToast("Сообщение не найдено."));
+            import("./utils").then((u) => u.customToast("Не удалось найти исходное сообщение (возможно, удалено)."));
           }
         });
       } else {
         import("./utils").then((u) =>
-          u.customToast("Сообщение не найдено.")
+          u.customToast("Не удалось найти исходное сообщение.")
         );
       }
     });

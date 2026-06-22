@@ -483,7 +483,7 @@ export function closeShortsAnalytics() {
 
 export function closeShorts() {
   if (window.location.hash.startsWith("#shorts")) {
-    window.location.hash = ""; // Clear all shorts modal hashes
+    window.history.back(); // Use history.back() instead of setting hash to empty
   } else {
     const screen = document.getElementById("shorts-screen");
     if (screen) screen.classList.add("hidden");

@@ -10,6 +10,10 @@ export function replyToMessage(id: string, content: string, senderName: string) 
         customToast('Нельзя ответить на несколько сообщений');
         return;
     }
+    if (id.startsWith('temp_')) {
+        customToast('Дождитесь отправки сообщения');
+        return;
+    }
     state.replyingTo = { id, content, senderName };
     state.forwardingMsg = null;
     

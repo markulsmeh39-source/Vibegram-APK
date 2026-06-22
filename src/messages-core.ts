@@ -91,7 +91,9 @@ function renderContent(content: string) {
     
     let safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const linkRegex = /(https?:\/\/[^\s]+)/g;
-    const urlParsedContent = safeContent.replace(linkRegex, '<a href="$1" target="_blank" onclick="event.stopPropagation()" class="text-blue-500 hover:underline break-all">$1</a>');
+    const urlParsedContent = safeContent.replace(linkRegex, (url) => {
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); window.open('${url.replace(/'/g, "\\'")}', '_system');" class="text-blue-500 hover:underline break-all">${url}</a>`;
+    });
 
     return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${urlParsedContent}</p>`;
 }
@@ -169,16 +171,26 @@ function setupMessageScrollListener() {
 export async function loadMessagesUntil(chatId: string, targetMsgId: string) {
     customToast('Поиск сообщения...');
     try {
+        // Prevent searching for optimistic ids
+        if (targetMsgId.startsWith('temp_')) {
+            return false;
+        }
+
         // Find the date of the target message
         const { data: targetMsg } = await supabase.from('messages').select('created_at').eq('id', targetMsgId).single();
         if (!targetMsg) return false;
         
         // Count how many messages are newer than the target message
-        const { count } = await supabase.from('messages')
+        const { count, error } = await supabase.from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('chat_id', chatId)
             .gte('created_at', targetMsg.created_at);
             
+        if (error) {
+            console.error('Count error:', error);
+            return false;
+        }
+
         if (count !== null) {
             currentMessageLimit = Math.max(currentMessageLimit, count + 20); // Load enough to show it + some context
             await loadMessages(chatId, false);
@@ -333,6 +345,30 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
 
         const adminModeData = mediaArr.find((m: any) => m.type === 'admin_mode');
         const isCommentsEnabled = mediaArr.some((m: any) => m.type === 'comments_enabled');
+
+        if (!shareData && msg.content) {
+            const miniappMatch = msg.content.match(/(?:\?miniapp=)([\w-]+)/);
+            if (miniappMatch) {
+                shareData = {
+                    type: 'share_app_content',
+                    content_type_label: 'МИНИ-ПРИЛОЖЕНИЕ',
+                    url_hash: '?miniapp=' + miniappMatch[1],
+                    title: 'Мини-приложение',
+                    thumbnail_url: ''
+                };
+            } else {
+                const shortsMatch = msg.content.match(/(?:#shorts\?id=)([\w-]+)/);
+                if (shortsMatch) {
+                    shareData = {
+                        type: 'share_app_content',
+                        content_type_label: 'ШОРТС',
+                        url_hash: '#shorts?id=' + shortsMatch[1],
+                        title: 'Смотреть шортс',
+                        thumbnail_url: ''
+                    };
+                }
+            }
+        }
 
         let shareHtml = '';
         if (shareData) {
