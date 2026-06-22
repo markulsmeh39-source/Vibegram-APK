@@ -956,9 +956,10 @@ export function closeMiniApp() {
 export function copyMiniAppLink(appId?: string) {
   const id = appId || currentRunningAppId;
   if (!id) return;
-  const url = `${window.location.origin}${window.location.pathname}?miniapp=${id}`;
+  const baseUrl = window.location.origin.includes('localhost') ? 'https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app' : window.location.origin;
+  const url = `${baseUrl}${window.location.pathname}?miniapp=${id}`;
   navigator.clipboard.writeText(url).then(() => {
-    customToast("Ссылка на проект скопирована!");
+    import('./utils').then(m => m.customToast("Ссылка на проект скопирована!"));
   });
 }
 
@@ -1204,7 +1205,11 @@ export async function downloadMiniApp() {
 
             if (urlToOpen) {
                 // _system forces the URL to be handled by the OS default browser (e.g. Chrome) instead of in-app WebView
-                window.open(urlToOpen, '_system');
+                if ((window as any).openExternalURL) {
+                    (window as any).openExternalURL(urlToOpen);
+                } else {
+                    window.open(urlToOpen, '_system');
+                }
                 import('./utils').then(m => m.customToast("Игра открыта во внешнем браузере! Добавьте её через меню браузера 'На экран Домой'."));
                 return;
             }

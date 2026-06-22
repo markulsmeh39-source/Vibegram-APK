@@ -1,5 +1,19 @@
 import { state, supabase } from './supabase';
 
+export async function openExternalURL(url: string) {
+    if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
+        try {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ url });
+        } catch (e) {
+            window.open(url, '_system');
+        }
+    } else {
+        window.open(url, '_blank');
+    }
+}
+(window as any).openExternalURL = openExternalURL;
+
 export const getFakeEmail = (nick: string) => `${nick.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}@vibegram.local`;
 
 export const formatBytes = (bytes: number) => {
@@ -790,12 +804,14 @@ export async function sendPushNotification(
 export async function shareAppContent(chatIds: string[], mediaPayload: any, notificationText: string) {
     const { supabase, state } = await import('./supabase');
     
+    const targetUrl = window.location.origin + '/' + (mediaPayload.url_hash || '');
+    
     // 1. Send messages
     const promises = chatIds.map(chatId => {
         return supabase.from('messages').insert({
             chat_id: chatId,
             sender_id: state.currentUser.id,
-            content: '',
+            content: targetUrl,
             media: [mediaPayload],
             message_type: 'document'
         });
