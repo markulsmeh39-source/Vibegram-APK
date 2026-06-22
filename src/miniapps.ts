@@ -934,8 +934,7 @@ export async function runMiniApp(id: string) {
 export function closeMiniApp() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has("miniapp")) {
-    window.location.href = window.location.pathname;
-    return;
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
   }
 
   const runModal = document.getElementById("mini-app-run-modal");
@@ -1199,18 +1198,15 @@ export async function downloadMiniApp() {
         import('./utils').then(m => m.customToast("Подготовка к скачиванию..."));
 
         if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
-            if (data.html_url) {
-                const { Browser } = await import('@capacitor/browser');
-                await Browser.open({ url: data.html_url });
-                import('./utils').then(m => m.customToast("Игра открыта в браузере! Добавьте её через меню браузера 'На экран Домой'."));
-            } else if (data.html_content && data.html_content.startsWith("https://")) {
-                const { Browser } = await import('@capacitor/browser');
-                await Browser.open({ url: data.html_content });
-                import('./utils').then(m => m.customToast("Игра открыта в браузере! Добавьте её через меню браузера 'На экран Домой'."));
-            } else {
-                 import('./utils').then(m => m.showError("Не удалось получить ссылку на эту игру для открытия в браузере."));
+            let urlToOpen = data.html_url;
+            if (!urlToOpen && data.html_content && (data.html_content.startsWith("http://") || data.html_content.startsWith("https://"))) urlToOpen = data.html_content.trim();
+
+            if (urlToOpen) {
+                // _system forces the URL to be handled by the OS default browser (e.g. Chrome) instead of in-app WebView
+                window.open(urlToOpen, '_system');
+                import('./utils').then(m => m.customToast("Игра открыта во внешнем браузере! Добавьте её через меню браузера 'На экран Домой'."));
+                return;
             }
-            return;
         }
 
         let html = "";

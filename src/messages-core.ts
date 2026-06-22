@@ -89,7 +89,11 @@ function renderContent(content: string) {
         return `<div class="flex gap-2 justify-center py-2">${html}</div>`;
     }
     
-    return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${content}</p>`;
+    let safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const linkRegex = /(https?:\/\/[^\s]+)/g;
+    const urlParsedContent = safeContent.replace(linkRegex, '<a href="$1" target="_blank" onclick="event.stopPropagation()" class="text-blue-500 hover:underline break-all">$1</a>');
+
+    return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${urlParsedContent}</p>`;
 }
 
 let floatingDateTimeout: any = null;
@@ -298,19 +302,45 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         let forwardHtml = '';
         const mediaArr = msg.media || [];
         
-        const actualMedia = mediaArr.filter((m: any) => m.type !== 'reply' && m.type !== 'forward' && m.type !== 'admin_mode' && m.type !== 'share_app_content' && m.type !== 'comments_enabled');
+        const actualMedia = mediaArr.filter((m: any) => m.type !== 'reply' && m.type !== 'forward' && m.type !== 'admin_mode' && m.type !== 'share_app_content' && m.type !== 'comments_enabled' && m.type !== 'short' && m.type !== 'miniapp' && !m.short_id && !m.miniapp_id);
         const replyData = mediaArr.find((m: any) => m.type === 'reply');
         const forwardData = mediaArr.find((m: any) => m.type === 'forward');
-        const shareData = mediaArr.find((m: any) => m.type === 'share_app_content');
+        let shareData = mediaArr.find((m: any) => m.type === 'share_app_content');
+        
+        if (!shareData) {
+            const oldApp = mediaArr.find((m: any) => m.type === 'miniapp' || m.miniapp_id);
+            if (oldApp) {
+                shareData = {
+                    type: 'share_app_content',
+                    content_type_label: 'ПРИЛОЖЕНИЕ',
+                    url_hash: '?miniapp=' + (oldApp.miniapp_id || oldApp.id || oldApp.url),
+                    title: oldApp.title || 'Mini App',
+                    thumbnail_url: oldApp.icon_url || null
+                };
+            } else {
+                const oldShort = mediaArr.find((m: any) => m.type === 'short' || m.short_id);
+                if (oldShort) {
+                    shareData = {
+                        type: 'share_app_content',
+                        content_type_label: 'ШОРТС',
+                        url_hash: '#shorts?id=' + (oldShort.short_id || oldShort.id || oldShort.url),
+                        title: oldShort.title || 'Shorts',
+                        thumbnail_url: oldShort.cover_url || oldShort.thumbnail_url || null
+                    };
+                }
+            }
+        }
+
         const adminModeData = mediaArr.find((m: any) => m.type === 'admin_mode');
         const isCommentsEnabled = mediaArr.some((m: any) => m.type === 'comments_enabled');
 
         let shareHtml = '';
         if (shareData) {
             shareHtml = `
-                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${shareData.url_hash}'.startsWith('?miniapp=')) { window.history.pushState(null, '', window.location.pathname + '${shareData.url_hash}'); if(window.runMiniApp) window.runMiniApp('${shareData.url_hash}'.split('=')[1]); } else if('${shareData.url_hash}'.startsWith('?')) { window.location.href = '${shareData.url_hash}'; } else { window.history.pushState(null, '', '${shareData.url_hash}'); window.dispatchEvent(new Event('popstate')); }">
-                    <div class="relative w-full aspect-video bg-gray-100 dark:bg-[#2C2C2E] flex items-center justify-center overflow-hidden group">
+                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${shareData.url_hash}'.startsWith('?miniapp=')) { window.history.pushState(null, '', window.location.pathname + '${shareData.url_hash}' + window.location.hash); if(window.runMiniApp) window.runMiniApp('${shareData.url_hash}'.split('=')[1]); } else if('${shareData.url_hash}'.startsWith('#shorts?id=')) { if(window.openShorts) window.openShorts('${shareData.url_hash}'.split('id=')[1]); } else if('${shareData.url_hash}'.startsWith('?')) { window.location.href = '${shareData.url_hash}'; } else { window.history.pushState(null, '', '${shareData.url_hash}'); window.dispatchEvent(new Event('popstate')); }">
+                    <div class="relative w-full aspect-video bg-gray-100 dark:bg-[#2C2C2E] flex items-center justify-center overflow-hidden group border-b border-gray-100 dark:border-gray-800">
                         ${(shareData.thumbnail_url && shareData.content_type_label !== 'ШОРТС') ? `<img src="${shareData.thumbnail_url}" class="w-full h-full object-cover">` : `<svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`}
+
                         <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <div class="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg">
                                 <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -580,7 +610,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         let contentLabel = msg.content || '';
         if (!contentLabel && actualMedia.length > 0) {
             if (msg.message_type === 'poll') contentLabel = '📊 Опрос';
-            else if (msg.message_type === 'voice_message') contentLabel = '🎵 ГС / Аудио';
+            else if (msg.message_type === 'voice' || msg.message_type === 'voice_message') contentLabel = '🎵 ГС / Аудио';
             else if (msg.message_type === 'video_circle') contentLabel = '📹 Видео кружок';
             else if (actualMedia[0].type === 'short') contentLabel = 'ШОРТС';
             else if (actualMedia[0].type === 'miniapp') contentLabel = 'App / Вложение';
@@ -588,8 +618,12 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             else if (actualMedia[0].type?.startsWith('video/')) contentLabel = '🎥 Видеосообщение';
             else if (actualMedia[0].type?.startsWith('audio/')) contentLabel = '🎵 ГС / Аудио';
             else contentLabel = '📁 Файл';
+        } else if (!contentLabel && shareData) {
+            contentLabel = shareData.content_type_label || 'App / Вложение';
+        } else if (!contentLabel) {
+            contentLabel = 'Вложение';
         }
-        const encodedContentLabel = encodeURIComponent(contentLabel);
+        const encodedContentLabel = encodeURIComponent(contentLabel).replace(/'/g, "%27");
 
         let avatarHtml = '';
         if (!isMe && state.activeChatType === 'group') {
@@ -627,12 +661,12 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                         Копировать
                     </button>
                     ${document.getElementById('input-area')?.style.display !== 'none' ? `
-                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); replyToMessage('${msg.id}', decodeURIComponent('${encodedContentLabel}'), '${displaySenderName}')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); replyToMessage('${msg.id}', decodeURIComponent('${encodedContentLabel}'), decodeURIComponent('${encodeURIComponent(displaySenderName).replace(/'/g, "%27")}'))" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                         Ответить
                     </button>
                     ` : ''}
-                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); forwardMessage('${msg.id}', decodeURIComponent('${encodedContent}'), '${displaySenderName}')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); closeAllMessageMenus(); forwardMessage('${msg.id}', decodeURIComponent('${encodedContent}'), decodeURIComponent('${encodeURIComponent(displaySenderName).replace(/'/g, "%27")}'))" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path></svg>
                         Переслать
                     </button>
