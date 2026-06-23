@@ -12,6 +12,7 @@ let touchStartX = 0;
 let touchStartY = 0;
 let isSwiping = false;
 let currentTranslateX = 0;
+let lastTouchTime = 0;
 
 document.addEventListener('click', (e) => {
     if (ignoreNextClick) {
@@ -22,6 +23,14 @@ document.addEventListener('click', (e) => {
 }, true);
 
 (window as any).handleMessageTouchStart = (e: TouchEvent | MouseEvent, msgId: string) => {
+    if (window.TouchEvent && e instanceof TouchEvent) {
+        lastTouchTime = Date.now();
+    } else {
+        if (Date.now() - lastTouchTime < 1000) {
+            return;
+        }
+    }
+
     touchTarget = msgId;
     isSwiping = false;
     currentTranslateX = 0;
@@ -52,21 +61,30 @@ document.addEventListener('click', (e) => {
 };
 
 (window as any).handleMessageTouchEnd = (e: TouchEvent | MouseEvent) => {
+    if (window.TouchEvent && e instanceof TouchEvent) {
+        lastTouchTime = Date.now();
+    } else {
+        if (Date.now() - lastTouchTime < 1000) {
+            return;
+        }
+    }
+
     clearTimeout(touchTimer);
     
     if (touchTarget) {
-        const wrapper = document.getElementById(`msg-wrapper-${touchTarget}`);
+        const targetId = touchTarget;
+        const wrapper = document.getElementById(`msg-wrapper-${targetId}`);
         
         if (isSwiping && currentTranslateX < -40) {
             // Trigger reply
-            const innerElement = document.getElementById(`msg-${touchTarget}`);
+            const innerElement = document.getElementById(`msg-${targetId}`);
             if (innerElement) {
                 const encodedContent = innerElement.getAttribute('data-reply-content') || '';
                 const encodedSender = innerElement.getAttribute('data-reply-sender') || '';
                 if (navigator.vibrate) {
                     try { navigator.vibrate(10); } catch(e){}
                 }
-                import('./messages-actions').then(m => m.replyToMessage(touchTarget!, decodeURIComponent(encodedContent), decodeURIComponent(encodedSender)));
+                import('./messages-actions').then(m => m.replyToMessage(targetId, decodeURIComponent(encodedContent), decodeURIComponent(encodedSender)));
             }
             ignoreNextClick = true;
         }
@@ -91,6 +109,14 @@ document.addEventListener('click', (e) => {
 };
 
 (window as any).handleMessageTouchMove = (e: TouchEvent | MouseEvent) => {
+    if (window.TouchEvent && e instanceof TouchEvent) {
+        lastTouchTime = Date.now();
+    } else {
+        if (Date.now() - lastTouchTime < 1000) {
+            return;
+        }
+    }
+
     if (!touchTarget) return;
     let currentX = 0;
     let currentY = 0;
