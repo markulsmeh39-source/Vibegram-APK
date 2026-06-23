@@ -1164,9 +1164,9 @@ async function actuallySend(text: string, files: File[], input: HTMLTextAreaElem
         const actualMediaCount = files.length;
         let messageType = 'text';
         if (actualMediaCount > 0) {
-            if (mediaArr[0].type?.startsWith('image/') && !mediaArr[0].asFile) messageType = 'photo';
-            else if (mediaArr[0].type?.startsWith('video/') && !mediaArr[0].asFile) messageType = 'video';
-            else messageType = 'document';
+            // We use 'text' as default for files, photos, videos to avoid check constraint errors on older schemas
+            // The frontend rendering relies on media[].type instead.
+            messageType = 'text';
         }
 
         let insertedMsg: any;

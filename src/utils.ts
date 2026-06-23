@@ -810,14 +810,16 @@ export async function shareAppContent(chatIds: string[], mediaPayload: any, noti
     const targetUrl = baseUrl + '/' + (mediaPayload.url_hash || '');
     
     // 1. Send messages
-    const promises = chatIds.map(chatId => {
-        return supabase.from('messages').insert({
+    const promises = chatIds.map(async chatId => {
+        const { data, error } = await supabase.from('messages').insert({
             chat_id: chatId,
             sender_id: state.currentUser.id,
             content: targetUrl,
             media: [mediaPayload],
-            message_type: 'document'
+            message_type: 'text'
         });
+        if (error) console.error('Error inserting shared content:', error);
+        return { data, error };
     });
     
     await Promise.all(promises);

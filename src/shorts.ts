@@ -701,7 +701,10 @@ async function fetchShortsBatch(
   }
 }
 
+let currentShortsLoadId = 0;
+
 async function loadShorts(initialShortId?: string, authorFilterId?: string) {
+  const loadId = ++currentShortsLoadId;
   const container = document.getElementById("shorts-container");
   if (!container) return;
 
@@ -749,6 +752,7 @@ async function loadShorts(initialShortId?: string, authorFilterId?: string) {
 
   loadedShortIds.clear();
   shortsQueue = await fetchShortsBatch(initialShortId, authorFilterId);
+  if (loadId !== currentShortsLoadId) return;
   shortsList = [];
 
   if (shortsQueue.length === 0) {
@@ -1252,7 +1256,19 @@ async function loadShortComments(shortId: string) {
 
     if (error) throw error;
 
-    title.innerText = `Комментарии (${comments?.length || 0})`;
+    const actualCount = comments?.length || 0;
+    title.innerText = `Комментарии (${actualCount})`;
+
+    const short = shortsList.find(s => s.id === shortId);
+    if (short && short.comments_count !== actualCount) {
+        short.comments_count = actualCount;
+        const countEl = document.getElementById(`short-comments-count-${shortId}`);
+        if (countEl) countEl.innerText = actualCount.toString();
+        // Fire and forget sync to DB
+        supabase.from("shorts").update({ comments_count: actualCount }).eq("id", shortId).then(({ error }) => {
+            if (error) console.error("Failed to auto-sync comments count", error);
+        });
+    }
 
     if (!comments || comments.length === 0) {
       list.innerHTML = `<div class="text-center text-gray-500 py-8 text-sm">Нет комментариев. Будьте первыми!</div>`;
