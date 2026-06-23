@@ -2,12 +2,7 @@ import { state, supabase } from './supabase';
 
 export async function openExternalURL(url: string) {
     if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
-        try {
-            const { Browser } = await import('@capacitor/browser');
-            await Browser.open({ url });
-        } catch (e) {
-            window.open(url, '_system');
-        }
+        window.open(url, '_system');
     } else {
         window.open(url, '_blank');
     }

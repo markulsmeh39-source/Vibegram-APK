@@ -372,6 +372,16 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
 
         let shareHtml = '';
         if (shareData) {
+            if (msg.content) {
+                const trimmed = msg.content.trim();
+                if (!trimmed.includes(' ')) {
+                    const idMatch = shareData.url_hash.includes('=') ? shareData.url_hash.split('=')[1] : shareData.url_hash;
+                    if (trimmed.includes(shareData.url_hash) || trimmed.includes(idMatch)) {
+                        msg.content = '';
+                    }
+                }
+            }
+
             shareHtml = `
                 <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${shareData.url_hash}'.startsWith('?miniapp=')) { window.history.pushState(null, '', window.location.pathname + '${shareData.url_hash}' + window.location.hash); if(window.runMiniApp) window.runMiniApp('${shareData.url_hash}'.split('=')[1]); } else if('${shareData.url_hash}'.startsWith('#shorts?id=')) { if(window.openShorts) window.openShorts('${shareData.url_hash}'.split('id=')[1]); } else if('${shareData.url_hash}'.startsWith('?')) { window.location.href = '${shareData.url_hash}'; } else { window.history.pushState(null, '', '${shareData.url_hash}'); window.dispatchEvent(new Event('popstate')); }">
                     <div class="relative w-full aspect-video bg-gray-100 dark:bg-[#2C2C2E] flex items-center justify-center overflow-hidden group border-b border-gray-100 dark:border-gray-800">
