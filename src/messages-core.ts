@@ -370,15 +370,16 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             }
         }
 
+        let displayContent = msg.content || '';
         let shareHtml = '';
         if (shareData) {
-            if (msg.content) {
-                const trimmed = msg.content.trim();
-                if (!trimmed.includes(' ')) {
-                    const idMatch = shareData.url_hash.includes('=') ? shareData.url_hash.split('=')[1] : shareData.url_hash;
-                    if (trimmed.includes(shareData.url_hash) || trimmed.includes(idMatch)) {
-                        msg.content = '';
-                    }
+            if (displayContent) {
+                const trimmed = displayContent.trim();
+                const idMatch = shareData.url_hash.includes('=') ? shareData.url_hash.split('=')[1] : shareData.url_hash;
+                // If the entire message content is just a URL that points to this share data, hide it.
+                const isJustUrl = /^((?:https?|capacitor|file):\/\/[^\s]+)$/i.test(trimmed) || (!trimmed.includes(' ') && trimmed.startsWith('#shorts')) || (!trimmed.includes(' ') && trimmed.startsWith('?miniapp'));
+                if (isJustUrl && (trimmed.includes(shareData.url_hash) || trimmed.includes(idMatch))) {
+                    displayContent = '';
                 }
             }
 
@@ -759,7 +760,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                     ${forwardHtml}
                     ${replyHtml}
                     ${senderNameHtml} ${fileHtml}
-                    ${renderContent(msg.content)}
+                    ${renderContent(displayContent)}
                     <div id="reactions-container-${msg.id}">${reactionsHtml}</div>
                     <div class="text-[11px] font-medium ${isMe ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'} mt-1 flex justify-end items-center float-right ml-4 pt-1">
                         ${time} ${ticks}

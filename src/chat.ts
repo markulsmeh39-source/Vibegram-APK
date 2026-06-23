@@ -40,7 +40,7 @@ export async function loadChats() {
     const { data: chats, error: chatsError } = await supabase
       .from("chats")
       .select(
-        `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id)`,
+        `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
       )
       .in("id", chatIds);
     if (chatsError) throw chatsError;
@@ -238,7 +238,32 @@ export async function loadChats() {
         '<span class="italic text-gray-400">Нет сообщений</span>';
 
       if (lastMsg) {
-        if (lastMsg.message_type === "voice") previewText = "🎤 Голосовое";
+        let isShareContent = false;
+        let shareContentText = "";
+        
+        if (lastMsg.media && Array.isArray(lastMsg.media)) {
+            const shareData = lastMsg.media.find((m: any) => m.type === 'share_app_content');
+            if (shareData) {
+                isShareContent = true;
+                shareContentText = `🔗 ${shareData.content_type_label === 'ШОРТС' ? 'Шортс' : 'Приложение'}`;
+            } else {
+                const oldApp = lastMsg.media.find((m: any) => m.type === 'miniapp' || m.miniapp_id);
+                if (oldApp) {
+                    isShareContent = true;
+                    shareContentText = `🔗 Приложение`;
+                } else {
+                    const oldShort = lastMsg.media.find((m: any) => m.type === 'short' || m.short_id);
+                    if (oldShort) {
+                        isShareContent = true;
+                        shareContentText = `🔗 Шортс`;
+                    }
+                }
+            }
+        }
+        
+        if (isShareContent) {
+            previewText = shareContentText;
+        } else if (lastMsg.message_type === "voice") previewText = "🎤 Голосовое";
         else if (lastMsg.message_type === "video_circle")
           previewText = "📹 Видеосообщение";
         else if (lastMsg.message_type === "photo") previewText = "📷 Фото";
