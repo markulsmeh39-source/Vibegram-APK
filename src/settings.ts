@@ -1334,78 +1334,92 @@ let isSendVibProcessing = false;
             <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8 text-gray-700 dark:text-gray-300">
                 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
-                        1. История и архитектура
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold">1</span>
+                        Общие положения
                     </h3>
-                    <p class="text-[15px] leading-relaxed mb-3 ml-4 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-800/30">
-                        Vibegram был спроектирован и разработан на платформе <b>Google AI Studio</b>. Ядром архитектурного проектирования и написания кода выступил агент <b>Antigravity</b> на базе мультимодальной нейросети <b>Gemini</b> от компании <b>Google DeepMind</b>.
+                    <p class="text-[14px] leading-relaxed mb-3">
+                        Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между пользователем и платформой <b>Vibegram</b>. Использование приложения означает ваше полное и безоговорочное согласие с настоящими условиями.
+                    </p>
+                    <p class="text-[14px] leading-relaxed">
+                        Vibegram представляет собой современную коммуникационную платформу, предоставляющую услуги мгновенного обмена сообщениями, медиафайлами, голосовых и видеовызовов, а также расширенный социальный функционал.
                     </p>
                 </section>
 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
-                        2. Технологическая инфраструктура
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-500 text-xs font-bold">2</span>
+                        История создания и Разработка
                     </h3>
-                    <p class="text-[15px] leading-relaxed mb-3 ml-4">
-                        Данное приложение предоставляет пользователям доступ к передовым технологиям связи и автоматизации:
+                    <p class="text-[14px] leading-relaxed mb-3">
+                        Vibegram был создан и спроектирован с применением передовых технологий искусственного интеллекта на базе платформы <b>Google AI Studio</b>. Ядром архитектурного и функционального проектирования выступили агентные алгоритмы <b>Google DeepMind</b> (в частности, модель Gemini Pro и агент Antigravity), которые обеспечили полный цикл разработки платформы: от написания серверной логики интеграции с облачной инфраструктурой (Supabase) и до создания адаптивного клиентского интерфейса (React).
                     </p>
-                    <ul class="list-none text-[15px] ml-4 space-y-3">
-                        <li class="flex items-start gap-3">
-                            <span class="text-xl">🤖</span>
-                            <div><b>Генеративный ИИ (@ai)</b> — встроенный ассистент, доступный во всех чатах, способный отвечать на вопросы, писать код и генерировать изображения по текстовому запросу.</div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-xl">🎙️</span>
-                            <div><b>Машинная транскрипция</b> — автоматическое распознавание речи, превращающее голосовые сообщения в структурированный текст.</div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-xl">📹</span>
-                            <div><b>Система Shorts</b> — платформа для публикации и алгоритмического просмотра коротких видеороликов сообщества.</div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-xl">🧩</span>
-                            <div><b>Mini-Apps</b> — интегрируемая среда для запуска сторонних мини-приложений без выхода из мессенджера.</div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-xl">🤙</span>
-                            <div><b>P2P-вызовы (WebRTC)</b> — децентрализованная технология безопасных аудио- и видеозвонков.</div>
-                        </li>
+                    <p class="text-[14px] leading-relaxed">
+                        Процесс разработки представлял собой синергию человеческого замысла и машинного исполнения, в ходе которой ИИ выстроил архитектуру реального времени (WebRTC, WebSocket), систему шифрования и авторизации, а также внедрил модули социальных экосистем (Shorts, Mini-Apps, генеративный ИИ).
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold">3</span>
+                        Инфраструктура и Функционал
+                    </h3>
+                    <div class="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-xl p-4 space-y-4">
+                        <div class="flex gap-3 text-[14px] leading-relaxed">
+                            <span class="text-emerald-500 mt-1 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                            <div><b>Интеллектуальные функции:</b> Платформа включает встроенную генерацию изображений по запросу через команду @ai [запрос], а также алгоритмы машинной транскрипции голосовых сообщений.</div>
+                        </div>
+                        <div class="flex gap-3 text-[14px] leading-relaxed">
+                            <span class="text-emerald-500 mt-1 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                            <div><b>Мультимедийная экосистема:</b> Сервис поддерживает публикацию коротких вертикальных видео (Shorts) с функциями комментирования и вовлечения.</div>
+                        </div>
+                        <div class="flex gap-3 text-[14px] leading-relaxed">
+                            <span class="text-emerald-500 mt-1 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                            <div><b>Коммуникационное ядро:</b> Система базируется на надежной трансляции данных, включая высококачественные P2P аудио- и видеозвонки (WebRTC), групповые взаимодействия и интерактивные опросы.</div>
+                        </div>
+                        <div class="flex gap-3 text-[14px] leading-relaxed">
+                            <span class="text-emerald-500 mt-1 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                            <div><b>Мини-приложения (Mini-Apps):</b> Возможность запускать внутренние встраиваемые приложения, расширяющие функционал базового мессенджера без необходимости установки стороннего ПО.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/10 text-purple-500 text-xs font-bold">4</span>
+                        Экономика платформы (VIB Coins)
+                    </h3>
+                    <p class="text-[14px] leading-relaxed">
+                        В платформу интегрирована виртуальная расчетная единица — <b>VIB Coin</b>. Данный инструмент используется исключительно для внутреннего взаимодействия, поощрения авторов Shorts и осуществления P2P переводов между пользователями. VIB не является криптовалютой или электронным средством платежа в рамках законодательства.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-red-500/10 text-red-500 text-xs font-bold">5</span>
+                        Запрещенный контент и Ограничения
+                    </h3>
+                    <p class="text-[14px] leading-relaxed mb-3">Категорически запрещено использование платформы для:</p>
+                    <ul class="list-disc text-[14px] ml-5 mb-4 space-y-2 marker:text-gray-500">
+                        <li>Распространения незаконных, экстремистских и мошеннических материалов.</li>
+                        <li>Публикации контента, разжигающего ненависть, содержащего оскорбления или угрозы.</li>
+                        <li>Массовой рассылки (спама), фишинга и использования автоматизированных скриптов без явного разрешения.</li>
                     </ul>
-                </section>
-
-                <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                        3. Экономика VIB Coins
-                    </h3>
-                    <p class="text-[15px] leading-relaxed ml-4">
-                        <b>VIB Coin</b> — официальная внутренняя валюта цифровой платформы Vibegram. 
-                        VIB Coins не являются фиатными деньгами и не подлежат обналичиванию. Они предназначены для переводов между пользователями, оплаты цифровых услуг (Premium) и поддержки креаторов. Администрация оставляет за собой право регулировать эмиссию и техническую архитектуру кошельков.
+                    <p class="text-[14px] leading-relaxed text-red-500 font-bold">
+                        Важно: В целях безопасности пресекается создание множества новых аккаунтов с одного устройства (абуз системы). Вход в существующие аккаунты не ограничивается.
                     </p>
-                </section>
-
-                <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
-                        4. Ограничения и ответственность
-                    </h3>
-                    <p class="text-[15px] leading-relaxed mb-3 ml-4">В рамках платформы Vibegram строго запрещено:</p>
-                    <ul class="list-disc text-[15px] ml-9 space-y-1.5 marker:text-red-400">
-                        <li>Создание множества новых аккаунтов на одном устройстве (авторизация в существующие профили разрешена).</li>
-                        <li>Распространение вредоносного, нарушающего закон или фишингового контента.</li>
-                        <li>Использование платформы для спам-рассылок и навязчивой рекламы.</li>
-                    </ul>
                 </section>
                 
                 <section>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                        5. Конфиденциальность
+                    <h3 class="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold">6</span>
+                        Конфиденциальность и Данные
                     </h3>
-                    <p class="text-[15px] leading-relaxed ml-4 mb-2">
-                        Личные переписки шифруются и не подлежат передаче третьим лицам. Доступ к профилю может быть защищен локальным ПИН-кодом на устройстве. Администрация вправе ограничивать доступ к аккаунтам исключительно в случаях нарушения пункта 4 настоящего соглашения.
+                    <p class="text-[14px] leading-relaxed mb-3">
+                        Защита ваших данных является приоритетом архитектуры Vibegram. Личные сообщения хранятся с использованием надежных баз данных. Администрация платформы не имеет несанкционированного доступа к содержанию переписок пользователей. Модерация контента осуществляется исключительно на основании валидных жалоб Пользователей в рамках раздела 5 настоящего Соглашения.
+                    </p>
+                    <p class="text-[14px] leading-relaxed">
+                        Пользователь имеет право установить локальный PIN-код приложения для предотвращения физического доступа к мессенджеру на устройстве.
                     </p>
                 </section>
 
