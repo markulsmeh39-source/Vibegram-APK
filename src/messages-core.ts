@@ -375,16 +375,14 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         if (shareData) {
             if (displayContent) {
                 // Strip URLs that are just the shared content links
-                displayContent = displayContent.split(/\s+/).filter(word => {
-                    if (word.includes('miniapp=') || word.includes('shorts?id=')) {
-                        return false;
+                if (displayContent.includes(shareData.url_hash) || displayContent.includes('miniapp=') || displayContent.includes('shorts?id=')) {
+                    // if the whole content is just one word/link, clear it!
+                    if (displayContent.split(/\s+/).length === 1) {
+                        displayContent = '';
+                    } else {
+                        // strip out the word
+                        displayContent = displayContent.split(/\s+/).filter(word => !word.includes('miniapp=') && !word.includes('shorts?id=') && !word.includes(shareData.url_hash)).join(' ').trim();
                     }
-                    return true;
-                }).join(' ').trim();
-                
-                // Fallback: if the entire content is just the hash/URL, clear it
-                if (!displayContent.includes(' ') && (displayContent.includes('miniapp=') || displayContent.includes('shorts?id='))) {
-                    displayContent = '';
                 }
             }
 

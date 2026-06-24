@@ -1,65 +1,24 @@
 import { state, supabase } from './supabase';
 
 export async function openExternalURL(url: string) {
-    openCustomInAppBrowser(url);
-}
-
-function openCustomInAppBrowser(url: string) {
-    const modal = document.getElementById('inapp-browser-modal');
-    const content = document.getElementById('inapp-browser-content');
-    const iframe = document.getElementById('inapp-browser-iframe') as HTMLIFrameElement;
-    const urlText = document.getElementById('inapp-browser-url');
-    const progress = document.getElementById('inapp-browser-progress');
-    const extBtn = document.getElementById('inapp-browser-external');
-    
-    if (!modal || !content || !iframe || !urlText || !progress || !extBtn) {
-        window.open(url, '_blank');
-        return;
+    if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
+        try {
+            const { Browser } = await import('@capacitor/browser');
+            // Try to open with system browser or custom tab (doesn't stretch behind system bars)
+            await Browser.open({ url, presentationStyle: 'popover' });
+        } catch (e) {
+            try {
+                const { App } = await import('@capacitor/app');
+                await App.openUrl({ url });
+            } catch (err) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        }
+    } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
     }
-
-    urlText.textContent = new URL(url).hostname;
-    iframe.src = url;
-    
-    extBtn.onclick = () => {
-        window.open(url, '_blank');
-    };
-
-    modal.classList.remove('hidden');
-    // Animate in
-    requestAnimationFrame(() => {
-        modal.classList.remove('opacity-0');
-        content.classList.remove('translate-y-full', 'sm:translate-y-0');
-        content.classList.add('translate-y-0', 'sm:translate-y-0'); // sm keeps it centered
-    });
-
-    // Fake progress bar
-    progress.style.width = '10%';
-    progress.style.opacity = '1';
-    let p = 10;
-    const interval = setInterval(() => {
-        p += Math.random() * 15;
-        if (p > 90) p = 90;
-        progress.style.width = p + '%';
-    }, 300);
-
-    iframe.onload = () => {
-        clearInterval(interval);
-        progress.style.width = '100%';
-        setTimeout(() => {
-            progress.style.opacity = '0';
-        }, 300);
-    };
-
-    (window as any).closeInAppBrowser = () => {
-        modal.classList.add('opacity-0');
-        content.classList.remove('translate-y-0');
-        content.classList.add('translate-y-full');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            iframe.src = 'about:blank';
-        }, 300);
-    };
 }
+
 (window as any).openExternalURL = openExternalURL;
 
 export const getFakeEmail = (nick: string) => `${nick.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}@vibegram.local`;
