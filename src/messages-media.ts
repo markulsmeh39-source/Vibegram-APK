@@ -70,21 +70,24 @@ export function toggleAttachMenu(event: Event) {
         }
     }
 }
-export async function downloadMedia(url: string, filename: string) {
+export function downloadMedia(url: string, filename: string) {
     try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
+        let downloadUrl = url;
+        if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+            // Force download via Cloudinary attachment flag
+            downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
+        }
         const a = document.createElement('a');
-        a.href = blobUrl;
+        a.href = downloadUrl;
         a.download = filename || 'download';
+        a.target = '_blank';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
+        import('./utils').then(m => m.customToast('Загрузка файла начата...'));
     } catch (e) {
         console.error('Download failed', e);
-        customToast('Ошибка при скачивании. Открываем в новой вкладке...');
+        import('./utils').then(m => m.customToast('Ошибка при скачивании. Открываем в новой вкладке...'));
         window.open(url, '_blank');
     }
 }

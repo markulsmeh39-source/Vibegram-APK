@@ -374,16 +374,11 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         let shareHtml = '';
         if (shareData) {
             if (displayContent) {
-                // Strip URLs that are just the shared content links
-                if (displayContent.includes(shareData.url_hash) || displayContent.includes('miniapp=') || displayContent.includes('shorts?id=')) {
-                    // if the whole content is just one word/link, clear it!
-                    if (displayContent.split(/\s+/).length === 1) {
-                        displayContent = '';
-                    } else {
-                        // strip out the word
-                        displayContent = displayContent.split(/\s+/).filter(word => !word.includes('miniapp=') && !word.includes('shorts?id=') && !word.includes(shareData.url_hash)).join(' ').trim();
-                    }
-                }
+                // Remove absolute URLs
+                const urlRegex = /(?:https?|capacitor|file):\/\/[^\s]+/gi;
+                displayContent = displayContent.replace(urlRegex, '').trim();
+                // Remove miniapp and shorts hashes
+                displayContent = displayContent.replace(/(?:\?miniapp=|#shorts\?id=)[\w-]+/gi, '').trim();
             }
 
             shareHtml = `

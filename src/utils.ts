@@ -3,22 +3,15 @@ import { state, supabase } from './supabase';
 export async function openExternalURL(url: string) {
     if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
         try {
-            const { Browser } = await import('@capacitor/browser');
-            // Try to open with system browser or custom tab (doesn't stretch behind system bars)
-            await Browser.open({ url, presentationStyle: 'popover' });
+            const { App } = await import('@capacitor/app');
+            await App.openUrl({ url });
         } catch (e) {
-            try {
-                const { App } = await import('@capacitor/app');
-                await App.openUrl({ url });
-            } catch (err) {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            }
+            window.open(url, '_blank');
         }
     } else {
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.open(url, '_blank');
     }
 }
-
 (window as any).openExternalURL = openExternalURL;
 
 export const getFakeEmail = (nick: string) => `${nick.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}@vibegram.local`;
