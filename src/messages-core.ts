@@ -374,14 +374,17 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         let shareHtml = '';
         if (shareData) {
             if (displayContent) {
-                const trimmed = displayContent.trim();
-                // If there's no space, it's just the URL. Hide it.
-                if (!trimmed.includes(' ')) {
+                // Strip URLs that are just the shared content links
+                displayContent = displayContent.split(/\s+/).filter(word => {
+                    if (word.includes('miniapp=') || word.includes('shorts?id=')) {
+                        return false;
+                    }
+                    return true;
+                }).join(' ').trim();
+                
+                // Fallback: if the entire content is just the hash/URL, clear it
+                if (!displayContent.includes(' ') && (displayContent.includes('miniapp=') || displayContent.includes('shorts?id='))) {
                     displayContent = '';
-                } else {
-                    // If it has spaces but contains the url hash, try to strip the URL out
-                    const urlRegex = /(?:https?|capacitor|file):\/\/[^\s]+/gi;
-                    displayContent = trimmed.replace(urlRegex, '').trim();
                 }
             }
 
