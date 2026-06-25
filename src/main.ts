@@ -82,7 +82,16 @@ requestNativePermissions();
 
 window.addEventListener('popstate', (e) => {
     const hash = window.location.hash;
+    const urlParams = new URLSearchParams(window.location.search);
     
+    // Close miniapp if it's open and we navigated back
+    const miniAppModal = document.getElementById('mini-app-run-modal');
+    if (miniAppModal && !miniAppModal.classList.contains('hidden') && !urlParams.has('miniapp')) {
+        if ((window as any).closeMiniApp) {
+            (window as any).closeMiniApp(true);
+        }
+    }
+
     // Close lightbox if it's open and we navigated back
     if (document.getElementById('lightbox-modal') && !document.getElementById('lightbox-modal')?.classList.contains('hidden')) {
         if (hash !== '#lightbox') {

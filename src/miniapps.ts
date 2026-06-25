@@ -931,10 +931,11 @@ export async function runMiniApp(id: string) {
   }
 }
 
-export function closeMiniApp() {
+export function closeMiniApp(fromPopState = false) {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has("miniapp")) {
-    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+  if (!fromPopState && urlParams.has("miniapp")) {
+    window.history.back();
+    return; // popstate will trigger this again with fromPopState=true
   }
 
   const runModal = document.getElementById("mini-app-run-modal");
@@ -1201,7 +1202,12 @@ export async function downloadMiniApp() {
         if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
             let urlToOpen = data.html_url;
             if (!urlToOpen && data.html_content && (data.html_content.startsWith("http://") || data.html_content.startsWith("https://"))) urlToOpen = data.html_content.trim();
-            if (!urlToOpen) urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
+            
+            if (urlToOpen && urlToOpen.includes('res.cloudinary.com') && urlToOpen.includes('/upload/')) {
+                urlToOpen = urlToOpen.replace('/upload/', `/upload/fl_attachment:${encodeURIComponent((data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_'))}.html/`);
+            } else if (!urlToOpen) {
+                urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
+            }
 
             if (urlToOpen) {
                 // _system forces the URL to be handled by the OS default browser (e.g. Chrome) instead of in-app WebView
@@ -1210,7 +1216,7 @@ export async function downloadMiniApp() {
                 } else {
                     window.open(urlToOpen, '_system');
                 }
-                import('./utils').then(m => m.customToast("Игра открыта во внешнем браузере! Добавьте её через меню браузера 'На экран Домой'."));
+                import('./utils').then(m => m.customToast("Загрузка мини-приложения начата во внешнем браузере"));
                 return;
             }
         }
