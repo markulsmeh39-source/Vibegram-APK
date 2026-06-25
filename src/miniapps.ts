@@ -289,14 +289,12 @@ async function loadMiniApps(tab: string) {
 
   try {
     let isDirectLinkSearch = false;
-    let query = supabase
-      .from("mini_apps")
-      .select(
-        `
+    let query = supabase.from("mini_apps").select(
+      `
             *,
             creator:creator_id(username, display_name, avatar_url)
         `,
-      );
+    );
 
     if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {
       query = query
@@ -843,7 +841,10 @@ async function fetchAndInjectBase(url: string): Promise<string> {
   if (!res.ok) throw new Error("Fetch failed");
   let text = await res.text();
   const urlObj = new URL(url);
-  urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+  urlObj.pathname = urlObj.pathname.substring(
+    0,
+    urlObj.pathname.lastIndexOf("/") + 1,
+  );
   const baseTag = `<base href="${urlObj.href}">`;
   if (/<head[^>]*>/i.test(text)) {
     text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
@@ -957,10 +958,16 @@ export function closeMiniApp(fromPopState = false) {
 export function copyMiniAppLink(appId?: string) {
   const id = appId || currentRunningAppId;
   if (!id) return;
-  const baseUrl = (window.location.origin.includes('localhost') || window.location.origin.startsWith('capacitor:')) ? 'https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app' : window.location.origin;
+  const baseUrl =
+    window.location.origin.includes("localhost") ||
+    window.location.origin.startsWith("capacitor:")
+      ? "https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app"
+      : window.location.origin;
   const url = `${baseUrl}${window.location.pathname}?miniapp=${id}`;
   navigator.clipboard.writeText(url).then(() => {
-    import('./utils').then(m => m.customToast("Ссылка на проект скопирована!"));
+    import("./utils").then((m) =>
+      m.customToast("Ссылка на проект скопирована!"),
+    );
   });
 }
 
@@ -974,7 +981,9 @@ function handleMiniAppMessage(event: MessageEvent) {
   }
 
   if (event.data.type === "vibe_get_user") {
-    const iframe = document.getElementById("mini-app-frame") as HTMLIFrameElement;
+    const iframe = document.getElementById(
+      "mini-app-frame",
+    ) as HTMLIFrameElement;
 
     if (iframe && iframe.contentWindow) {
       iframe.contentWindow.postMessage(
@@ -1044,15 +1053,16 @@ export async function deleteMiniApp(id: string) {
   const id = appId || currentRunningAppId;
   if (!id) return;
 
-  const app = loadedMiniAppsData?.find(a => a.id === id) || miniAppContentData;
+  const app =
+    loadedMiniAppsData?.find((a) => a.id === id) || miniAppContentData;
   if (!app) return;
 
   // We could have imported state, but let's just make sure type checking is fine
-  import('./supabase').then(async (m) => {
-      const state = m.state;
-      state.forwardSelectedChats = [];
-      const modal = document.getElementById('modal-content')!;
-      modal.innerHTML = `
+  import("./supabase").then(async (m) => {
+    const state = m.state;
+    state.forwardSelectedChats = [];
+    const modal = document.getElementById("modal-content")!;
+    modal.innerHTML = `
           <div class="p-6">
               <div class="flex justify-between items-center mb-6">
                   <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Поделиться Mini App</h3>
@@ -1066,186 +1076,258 @@ export async function deleteMiniApp(id: string) {
               </button>
           </div>
       `;
-      document.getElementById('modal-overlay')!.classList.remove('hidden');
+    document.getElementById("modal-overlay")!.classList.remove("hidden");
 
-      const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
-      if (!members || members.length === 0) {
-          document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
-          return;
-      }
-      
-      const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))').in('id', members.map(member => member.chat_id));
-      
-      let savedMessagesChat = chats?.find(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((member: any) => member.user_id !== state.currentUser.id)?.length));
-      let renderedChats = chats ? [...chats] : [];
-      
-      // Filter out phantom chats and channels where user is not admin
-      renderedChats = renderedChats.filter(c => {
-          if (c.type === 'channel') {
-              const myRole = c.chat_members?.find((m: any) => m.user_id === state.currentUser.id)?.role;
-              if (myRole !== 'admin' && myRole !== 'creator') return false;
-          }
-          return c.type.includes('group') || c.type.includes('channel') || (c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length);
-      });
-      
-      if (savedMessagesChat) {
-          renderedChats.unshift(savedMessagesChat);
-      }
-      
-      const list = document.getElementById('forward-chats-list')!;
-      list.innerHTML = '';
-      
-      renderedChats.forEach((chat: any) => {
-          const isGroup = chat.type === 'group' || chat.type === 'channel';
-          let isSavedMessages = false;
-          let chatName = chat.title;
-          let avatarUrl = chat.avatar_url;
-          let isPremiumUser = false;
-          
-          if (!isGroup) {
-              const others = chat.chat_members?.filter((member: any) => member.user_id !== state.currentUser.id);
-              if (!others || others.length === 0) {
-                  isSavedMessages = true;
-                  chatName = 'Избранное';
-              } else {
-                  const other = others[0];
-                  if (other?.profiles) {
-                      chatName = other.profiles.display_name || other.profiles.username;
-                      avatarUrl = other.profiles.avatar_url;
-                      isPremiumUser = other.profiles.is_premium && (!other.profiles.premium_until || new Date(other.profiles.premium_until) > new Date());
-                  }
-              }
-          }
-          
-          const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain"></div>` : '';
-          const firstLetter = (chatName || 'C')[0].toUpperCase();
-          
-          let avatarHtml;
-          if (isSavedMessages) {
-              avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
-          } else {
-              avatarHtml = avatarUrl 
-                  ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>` 
-                  : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
-          }
+    const { data: members } = await supabase
+      .from("chat_members")
+      .select("chat_id")
+      .eq("user_id", state.currentUser.id);
+    if (!members || members.length === 0) {
+      document.getElementById("forward-chats-list")!.innerHTML =
+        '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
+      return;
+    }
 
-          const div = document.createElement('div');
-          div.className = 'flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group';
-          div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
-          
-          div.innerHTML = `
+    const { data: chats } = await supabase
+      .from("chats")
+      .select(
+        "id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))",
+      )
+      .in(
+        "id",
+        members.map((member) => member.chat_id),
+      );
+
+    let savedMessagesChat = chats?.find(
+      (c) =>
+        !c.type.includes("group") &&
+        !c.type.includes("channel") &&
+        !c.chat_members?.filter(
+          (member: any) => member.user_id !== state.currentUser.id,
+        )?.length,
+    );
+    let renderedChats = chats ? [...chats] : [];
+
+    // Filter out phantom chats and channels where user is not admin
+    renderedChats = renderedChats.filter((c) => {
+      if (c.type === "channel") {
+        const myRole = c.chat_members?.find(
+          (m: any) => m.user_id === state.currentUser.id,
+        )?.role;
+        if (myRole !== "admin" && myRole !== "creator") return false;
+      }
+      return (
+        c.type.includes("group") ||
+        c.type.includes("channel") ||
+        c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)
+          ?.length
+      );
+    });
+
+    if (savedMessagesChat) {
+      renderedChats.unshift(savedMessagesChat);
+    }
+
+    const list = document.getElementById("forward-chats-list")!;
+    list.innerHTML = "";
+
+    renderedChats.forEach((chat: any) => {
+      const isGroup = chat.type === "group" || chat.type === "channel";
+      let isSavedMessages = false;
+      let chatName = chat.title;
+      let avatarUrl = chat.avatar_url;
+      let isPremiumUser = false;
+
+      if (!isGroup) {
+        const others = chat.chat_members?.filter(
+          (member: any) => member.user_id !== state.currentUser.id,
+        );
+        if (!others || others.length === 0) {
+          isSavedMessages = true;
+          chatName = "Избранное";
+        } else {
+          const other = others[0];
+          if (other?.profiles) {
+            chatName = other.profiles.display_name || other.profiles.username;
+            avatarUrl = other.profiles.avatar_url;
+            isPremiumUser =
+              other.profiles.is_premium &&
+              (!other.profiles.premium_until ||
+                new Date(other.profiles.premium_until) > new Date());
+          }
+        }
+      }
+
+      const premiumBadgeHtml = isPremiumUser
+        ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain"></div>`
+        : "";
+      const firstLetter = (chatName || "C")[0].toUpperCase();
+
+      let avatarHtml;
+      if (isSavedMessages) {
+        avatarHtml = `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`;
+      } else {
+        avatarHtml = avatarUrl
+          ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>`
+          : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? "from-emerald-400 to-teal-500" : "from-blue-400 to-indigo-500"} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
+      }
+
+      const div = document.createElement("div");
+      div.className =
+        "flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group";
+      div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
+
+      div.innerHTML = `
               <div class="w-10 h-10 shrink-0 relative">${avatarHtml}${premiumBadgeHtml}</div>
               <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">${chatName || 'Неизвестно'}</div>
-                  <div class="text-xs text-gray-500">${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
+                  <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">${chatName || "Неизвестно"}</div>
+                  <div class="text-xs text-gray-500">${isSavedMessages ? "Избранное" : chat.type === "channel" ? "Канал" : isGroup ? "Группа" : "Личный чат"}</div>
               </div>
               <div id="forward-check-${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all shadow-sm bg-white dark:bg-gray-900">
                   <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
               </div>
           `;
-          list.appendChild(div);
-      });
+      list.appendChild(div);
+    });
   });
 };
 
 (window as any).confirmForwardMiniApp = async (appId: string) => {
-    import('./supabase').then(async (m) => {
-        const state = m.state;
-        if (state.forwardSelectedChats.length === 0) return;
-        
-        let app = loadedMiniAppsData?.find(a => a.id === appId) || miniAppContentData;
-        if (!app) return;
-        
-        const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
-        const originalText = btn.innerText;
-        btn.innerText = 'Отправка...';
-        btn.disabled = true;
+  import("./supabase").then(async (m) => {
+    const state = m.state;
+    if (state.forwardSelectedChats.length === 0) return;
 
-        try {
-            import('./utils').then(async m => {
-                await m.shareAppContent(
-                    state.forwardSelectedChats,
-                    {
-                        type: 'share_app_content',
-                        content_type_label: 'ПРИЛОЖЕНИЕ',
-                        url_hash: '?miniapp=' + app.id,
-                        title: app.title,
-                        thumbnail_url: app.icon_url
-                    },
-                    'Отправил(а) мини-приложение'
-                );
-                m.closeModal();
-                m.customToast(`Mini App отправлено (${state.forwardSelectedChats.length})`);
-                
-                if (state.forwardSelectedChats.includes(state.activeChatId!)) {
-                    import('./messages-core').then(mc => mc.loadMessages(state.activeChatId!));
-                }
-            });
-        } catch (e) {
-            console.error(e);
-            btn.innerText = 'Ошибка';
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }, 2000);
+    let app =
+      loadedMiniAppsData?.find((a) => a.id === appId) || miniAppContentData;
+    if (!app) return;
+
+    const btn = document.getElementById(
+      "confirm-forward-btn",
+    ) as HTMLButtonElement;
+    const originalText = btn.innerText;
+    btn.innerText = "Отправка...";
+    btn.disabled = true;
+
+    try {
+      import("./utils").then(async (m) => {
+        await m.shareAppContent(
+          state.forwardSelectedChats,
+          {
+            type: "share_app_content",
+            content_type_label: "ПРИЛОЖЕНИЕ",
+            url_hash: "?miniapp=" + app.id,
+            title: app.title,
+            thumbnail_url: app.icon_url,
+          },
+          "Отправил(а) мини-приложение",
+        );
+        m.closeModal();
+        m.customToast(
+          `Mini App отправлено (${state.forwardSelectedChats.length})`,
+        );
+
+        if (state.forwardSelectedChats.includes(state.activeChatId!)) {
+          import("./messages-core").then((mc) =>
+            mc.loadMessages(state.activeChatId!),
+          );
         }
-    });
+      });
+    } catch (e) {
+      console.error(e);
+      btn.innerText = "Ошибка";
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
 };
 
 export async function downloadMiniApp() {
-    const data = miniAppContentData;
-    if (!data) return;
+  const data = miniAppContentData;
+  if (!data) return;
 
-    try {
-        import('./utils').then(m => m.customToast("Подготовка к скачиванию..."));
+  try {
+    import("./utils").then((m) => m.customToast("Подготовка к скачиванию..."));
 
-        if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
-            let urlToOpen = data.html_url;
-            if (!urlToOpen && data.html_content && (data.html_content.startsWith("http://") || data.html_content.startsWith("https://"))) urlToOpen = data.html_content.trim();
-            
-            if (urlToOpen && urlToOpen.includes('res.cloudinary.com') && urlToOpen.includes('/upload/')) {
-                urlToOpen = urlToOpen.replace('/upload/', `/upload/fl_attachment:${encodeURIComponent((data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_'))}.html/`);
-            } else if (!urlToOpen) {
-                urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
-            }
+    if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
+      let urlToOpen = data.html_url;
+      if (
+        !urlToOpen &&
+        data.html_content &&
+        (data.html_content.startsWith("http://") ||
+          data.html_content.startsWith("https://"))
+      )
+        urlToOpen = data.html_content.trim();
 
-            if (urlToOpen) {
-                // _system forces the URL to be handled by the OS default browser (e.g. Chrome) instead of in-app WebView
-                if ((window as any).openExternalURL) {
-                    (window as any).openExternalURL(urlToOpen);
-                } else {
-                    window.open(urlToOpen, '_system');
-                }
-                import('./utils').then(m => m.customToast("Загрузка мини-приложения начата во внешнем браузере"));
-                return;
-            }
+      if (
+        !urlToOpen &&
+        data.html_content &&
+        data.html_content.trim().startsWith("<")
+      ) {
+        const { uploadToCloudinary } = await import("./utils");
+        const blob = new Blob([data.html_content], { type: "text/html" });
+        const file = new File(
+          [blob],
+          `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`,
+          { type: "text/html" },
+        );
+        urlToOpen = await uploadToCloudinary(file);
+      }
+
+      if (
+        urlToOpen &&
+        urlToOpen.includes("res.cloudinary.com") &&
+        urlToOpen.includes("/upload/")
+      ) {
+        // Do not append fl_attachment for raw html files as it breaks Cloudinary URLs
+      } else if (!urlToOpen) {
+        urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
+      }
+
+      if (urlToOpen) {
+        // _blank ensures Capacitor intercepts and opens in the system browser
+        if ((window as any).openExternalURL) {
+          (window as any).openExternalURL(urlToOpen);
+        } else {
+          window.open(urlToOpen, "_blank");
         }
+        import("./utils").then((m) =>
+          m.customToast("Загрузка мини-приложения начата во внешнем браузере"),
+        );
+        return;
+      }
+    }
 
-        let html = "";
-        if (data.html_content && data.html_content.trim().startsWith("<")) {
-            html = data.html_content;
-        } else if (data.html_content && data.html_content.startsWith("https://")) {
-            html = await fetchAndInjectBase(data.html_content);
-        } else if (data.html_url) {
-            html = await fetchAndInjectBase(data.html_url);
-        } else if (data.html_content) {
-            html = data.html_content;
-        }
-        
-        if (!html) throw new Error("Нет HTML содержимого");
-        
-        const iconUrl = data.icon_url || '';
-        const appTitle = (data.title || 'App').replace(/"/g, '&quot;');
-        const manifest = {
-            name: appTitle,
-            short_name: appTitle,
-            display: "fullscreen",
-            start_url: ".",
-            icons: iconUrl ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }] : []
-        };
-        const manifestStr = "data:application/manifest+json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
+    let html = "";
+    if (data.html_content && data.html_content.trim().startsWith("<")) {
+      html = data.html_content;
+    } else if (data.html_content && data.html_content.startsWith("https://")) {
+      html = await fetchAndInjectBase(data.html_content);
+    } else if (data.html_url) {
+      html = await fetchAndInjectBase(data.html_url);
+    } else if (data.html_content) {
+      html = data.html_content;
+    }
 
-        const pwaTags = `
+    if (!html) throw new Error("Нет HTML содержимого");
+
+    const iconUrl = data.icon_url || "";
+    const appTitle = (data.title || "App").replace(/"/g, "&quot;");
+    const manifest = {
+      name: appTitle,
+      short_name: appTitle,
+      display: "fullscreen",
+      start_url: ".",
+      icons: iconUrl
+        ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
+        : [],
+    };
+    const manifestStr =
+      "data:application/manifest+json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(manifest));
+
+    const pwaTags = `
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1253,50 +1335,57 @@ export async function downloadMiniApp() {
 <meta name="apple-mobile-web-app-title" content="${appTitle}">
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="${manifestStr}">
-${iconUrl ? `<link rel="icon" href="${iconUrl}">` : ''}
-${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ''}
+${iconUrl ? `<link rel="icon" href="${iconUrl}">` : ""}
+${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ""}
 <title>${appTitle}</title>
 <style>
     html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
 </style>
 `;
-        if (/<head[^>]*>/i.test(html)) {
-            html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
-        } else if (/<html[^>]*>/i.test(html)) {
-            html = html.replace(/(<html[^>]*>)/i, `$1\n<head>\n${pwaTags}\n</head>\n`);
-        } else {
-            html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
-        }
-        
-        const blob = new Blob([html], { type: 'text/html' });
-        
-        try {
-            const fileName = `${(data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_')}.html`;
-            const file = new File([blob], fileName, { type: 'text/html' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: data.title || 'App'
-                });
-                import('./utils').then(m => m.customToast("Игра успешно сохранена!"));
-                return;
-            }
-        } catch (e) {
-            console.log("Share API error:", e);
-        }
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(data.title || 'miniapp').replace(/[^a-z0-9а-яё]/gi, '_')}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        import('./utils').then(m => m.customToast("Игра скачана! Можете добавить её на рабочий стол."));
-    } catch(e: any) {
-        console.error(e);
-        import('./utils').then(m => m.showError("Не удалось скачать игру: " + e.message));
+    if (/<head[^>]*>/i.test(html)) {
+      html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
+    } else if (/<html[^>]*>/i.test(html)) {
+      html = html.replace(
+        /(<html[^>]*>)/i,
+        `$1\n<head>\n${pwaTags}\n</head>\n`,
+      );
+    } else {
+      html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
     }
+
+    const blob = new Blob([html], { type: "text/html" });
+
+    try {
+      const fileName = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
+      const file = new File([blob], fileName, { type: "text/html" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: data.title || "App",
+        });
+        import("./utils").then((m) => m.customToast("Игра успешно сохранена!"));
+        return;
+      }
+    } catch (e) {
+      console.log("Share API error:", e);
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    import("./utils").then((m) =>
+      m.customToast("Игра скачана! Можете добавить её на рабочий стол."),
+    );
+  } catch (e: any) {
+    console.error(e);
+    import("./utils").then((m) =>
+      m.showError("Не удалось скачать игру: " + e.message),
+    );
+  }
 }

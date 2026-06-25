@@ -96,7 +96,7 @@ function renderContent(content: string) {
         if (url.includes('#shorts?id=') || url.includes('?miniapp=')) {
             return '';
         }
-        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_system');}" class="text-blue-500 hover:underline break-all">${url}</a>`;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_blank');}" class="text-blue-500 hover:underline break-all">${url}</a>`;
     });
 
     return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${urlParsedContent}</p>`;
