@@ -92,6 +92,10 @@ function renderContent(content: string) {
     let safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const linkRegex = /((?:https?|capacitor|file):\/\/[^\s]+)/g;
     const urlParsedContent = safeContent.replace(linkRegex, (url) => {
+        // Do not render share app content links as clickable blue links
+        if (url.includes('#shorts?id=') || url.includes('?miniapp=')) {
+            return '';
+        }
         return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_system');}" class="text-blue-500 hover:underline break-all">${url}</a>`;
     });
 
@@ -374,11 +378,14 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         let shareHtml = '';
         if (shareData) {
             if (displayContent) {
-                // Remove absolute URLs
-                const urlRegex = /(?:https?|capacitor|file):\/\/[^\s]+/gi;
-                displayContent = displayContent.replace(urlRegex, '').trim();
-                // Remove miniapp and shorts hashes
+                // Force remove the known url patterns from anywhere in the string
+                displayContent = displayContent.replace(/(?:https?|capacitor|file):\/\/[^\s]+/gi, '').trim();
                 displayContent = displayContent.replace(/(?:\?miniapp=|#shorts\?id=)[\w-]+/gi, '').trim();
+                
+                // If there's barely anything left, just clear it
+                if (displayContent.length < 3 || displayContent === 'http://localhost' || displayContent === 'capacitor://localhost') {
+                    displayContent = '';
+                }
             }
 
             shareHtml = `

@@ -77,6 +77,18 @@ export async function downloadMedia(url: string, filename: string) {
             // Force download via Cloudinary attachment flag
             downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
         }
+
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+            if (Capacitor.isPluginAvailable('Browser')) {
+                const { Browser } = await import('@capacitor/browser');
+                await Browser.open({ url: downloadUrl });
+            } else {
+                window.open(downloadUrl, '_system');
+            }
+            import('./utils').then(m => m.customToast('Загрузка файла начата...'));
+            return;
+        }
         
         try {
             const response = await fetch(downloadUrl);
