@@ -83,6 +83,13 @@ requestNativePermissions();
 window.addEventListener('popstate', (e) => {
     const hash = window.location.hash;
     
+    // Close lightbox if it's open and we navigated back
+    if (document.getElementById('lightbox-modal') && !document.getElementById('lightbox-modal')?.classList.contains('hidden')) {
+        if (hash !== '#lightbox') {
+            logic.closeLightbox();
+        }
+    }
+    
     // Fallbacks / globals for navigation
     if (!hash || hash === '' || hash === '#') {
         // Back to home (chat list on mobile, or just base state)

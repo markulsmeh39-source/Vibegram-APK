@@ -19,6 +19,7 @@ export function openLightbox(url: string) {
     
     renderLightbox();
     document.getElementById('lightbox-modal')?.classList.remove('hidden');
+    window.history.pushState({ screen: "lightbox" }, "", "#lightbox");
 }
 
 export function closeLightbox(e?: Event) {
@@ -30,6 +31,10 @@ export function closeLightbox(e?: Event) {
     document.getElementById('lightbox-modal')?.classList.add('hidden');
     const content = document.getElementById('lightbox-content');
     if (content) content.innerHTML = '';
+    
+    if (window.location.hash === '#lightbox') {
+        window.history.back();
+    }
 }
 
 export function lightboxNext(e?: Event) {

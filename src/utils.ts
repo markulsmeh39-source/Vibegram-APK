@@ -3,8 +3,14 @@ import { state, supabase } from './supabase';
 export async function openExternalURL(url: string) {
     if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
         try {
-            const { App } = await import('@capacitor/app');
-            await App.openUrl({ url });
+            const { Capacitor } = await import('@capacitor/core');
+            if (Capacitor.isPluginAvailable('Browser')) {
+                const { Browser } = await import('@capacitor/browser');
+                await Browser.open({ url });
+            } else {
+                const { App } = await import('@capacitor/app');
+                await App.openUrl({ url });
+            }
         } catch (e) {
             window.open(url, '_blank');
         }
