@@ -1246,7 +1246,7 @@ export async function copyMiniAppDirectLink() {
 
   try {
     const baseUrl = "https://dmitrijai.github.io/Vibegram-PRO";
-    const shareUrl = `${baseUrl}/?miniapp_fullscreen=${data.id}`;
+    const shareUrl = `${baseUrl}/?miniapp=${data.id}`;
 
     const copySuccess = () => {
       import("./utils").then((m) =>
