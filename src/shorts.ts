@@ -1911,6 +1911,8 @@ export async function deleteUserShorts(userId: string) {
             if (state.forwardSelectedChats.includes(state.activeChatId!)) {
                 import('./messages-core').then(mc => mc.loadMessages(state.activeChatId!));
             }
+            document.getElementById("modal-overlay")?.classList.add("hidden");
+            document.getElementById("modal-content")!.innerHTML = "";
         });
     } catch (e) {
         console.error(e);

@@ -1226,6 +1226,8 @@ export async function deleteMiniApp(id: string) {
             mc.loadMessages(state.activeChatId!),
           );
         }
+        document.getElementById("modal-overlay")?.classList.add("hidden");
+        document.getElementById("modal-content")!.innerHTML = "";
       });
     } catch (e) {
       console.error(e);

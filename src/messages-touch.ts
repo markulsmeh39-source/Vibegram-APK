@@ -16,6 +16,8 @@ let lastTouchTime = 0;
 
 let lastTapTime = 0;
 let lastTapTarget: string | null = null;
+let lastTapX = 0;
+let lastTapY = 0;
 
 function copyText(text: string) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -122,7 +124,10 @@ document.addEventListener('click', (e) => {
         
         if (!isSwiping) {
             const now = Date.now();
-            if (lastTapTarget === targetId && (now - lastTapTime) < 700) {
+            const dx = Math.abs(touchStartX - lastTapX);
+            const dy = Math.abs(touchStartY - lastTapY);
+            
+            if (lastTapTarget === targetId && (now - lastTapTime) < 700 && dx < 40 && dy < 40) {
                 ignoreNextClick = true;
                 (window as any).toggleReactionMenu(e, targetId);
                 if (navigator.vibrate) {
@@ -133,6 +138,8 @@ document.addEventListener('click', (e) => {
             } else {
                 lastTapTime = now;
                 lastTapTarget = targetId;
+                lastTapX = touchStartX;
+                lastTapY = touchStartY;
             }
         }
 
