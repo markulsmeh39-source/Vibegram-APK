@@ -959,11 +959,7 @@ export async function shareAppContent(
 ) {
   const { supabase, state } = await import("./supabase");
 
-  const baseUrl =
-    window.location.origin.includes("localhost") ||
-    window.location.origin.startsWith("capacitor:")
-      ? "https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app"
-      : window.location.origin;
+  const baseUrl = "https://dmitrijai.github.io/Vibegram-PRO";
   const targetUrl = baseUrl + "/" + (mediaPayload.url_hash || "");
 
   // 1. Send messages

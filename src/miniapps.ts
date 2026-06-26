@@ -957,12 +957,8 @@ export function closeMiniApp(fromPopState = false) {
 export function copyMiniAppLink(appId?: string) {
   const id = appId || currentRunningAppId;
   if (!id) return;
-  const baseUrl =
-    window.location.origin.includes("localhost") ||
-    window.location.origin.startsWith("capacitor:")
-      ? "https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app"
-      : window.location.origin;
-  const url = `${baseUrl}${window.location.pathname}?miniapp=${id}`;
+  const baseUrl = "https://dmitrijai.github.io/Vibegram-PRO";
+  const url = `${baseUrl}?miniapp=${id}`;
   navigator.clipboard.writeText(url).then(() => {
     import("./utils").then((m) =>
       m.customToast("Ссылка на проект скопирована!"),
@@ -1247,10 +1243,7 @@ export async function copyMiniAppDirectLink() {
   if (!data) return;
 
   try {
-    const baseUrl = window.location.origin.includes("localhost") || window.location.origin.startsWith("capacitor:")
-        ? "https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app"
-        : window.location.origin;
-    
+    const baseUrl = "https://dmitrijai.github.io/Vibegram-PRO";
     const shareUrl = `${baseUrl}/?miniapp_fullscreen=${data.id}`;
 
     const copySuccess = () => {

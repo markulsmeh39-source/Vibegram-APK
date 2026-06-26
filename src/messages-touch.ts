@@ -122,7 +122,7 @@ document.addEventListener('click', (e) => {
         
         if (!isSwiping) {
             const now = Date.now();
-            if (lastTapTarget === targetId && (now - lastTapTime) < 500) {
+            if (lastTapTarget === targetId && (now - lastTapTime) < 700) {
                 ignoreNextClick = true;
                 (window as any).toggleReactionMenu(e, targetId);
                 if (navigator.vibrate) {
