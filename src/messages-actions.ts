@@ -284,6 +284,10 @@ export async function deleteMessage(messageId: string) {
     import('./supabase').then(s => s.broadcastUpdate(state.activeChatId!, 'delete'));
 }
 export function copyMessageText(content: string) {
+    if (!content || content.trim().length === 0) {
+        customToast('Нечего копировать');
+        return;
+    }
     if (isSelectionMode && selectedMessages.size > 0) {
         customToast('Копирование нескольких сообщений пока не поддерживается');
         return;

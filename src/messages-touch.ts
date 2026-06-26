@@ -87,9 +87,12 @@ document.addEventListener('click', (e) => {
             
             const innerElement = document.getElementById(`msg-${msgId}`);
             if (innerElement) {
-                const encodedContent = innerElement.getAttribute('data-copy-content') || innerElement.getAttribute('data-reply-content') || '';
+                let encodedContent = innerElement.getAttribute('data-copy-content');
+                if (encodedContent === null) {
+                    encodedContent = innerElement.getAttribute('data-reply-content') || '';
+                }
                 const textToCopy = decodeURIComponent(encodedContent);
-                if (textToCopy && textToCopy.trim().length > 0) {
+                if (textToCopy && textToCopy.trim().length > 0 && textToCopy !== 'Вложение' && !textToCopy.includes('Вложение') && textToCopy !== 'ШОРТС' && textToCopy !== 'Мини-приложение' && textToCopy !== 'App / Вложение' && !textToCopy.includes('Видеокружок') && !textToCopy.includes('Фотография') && !textToCopy.includes('Видеосообщение') && !textToCopy.includes('Голосовое сообщение')) {
                     copyText(textToCopy);
                 }
             }
@@ -119,7 +122,7 @@ document.addEventListener('click', (e) => {
         
         if (!isSwiping) {
             const now = Date.now();
-            if (lastTapTarget === targetId && (now - lastTapTime) < 300) {
+            if (lastTapTarget === targetId && (now - lastTapTime) < 500) {
                 ignoreNextClick = true;
                 (window as any).toggleReactionMenu(e, targetId);
                 if (navigator.vibrate) {

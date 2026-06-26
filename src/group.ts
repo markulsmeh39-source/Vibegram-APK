@@ -891,7 +891,7 @@ export async function openChatInfo(skipPushState = false) {
   messagesWithMedia?.forEach((msg) => {
     if (!msg.media) return;
     const actualMedia = msg.media.filter(
-      (m: any) => m.type !== "reply" && m.type !== "forward",
+      (m: any) => m.type !== "reply" && m.type !== "forward" && m.type !== 'admin_mode' && m.type !== 'share_app_content' && m.type !== 'comments_enabled' && m.type !== 'short' && m.type !== 'miniapp' && !m.short_id && !m.miniapp_id,
     );
     if (actualMedia.length === 0) return;
 
