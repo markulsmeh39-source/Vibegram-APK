@@ -262,6 +262,71 @@ window.addEventListener('popstate', (e) => {
 
 const urlParams = new URLSearchParams(window.location.search);
 const standaloneMiniAppId = urlParams.get('miniapp');
+const fullscreenMiniAppId = urlParams.get('miniapp_fullscreen');
+
+if (fullscreenMiniAppId) {
+    document.getElementById('app')!.style.display = 'none';
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100vw';
+    iframe.style.height = '100vh';
+    iframe.style.border = 'none';
+    iframe.style.zIndex = '999999';
+    iframe.style.backgroundColor = '#fff';
+    document.body.appendChild(iframe);
+
+    import('./supabase').then(({ supabase }) => {
+        supabase.from('mini_apps').select('*').eq('id', fullscreenMiniAppId).single().then(async ({ data, error }) => {
+            if (error || !data) {
+                iframe.srcdoc = `<html><body style="font-family:sans-serif;text-align:center;padding:50px;"><h2>Приложение не найдено</h2><p>${error?.message || ''}</p></body></html>`;
+                return;
+            }
+            // Increment views
+            supabase.rpc("increment_miniapp_view", { app_id: fullscreenMiniAppId }).then((res) => {
+                if (res.error) {
+                    supabase.from("mini_apps").update({ views_count: (data.views_count || 0) + 1 }).eq("id", fullscreenMiniAppId).then();
+                }
+            });
+
+            const loadIframe = async () => {
+                if (data.html_content && data.html_content.trim().startsWith("<")) {
+                    iframe.srcdoc = data.html_content;
+                } else if (data.html_content && data.html_content.startsWith("https://")) {
+                    if (data.html_content.includes("res.cloudinary.com")) {
+                        try {
+                            const res = await fetch(data.html_content);
+                            let text = await res.text();
+                            const urlObj = new URL(data.html_content);
+                            urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf("/") + 1);
+                            const baseTag = `<base href="${urlObj.href}">`;
+                            if (/<head[^>]*>/i.test(text)) text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
+                            else text = `<head>${baseTag}</head>` + text;
+                            iframe.srcdoc = text;
+                        } catch (e) { iframe.src = data.html_content; }
+                    } else iframe.src = data.html_content;
+                } else if (data.html_url) {
+                    if (data.html_url.includes("res.cloudinary.com")) {
+                        try {
+                            const res = await fetch(data.html_url);
+                            let text = await res.text();
+                            const urlObj = new URL(data.html_url);
+                            urlObj.pathname = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf("/") + 1);
+                            const baseTag = `<base href="${urlObj.href}">`;
+                            if (/<head[^>]*>/i.test(text)) text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
+                            else text = `<head>${baseTag}</head>` + text;
+                            iframe.srcdoc = text;
+                        } catch (e) { iframe.src = data.html_url; }
+                    } else iframe.src = data.html_url;
+                } else if (data.html_content) {
+                    iframe.srcdoc = data.html_content;
+                }
+            };
+            loadIframe();
+        });
+    });
+}
 
 // Initialize app
 const hashParams = new URLSearchParams(window.location.hash.substring(1));

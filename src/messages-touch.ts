@@ -165,7 +165,15 @@ document.addEventListener('click', (e) => {
     isSwiping = false;
     
     if (ignoreNextClick) {
-        setTimeout(() => { ignoreNextClick = false; }, 300);
+        setTimeout(() => { ignoreNextClick = false; }, 600);
+    }
+};
+
+(window as any).handleMessageDoubleClick = (e: MouseEvent, msgId: string) => {
+    ignoreNextClick = true;
+    (window as any).toggleReactionMenu(e, msgId);
+    if (navigator.vibrate) {
+        try { navigator.vibrate(50); } catch(err){}
     }
 };
 

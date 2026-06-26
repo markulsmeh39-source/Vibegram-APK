@@ -935,8 +935,7 @@ export async function runMiniApp(id: string) {
 export function closeMiniApp(fromPopState = false) {
   const urlParams = new URLSearchParams(window.location.search);
   if (!fromPopState && urlParams.has("miniapp")) {
-    window.history.back();
-    return; // popstate will trigger this again with fromPopState=true
+     window.history.replaceState(null, '', window.location.pathname + window.location.hash);
   }
 
   const runModal = document.getElementById("mini-app-run-modal");
@@ -1248,95 +1247,11 @@ export async function copyMiniAppDirectLink() {
   if (!data) return;
 
   try {
-    import("./utils").then((m) => m.customToast("Создание ссылки..."));
-
-    let html = "";
-    if (data.html_content && data.html_content.trim().startsWith("<")) {
-      html = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      html = await fetchAndInjectBase(data.html_content);
-    } else if (data.html_url && !data.html_url.includes("res.cloudinary.com")) {
-      try {
-        html = await fetchAndInjectBase(data.html_url);
-      } catch (e) {
-        // Fallback
-      }
-    } else if (data.html_content) {
-      html = data.html_content;
-    }
-
-    let shareUrl = data.html_url;
-
-    if (html) {
-      const iconUrl = data.icon_url || "";
-      const appTitle = (data.title || "App").replace(/"/g, "&quot;");
-      const manifest = {
-        name: appTitle,
-        short_name: appTitle,
-        display: "fullscreen",
-        start_url: ".",
-        icons: iconUrl
-          ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
-          : [],
-      };
-      const manifestStr =
-        "data:application/manifest+json;charset=utf-8," +
-        encodeURIComponent(JSON.stringify(manifest));
-
-      const pwaTags = `
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="application-name" content="${appTitle}">
-<meta name="apple-mobile-web-app-title" content="${appTitle}">
-<meta name="theme-color" content="#ffffff">
-<link rel="manifest" href="${manifestStr}">
-${iconUrl ? `<link rel="icon" href="${iconUrl}">` : ""}
-${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ""}
-<title>${appTitle}</title>
-<style>
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-</style>
-`;
-      if (/<head[^>]*>/i.test(html)) {
-        html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
-      } else if (/<html[^>]*>/i.test(html)) {
-        html = html.replace(
-          /(<html[^>]*>)/i,
-          `$1\n<head>\n${pwaTags}\n</head>\n`,
-        );
-      } else {
-        html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
-      }
-
-      if (!shareUrl || !shareUrl.includes("res.cloudinary.com")) {
-        const { uploadToCloudinary } = await import("./utils");
-        const blob = new Blob([html], { type: "text/html" });
-        const fileName = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
-        const file = new File([blob], fileName, { type: "text/html" });
-        shareUrl = await uploadToCloudinary(file);
-
-        try {
-          const { supabase } = await import("./supabase");
-          await supabase
-            .from("mini_apps")
-            .update({ html_url: shareUrl })
-            .eq("id", data.id);
-        } catch (e) {}
-      }
-    }
-
-    if (!shareUrl) {
-      if (
-        data.html_content &&
-        (data.html_content.startsWith("http://") ||
-          data.html_content.startsWith("https://"))
-      ) {
-        shareUrl = data.html_content.trim();
-      } else {
-        shareUrl = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
-      }
-    }
+    const baseUrl = window.location.origin.includes("localhost") || window.location.origin.startsWith("capacitor:")
+        ? "https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app"
+        : window.location.origin;
+    
+    const shareUrl = `${baseUrl}/?miniapp_fullscreen=${data.id}`;
 
     const copySuccess = () => {
       import("./utils").then((m) =>
