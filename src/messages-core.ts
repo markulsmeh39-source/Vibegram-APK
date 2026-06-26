@@ -96,7 +96,7 @@ function renderContent(content: string) {
         if (url.includes('#shorts?id=') || url.includes('?miniapp=')) {
             return '';
         }
-        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_blank');}" class="text-blue-500 hover:underline break-all">${url}</a>`;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_blank');}" class="text-blue-500 hover:underline break-all active:scale-95 active:opacity-70 transition-all duration-200">${url}</a>`;
     });
 
     return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${urlParsedContent}</p>`;
@@ -760,7 +760,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         const innerHTML = `
             <div class="flex items-end max-w-full">
                 ${avatarHtml}
-                <div class="relative group select-none ${isMe ? 'bg-[#e3f2fd] dark:bg-blue-900/40 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-br-[4px]' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-bl-[4px]'} p-2 px-3 shadow-sm border border-gray-200/60 dark:border-gray-700/60 max-w-full flex-1 min-w-0" style="touch-action: pan-y;" id="msg-${msg.id}" data-reply-content="${encodedContentLabel}" data-reply-sender="${encodeURIComponent(displaySenderName).replace(/'/g, "%27")}" ontouchstart="handleMessageTouchStart(event, '${msg.id}')" ontouchend="handleMessageTouchEnd(event)" ontouchcancel="handleMessageTouchEnd(event)" ontouchmove="handleMessageTouchMove(event)" onmousedown="handleMessageTouchStart(event, '${msg.id}')" onmouseup="handleMessageTouchEnd(event)" onmousemove="handleMessageTouchMove(event)" onmouseleave="handleMessageTouchEnd(event)">
+                <div class="relative group select-none ${isMe ? 'bg-[#e3f2fd] dark:bg-blue-900/40 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-br-[4px]' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-[18px] rounded-bl-[4px]'} p-2 px-3 shadow-sm border border-gray-200/60 dark:border-gray-700/60 max-w-full flex-1 min-w-0" style="touch-action: pan-y;" id="msg-${msg.id}" data-copy-content="${encodedContent}" data-reply-content="${encodedContentLabel}" data-reply-sender="${encodeURIComponent(displaySenderName).replace(/'/g, "%27")}" ontouchstart="handleMessageTouchStart(event, '${msg.id}')" ontouchend="handleMessageTouchEnd(event)" ontouchcancel="handleMessageTouchEnd(event)" ontouchmove="handleMessageTouchMove(event)" onmousedown="handleMessageTouchStart(event, '${msg.id}')" onmouseup="handleMessageTouchEnd(event)" onmousemove="handleMessageTouchMove(event)" onmouseleave="handleMessageTouchEnd(event)">
                     ${shareHtml}
                     ${forwardHtml}
                     ${replyHtml}

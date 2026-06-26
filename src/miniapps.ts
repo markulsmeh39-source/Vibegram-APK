@@ -1243,91 +1243,47 @@ export async function deleteMiniApp(id: string) {
   });
 };
 
-export async function downloadMiniApp() {
+export async function copyMiniAppDirectLink() {
   const data = miniAppContentData;
   if (!data) return;
 
   try {
-    import("./utils").then((m) => m.customToast("Подготовка к скачиванию..."));
-
-    if ((window as any).Capacitor && (window as any).Capacitor.isNative) {
-      let urlToOpen = data.html_url;
-      if (
-        !urlToOpen &&
-        data.html_content &&
-        (data.html_content.startsWith("http://") ||
-          data.html_content.startsWith("https://"))
-      )
-        urlToOpen = data.html_content.trim();
-
-      if (
-        !urlToOpen &&
-        data.html_content &&
-        data.html_content.trim().startsWith("<")
-      ) {
-        const { uploadToCloudinary } = await import("./utils");
-        const blob = new Blob([data.html_content], { type: "text/html" });
-        const file = new File(
-          [blob],
-          `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`,
-          { type: "text/html" },
-        );
-        urlToOpen = await uploadToCloudinary(file);
-      }
-
-      if (
-        urlToOpen &&
-        urlToOpen.includes("res.cloudinary.com") &&
-        urlToOpen.includes("/upload/")
-      ) {
-        // Do not append fl_attachment for raw html files as it breaks Cloudinary URLs
-      } else if (!urlToOpen) {
-        urlToOpen = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
-      }
-
-      if (urlToOpen) {
-        // _blank ensures Capacitor intercepts and opens in the system browser
-        if ((window as any).openExternalURL) {
-          (window as any).openExternalURL(urlToOpen);
-        } else {
-          window.open(urlToOpen, "_blank");
-        }
-        import("./utils").then((m) =>
-          m.customToast("Загрузка мини-приложения начата во внешнем браузере"),
-        );
-        return;
-      }
-    }
+    import("./utils").then((m) => m.customToast("Создание ссылки..."));
 
     let html = "";
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       html = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("https://")) {
       html = await fetchAndInjectBase(data.html_content);
-    } else if (data.html_url) {
-      html = await fetchAndInjectBase(data.html_url);
+    } else if (data.html_url && !data.html_url.includes("res.cloudinary.com")) {
+      try {
+        html = await fetchAndInjectBase(data.html_url);
+      } catch (e) {
+        // Fallback
+      }
     } else if (data.html_content) {
       html = data.html_content;
     }
 
-    if (!html) throw new Error("Нет HTML содержимого");
+    let shareUrl = data.html_url;
 
-    const iconUrl = data.icon_url || "";
-    const appTitle = (data.title || "App").replace(/"/g, "&quot;");
-    const manifest = {
-      name: appTitle,
-      short_name: appTitle,
-      display: "fullscreen",
-      start_url: ".",
-      icons: iconUrl
-        ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
-        : [],
-    };
-    const manifestStr =
-      "data:application/manifest+json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(manifest));
+    if (html) {
+      const iconUrl = data.icon_url || "";
+      const appTitle = (data.title || "App").replace(/"/g, "&quot;");
+      const manifest = {
+        name: appTitle,
+        short_name: appTitle,
+        display: "fullscreen",
+        start_url: ".",
+        icons: iconUrl
+          ? [{ src: iconUrl, sizes: "192x192", type: "image/png" }]
+          : [],
+      };
+      const manifestStr =
+        "data:application/manifest+json;charset=utf-8," +
+        encodeURIComponent(JSON.stringify(manifest));
 
-    const pwaTags = `
+      const pwaTags = `
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1342,50 +1298,79 @@ ${iconUrl ? `<link rel="apple-touch-icon" href="${iconUrl}">` : ""}
     html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
 </style>
 `;
-    if (/<head[^>]*>/i.test(html)) {
-      html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
-    } else if (/<html[^>]*>/i.test(html)) {
-      html = html.replace(
-        /(<html[^>]*>)/i,
-        `$1\n<head>\n${pwaTags}\n</head>\n`,
-      );
-    } else {
-      html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
-    }
-
-    const blob = new Blob([html], { type: "text/html" });
-
-    try {
-      const fileName = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
-      const file = new File([blob], fileName, { type: "text/html" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: data.title || "App",
-        });
-        import("./utils").then((m) => m.customToast("Игра успешно сохранена!"));
-        return;
+      if (/<head[^>]*>/i.test(html)) {
+        html = html.replace(/(<head[^>]*>)/i, `$1\n${pwaTags}`);
+      } else if (/<html[^>]*>/i.test(html)) {
+        html = html.replace(
+          /(<html[^>]*>)/i,
+          `$1\n<head>\n${pwaTags}\n</head>\n`,
+        );
+      } else {
+        html = `<!DOCTYPE html><html><head>${pwaTags}</head><body>${html}</body></html>`;
       }
-    } catch (e) {
-      console.log("Share API error:", e);
+
+      if (!shareUrl || !shareUrl.includes("res.cloudinary.com")) {
+        const { uploadToCloudinary } = await import("./utils");
+        const blob = new Blob([html], { type: "text/html" });
+        const fileName = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
+        const file = new File([blob], fileName, { type: "text/html" });
+        shareUrl = await uploadToCloudinary(file);
+
+        try {
+          const { supabase } = await import("./supabase");
+          await supabase
+            .from("mini_apps")
+            .update({ html_url: shareUrl })
+            .eq("id", data.id);
+        } catch (e) {}
+      }
     }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(data.title || "miniapp").replace(/[^a-z0-9а-яё]/gi, "_")}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!shareUrl) {
+      if (
+        data.html_content &&
+        (data.html_content.startsWith("http://") ||
+          data.html_content.startsWith("https://"))
+      ) {
+        shareUrl = data.html_content.trim();
+      } else {
+        shareUrl = `https://ais-pre-sr5rmtt2slx6w7n7rjsflu-621526051979.europe-west2.run.app/?miniapp=${data.id}`;
+      }
+    }
 
-    import("./utils").then((m) =>
-      m.customToast("Игра скачана! Можете добавить её на рабочий стол."),
-    );
+    const copySuccess = () => {
+      import("./utils").then((m) =>
+        m.customToast(
+          "Прямая ссылка скопирована! Откройте её в браузере для игры на весь экран.",
+        ),
+      );
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(shareUrl);
+      copySuccess();
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        copySuccess();
+      } catch (err) {
+        import("./utils").then((m) =>
+          m.showError("Не удалось скопировать ссылку"),
+        );
+      }
+      document.body.removeChild(textArea);
+    }
   } catch (e: any) {
     console.error(e);
     import("./utils").then((m) =>
-      m.showError("Не удалось скачать игру: " + e.message),
+      m.showError("Не удалось создать ссылку: " + e.message),
     );
   }
 }
+(window as any).copyMiniAppDirectLink = copyMiniAppDirectLink;

@@ -14,6 +14,39 @@ let isSwiping = false;
 let currentTranslateX = 0;
 let lastTouchTime = 0;
 
+let lastTapTime = 0;
+let lastTapTarget: string | null = null;
+
+function copyText(text: string) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            customToast('Текст скопирован');
+        }).catch(() => {
+            fallbackCopyText(text);
+        });
+    } else {
+        fallbackCopyText(text);
+    }
+}
+
+function fallbackCopyText(text: string) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        customToast('Текст скопирован');
+    } catch (err) {
+        customToast('Не удалось скопировать');
+    }
+    textArea.remove();
+}
+
 document.addEventListener('click', (e) => {
     if (ignoreNextClick) {
         e.stopPropagation();
@@ -51,7 +84,16 @@ document.addEventListener('click', (e) => {
     touchTimer = setTimeout(() => {
         if (touchTarget === msgId && !isSwiping) {
             ignoreNextClick = true;
-            (window as any).toggleReactionMenu(e, msgId);
+            
+            const innerElement = document.getElementById(`msg-${msgId}`);
+            if (innerElement) {
+                const encodedContent = innerElement.getAttribute('data-copy-content') || innerElement.getAttribute('data-reply-content') || '';
+                const textToCopy = decodeURIComponent(encodedContent);
+                if (textToCopy && textToCopy.trim().length > 0) {
+                    copyText(textToCopy);
+                }
+            }
+
             if (navigator.vibrate) {
                 try { navigator.vibrate(50); } catch(e){}
             }
@@ -75,6 +117,22 @@ document.addEventListener('click', (e) => {
         const targetId = touchTarget;
         const wrapper = document.getElementById(`msg-wrapper-${targetId}`);
         
+        if (!isSwiping) {
+            const now = Date.now();
+            if (lastTapTarget === targetId && (now - lastTapTime) < 300) {
+                ignoreNextClick = true;
+                (window as any).toggleReactionMenu(e, targetId);
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(50); } catch(err){}
+                }
+                lastTapTime = 0;
+                lastTapTarget = null;
+            } else {
+                lastTapTime = now;
+                lastTapTarget = targetId;
+            }
+        }
+
         if (isSwiping && currentTranslateX < -40) {
             // Trigger reply
             const innerElement = document.getElementById(`msg-${targetId}`);
