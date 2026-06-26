@@ -11,7 +11,7 @@ export function setupMiniApps() {
   (window as any).runMiniApp = runMiniApp;
   (window as any).closeMiniApp = closeMiniApp;
   (window as any).copyMiniAppLink = copyMiniAppLink;
-  (window as any).downloadMiniApp = downloadMiniApp;
+  (window as any).copyMiniAppDirectLink = copyMiniAppDirectLink;
   (window as any).deleteMiniApp = deleteMiniApp;
   (window as any).searchMiniApps = searchMiniApps;
   (window as any).toggleLikeMiniApp = toggleLikeMiniApp;
