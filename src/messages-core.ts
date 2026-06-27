@@ -213,11 +213,18 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         setupMessageScrollListener();
     }
     try {
-        let { data: messages, error } = await supabase.from('messages')
-            .select('*, profiles(username, display_name, is_premium, premium_until)')
-            .eq('chat_id', chatId)
-            .order('created_at', { ascending: false })
-            .limit(currentMessageLimit);
+        let messages = null;
+        let error = null;
+        
+        if (navigator.onLine) {
+            const res = await supabase.from('messages')
+                .select('*, profiles(username, display_name, is_premium, premium_until)')
+                .eq('chat_id', chatId)
+                .order('created_at', { ascending: false })
+                .limit(currentMessageLimit);
+            messages = res.data;
+            error = res.error;
+        }
             
         if (error && navigator.onLine) throw error;
         

@@ -776,6 +776,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 setupMiniApps();
 
+// Check for shared files via PWA
+async function checkSharedFiles() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('shared')) {
+        try {
+            const db = await new Promise<IDBDatabase>((resolve, reject) => {
+                const request = indexedDB.open('vibegram-share', 1);
+                request.onsuccess = (e: any) => resolve(e.target.result);
+                request.onerror = (e: any) => reject(e.target.error);
+            });
+            const tx = db.transaction('shared_files', 'readwrite');
+            const store = tx.objectStore('shared_files');
+            const getReq = store.getAll();
+            
+            getReq.onsuccess = async () => {
+                const sharedDataArray = getReq.result;
+                if (sharedDataArray && sharedDataArray.length > 0) {
+                    const sharedData = sharedDataArray[0];
+                    if (sharedData.files && sharedData.files.length > 0) {
+                        const { state } = await import('./logic');
+                        state.selectedFiles = sharedData.files;
+                        
+                        // We need the user to pick a chat if none is active
+                        if (!state.activeChatId) {
+                            const { customToast } = await import('./utils');
+                            customToast('Выберите чат для отправки файла');
+                            // We keep the files in state, when they open a chat they can send them.
+                            // Or better, show the attach menu immediately when they open a chat.
+                            // Let's set a global flag so next time openChat finishes, we show modal.
+                            (window as any).pendingSharedFiles = true;
+                        } else {
+                            const { renderMediaModal } = await import('./messages-media');
+                            renderMediaModal();
+                        }
+                    }
+                }
+                store.clear();
+            };
+        } catch (e) {
+            console.error('Error reading shared files', e);
+        }
+        
+        // Remove the parameter from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+checkSharedFiles();
+
 // Network status listeners
 function updateNetworkStatus() {
     const searchContainer = document.getElementById('search-input-container');

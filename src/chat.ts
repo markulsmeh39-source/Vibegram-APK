@@ -12,11 +12,18 @@ export async function loadChats() {
         console.error("Error loading group for pending checks:", err),
       );
 
-    let { data: members, error: membersError } = await supabase
-      .from("chat_members")
-      .select("chat_id")
-      .eq("user_id", state.currentUser.id)
-      .neq("role", "pending");
+    let members = null;
+    let membersError = null;
+    
+    if (navigator.onLine) {
+      const res = await supabase
+        .from("chat_members")
+        .select("chat_id")
+        .eq("user_id", state.currentUser.id)
+        .neq("role", "pending");
+      members = res.data;
+      membersError = res.error;
+    }
       
     if (membersError && navigator.onLine) throw membersError;
     
@@ -47,12 +54,19 @@ export async function loadChats() {
       return;
     }
 
-    let { data: chats, error: chatsError } = await supabase
-      .from("chats")
-      .select(
-        `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
-      )
-      .in("id", chatIds);
+    let chats = null;
+    let chatsError = null;
+    
+    if (navigator.onLine) {
+      const res = await supabase
+        .from("chats")
+        .select(
+          `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
+        )
+        .in("id", chatIds);
+      chats = res.data;
+      chatsError = res.error;
+    }
       
     if (chatsError && navigator.onLine) throw chatsError;
     
@@ -782,6 +796,8 @@ export function updateChatInputUI() {
 }
 (window as any).updateChatInputUI = updateChatInputUI;
 
+let isChatOpening = false;
+
 export async function openChat(
   chatId: string,
   chatName: string,
@@ -794,13 +810,17 @@ export async function openChat(
   isPublic?: boolean,
   skipPushState: boolean = false,
 ) {
-  if (!skipPushState && window.location.hash !== "#chat") {
-    window.history.pushState({ screen: "chat", chatId }, "", "#chat");
-  }
+  if (isChatOpening) return;
+  isChatOpening = true;
+  document.body.style.pointerEvents = 'none';
+  try {
+    if (!skipPushState && window.location.hash !== "#chat") {
+      window.history.pushState({ screen: "chat", chatId }, "", "#chat");
+    }
 
-  if ((window as any).logic?.pauseAllMedia) {
-    (window as any).logic.pauseAllMedia(undefined, true);
-  }
+    if ((window as any).logic?.pauseAllMedia) {
+      (window as any).logic.pauseAllMedia(undefined, true);
+    }
 
   if (state.activeChatId && state.activeChatId !== chatId) {
     const list = document.getElementById("messages-list");
@@ -1108,8 +1128,18 @@ export async function openChat(
   list.innerHTML =
     '<div class="flex h-full items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>';
 
-  loadMessages(chatId, true);
+  await loadMessages(chatId, true);
   markMessagesAsRead(chatId);
+  
+  if ((window as any).pendingSharedFiles && state.selectedFiles && state.selectedFiles.length > 0) {
+    (window as any).pendingSharedFiles = false;
+    import('./messages-media').then(m => m.renderMediaModal());
+  }
+  
+  } finally {
+    isChatOpening = false;
+    document.body.style.pointerEvents = 'auto';
+  }
 }
 
 (window as any).toggleChatSearch = () => {
