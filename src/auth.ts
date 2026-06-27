@@ -67,6 +67,25 @@ export async function checkUser(authEvent?: string) {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+    
+    // Offline check
+    if (!navigator.onLine) {
+      const cachedUser = localStorage.getItem("vibegram_cached_user");
+      const cachedProfile = localStorage.getItem("vibegram_cached_profile");
+      
+      if (cachedUser && cachedProfile) {
+        state.currentUser = JSON.parse(cachedUser);
+        state.currentProfile = JSON.parse(cachedProfile);
+        
+        // Clear URL to prevent OAuth token leak or reload loops
+        window.history.replaceState({}, document.title, window.location.pathname);
+        document.getElementById("auth-screen")!.classList.add("hidden");
+        
+        finalizeAppSetup();
+        return;
+      }
+    }
+
     const {
       data: { user },
       error,
@@ -160,6 +179,10 @@ export async function checkUser(authEvent?: string) {
       }
 
       state.currentProfile = data;
+
+      // Save for offline access
+      localStorage.setItem("vibegram_cached_user", JSON.stringify(user));
+      localStorage.setItem("vibegram_cached_profile", JSON.stringify(data));
 
       const savedPushToken = localStorage.getItem("vibegram_push_token");
       if (savedPushToken && data.push_token !== savedPushToken) {

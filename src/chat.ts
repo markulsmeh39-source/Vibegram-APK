@@ -12,12 +12,22 @@ export async function loadChats() {
         console.error("Error loading group for pending checks:", err),
       );
 
-    const { data: members, error: membersError } = await supabase
+    let { data: members, error: membersError } = await supabase
       .from("chat_members")
       .select("chat_id")
       .eq("user_id", state.currentUser.id)
       .neq("role", "pending");
-    if (membersError) throw membersError;
+      
+    if (membersError && navigator.onLine) throw membersError;
+    
+    if (!navigator.onLine && !members) {
+      const cachedMembers = localStorage.getItem("vibegram_cached_chat_members");
+      if (cachedMembers) {
+        members = JSON.parse(cachedMembers);
+      }
+    } else if (members) {
+      localStorage.setItem("vibegram_cached_chat_members", JSON.stringify(members));
+    }
 
     let chatIds = members ? members.map((m) => m.chat_id) : [];
     if (state.currentProfile?.settings?.is_tech_support) {
@@ -37,13 +47,26 @@ export async function loadChats() {
       return;
     }
 
-    const { data: chats, error: chatsError } = await supabase
+    let { data: chats, error: chatsError } = await supabase
       .from("chats")
       .select(
         `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
       )
       .in("id", chatIds);
-    if (chatsError) throw chatsError;
+      
+    if (chatsError && navigator.onLine) throw chatsError;
+    
+    if (!navigator.onLine && !chats) {
+      const cachedChats = localStorage.getItem("vibegram_cached_chats");
+      if (cachedChats) {
+        chats = JSON.parse(cachedChats);
+      } else {
+        throw new Error("No cached chats available");
+      }
+    } else if (chats) {
+      localStorage.setItem("vibegram_cached_chats", JSON.stringify(chats));
+    }
+    
     if (!chats) return;
 
     chats.forEach((chat: any) => {

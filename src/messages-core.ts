@@ -213,13 +213,24 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         setupMessageScrollListener();
     }
     try {
-        const { data: messages, error } = await supabase.from('messages')
+        let { data: messages, error } = await supabase.from('messages')
             .select('*, profiles(username, display_name, is_premium, premium_until)')
             .eq('chat_id', chatId)
             .order('created_at', { ascending: false })
             .limit(currentMessageLimit);
             
-        if (error) throw error;
+        if (error && navigator.onLine) throw error;
+        
+        if (!navigator.onLine && !messages) {
+            const cachedMessages = localStorage.getItem(`vibegram_cached_msgs_${chatId}`);
+            if (cachedMessages) {
+                messages = JSON.parse(cachedMessages);
+            } else {
+                throw new Error("No cached messages available");
+            }
+        } else if (messages && isInitialLoad) {
+            localStorage.setItem(`vibegram_cached_msgs_${chatId}`, JSON.stringify(messages));
+        }
         
         if (messages) {
             hasMoreMessages = messages.length === currentMessageLimit;

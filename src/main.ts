@@ -775,3 +775,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 setupMiniApps();
+
+// Network status listeners
+function updateNetworkStatus() {
+    const searchContainer = document.getElementById('search-input-container');
+    const noInternetIndicator = document.getElementById('no-internet-indicator');
+    
+    if (navigator.onLine) {
+        searchContainer?.classList.remove('hidden');
+        noInternetIndicator?.classList.add('hidden');
+    } else {
+        searchContainer?.classList.add('hidden');
+        noInternetIndicator?.classList.remove('hidden');
+    }
+}
+
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+
+// Initial check
+updateNetworkStatus();
+
