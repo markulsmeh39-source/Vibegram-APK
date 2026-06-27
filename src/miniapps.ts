@@ -282,6 +282,79 @@ async function updateAuthorTotalStats() {
 
 let loadedMiniAppsData: any[] = [];
 
+function renderMiniAppsList(data: any[], tab: string, likedAppIds: Set<string>, listEl: HTMLElement) {
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<div class="text-center p-8 text-gray-500 dark:text-gray-400 flex flex-col items-center">
+                <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                <p>${currentAuthorFilter ? "У автора нет публичных приложений." : currentSearchQuery ? "По вашему запросу ничего не найдено" : tab === "public" ? "Нет публичных приложений" : "У вас пока нет своих приложений"}</p>
+                </div>`;
+      return;
+    }
+
+    if (currentAuthorFilter) {
+      let tv = 0;
+      let tl = 0;
+      data.forEach((d) => {
+        tv += d.views_count || 0;
+        tl += d.likes_count || 0;
+      });
+      document.getElementById("miniapps-author-views")!.textContent =
+        String(tv);
+      document.getElementById("miniapps-author-likes")!.textContent =
+        String(tl);
+    }
+
+    loadedMiniAppsData = data;
+    listEl.innerHTML = data
+      .map((app) => {
+        const isLiked = likedAppIds.has(app.id);
+        return `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow relative group">
+                <div class="flex items-start gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-inner shrink-0 truncate px-1 cursor-pointer" onclick="window.runMiniApp('${app.id}')">
+                        ${app.icon_url ? `<img src="${app.icon_url}" class="w-full h-full object-cover rounded-2xl">` : app.title.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-1 min-w-0">
+                                <h4 class="font-bold text-gray-900 dark:text-white truncate text-lg leading-tight cursor-pointer hover:text-blue-500 transition-colors" onclick="window.runMiniApp('${app.id}')">${app.title.replace(/</g, "&lt;")}</h4>
+                            </div>
+                            <span class="text-xs font-semibold ${app.visibility === "public" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"} px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">${app.visibility === "public" ? "Публичное" : "По ссылке"}</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed cursor-pointer" onclick="window.runMiniApp('${app.id}')">${(app.description || "Нет описания").replace(/</g, "&lt;")}</p>
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                <div class="flex items-center gap-1 px-2 py-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onclick="window.showAuthorMiniApps('${app.creator_id}', '${(app.creator?.display_name || app.creator?.username || "").replace(/'/g, "\\'")}')">
+                                    ${
+                                      app.creator?.avatar_url
+                                        ? `<img src="${app.creator.avatar_url}" class="w-4 h-4 rounded-full object-cover">`
+                                        : `<div class="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[8px]">${(app.creator?.display_name || app.creator?.username || "A")[0].toUpperCase()}</div>`
+                                    }
+                                    <span class="truncate max-w-[80px]">${app.creator?.display_name || app.creator?.username || "Автор"}</span>
+                                </div>
+                                <div class="flex items-center gap-1 px-2 py-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    ${app.views_count || 0}
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?miniapp=' + '${app.id}'); import('./utils').then(m => m.customToast('Ссылка скопирована'))" class="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Скопировать ссылку">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                </button>
+                                <button id="like-btn-${app.id}" onclick="window.toggleLikeMiniApp('${app.id}')" data-liked="${isLiked}" class="flex items-center gap-1.5 p-1.5 rounded-lg transition-colors ${isLiked ? "text-red-500 bg-red-50 dark:bg-red-900/20" : "text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"}">
+                                    ${isLiked ? `<svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>` : `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>`}
+                                    <span id="like-count-${app.id}" class="text-sm font-semibold">${app.likes_count || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+      })
+      .join("");
+}
+
 async function loadMiniApps(tab: string) {
   const listEl = document.getElementById("mini-apps-list")!;
   listEl.innerHTML =
@@ -295,6 +368,29 @@ async function loadMiniApps(tab: string) {
             creator:creator_id(username, display_name, avatar_url)
         `,
     );
+
+    const cacheKey = `vibegram_cached_miniapps_${tab}_${currentAuthorFilter || ""}_${currentSearchQuery || ""}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    let cachedLikes = new Set<string>();
+    
+    if (cachedData) {
+        try {
+            const parsed = JSON.parse(cachedData);
+            const cachedLikesData = localStorage.getItem('vibegram_cached_miniapps_likes');
+            if (cachedLikesData) cachedLikes = new Set(JSON.parse(cachedLikesData));
+            renderMiniAppsList(parsed, tab, cachedLikes, listEl);
+        } catch(e) {}
+    }
+
+    if (!navigator.onLine) {
+        if (!cachedData) {
+            listEl.innerHTML = `<div class="text-center p-8 text-gray-500 dark:text-gray-400 flex flex-col items-center">
+                <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <p>Нет подключения к интернету</p>
+            </div>`;
+        }
+        return;
+    }
 
     if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {
       query = query
@@ -504,6 +600,9 @@ async function loadMiniApps(tab: string) {
             `;
       })
       .join("");
+      
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem('vibegram_cached_miniapps_likes', JSON.stringify(Array.from(likedAppIds)));
   } catch (e: any) {
     console.error("Error loading mini apps", e);
     listEl.innerHTML = `<div class="text-red-500 p-4 text-center">Ошибка: ${e.message}</div>`;

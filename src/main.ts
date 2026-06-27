@@ -776,6 +776,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
 setupMiniApps();
 
+// Check for shared files via Capacitor SendIntent
+if (Capacitor.isNativePlatform()) {
+    import('@capacitor/core').then(({ Capacitor }) => {
+        if (Capacitor.isPluginAvailable('SendIntent')) {
+            // we use any because we didn't install types
+            const SendIntent = (Capacitor as any).Plugins.SendIntent;
+            if (SendIntent) {
+                SendIntent.addListener('appSendActionIntent', async (data: any) => {
+                    const extras = data.extras || {};
+                    const title = extras['android.intent.extra.TITLE'] || extras['android.intent.extra.SUBJECT'];
+                    const text = extras['android.intent.extra.TEXT'];
+                    const stream = extras['android.intent.extra.STREAM']; // URI for file
+
+                    if (text || stream) {
+                        const { state, customToast } = await import('./logic');
+                        
+                        // We will need a way to read the file from URI. Capacitor Filesystem can sometimes do it, or we can just send the URI and let Capacitor HTTP send it?
+                        // Actually, without a proper file reading plugin, it's tricky.
+                        // For now, let's just handle text sharing easily.
+                        if (text && !stream) {
+                            const chatInput = document.getElementById('message-input') as HTMLTextAreaElement;
+                            if (chatInput) {
+                                chatInput.value = text;
+                                customToast('Текст скопирован в поле ввода');
+                            }
+                        } else if (stream) {
+                            try {
+                                const { Filesystem } = await import('@capacitor/filesystem');
+                                const fileData = await Filesystem.readFile({
+                                    path: stream
+                                });
+                                // fileData.data is base64 string
+                                // Convert to File object
+                                const res = await fetch(`data:application/octet-stream;base64,${fileData.data}`);
+                                const blob = await res.blob();
+                                // Try to extract filename or just use a generic one
+                                let filename = "shared_file";
+                                if (stream.includes('%2F')) {
+                                    const parts = stream.split('%2F');
+                                    filename = decodeURIComponent(parts[parts.length - 1]);
+                                } else if (stream.includes('/')) {
+                                    const parts = stream.split('/');
+                                    filename = parts[parts.length - 1];
+                                }
+                                
+                                const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+                                
+                                if (state.activeChatId) {
+                                    const { handleMediaSelect } = await import('./messages-media');
+                                    handleMediaSelect({ target: { files: [file], value: '' } });
+                                } else {
+                                    state.selectedFiles = [file];
+                                    (window as any).pendingSharedFiles = true;
+                                    customToast('Получен файл. Откройте нужный чат для отправки.');
+                                }
+                            } catch (e: any) {
+                                customToast('Ошибка при чтении файла: ' + e.message);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+
 // Check for shared files via PWA
 async function checkSharedFiles() {
     const params = new URLSearchParams(window.location.search);

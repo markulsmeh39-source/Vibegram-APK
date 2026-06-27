@@ -211,6 +211,15 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         currentMessageLimit = 50;
         hasMoreMessages = true;
         setupMessageScrollListener();
+        
+        // Render from cache immediately for fast UI
+        const cachedMessages = localStorage.getItem(`vibegram_cached_msgs_${chatId}`);
+        if (cachedMessages) {
+            try {
+                const parsedCache = JSON.parse(cachedMessages);
+                renderMessages([...parsedCache].reverse(), true);
+            } catch (e) {}
+        }
     }
     try {
         let messages = null;
@@ -241,12 +250,17 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         
         if (messages) {
             hasMoreMessages = messages.length === currentMessageLimit;
+            // If it's online and initial load, we already rendered cache, so we re-render network data
+            // We can pass false to avoid scrolling down again if the user already scrolled up? 
+            // Wait, if it's initial load, we always want to scroll down unless state.chatScrollPositions says otherwise.
             renderMessages(messages.reverse(), isInitialLoad);
         }
     } catch (error) {
         console.error('Error loading messages:', error);
-        const list = document.getElementById('messages-list')!;
-        list.innerHTML = '<div class="flex h-full items-center justify-center"><div class="bg-red-500/80 text-white px-5 py-2 rounded-full text-sm font-medium backdrop-blur-md shadow-lg">Ошибка загрузки сообщений</div></div>';
+        if (!isInitialLoad || !localStorage.getItem(`vibegram_cached_msgs_${chatId}`)) {
+            const list = document.getElementById('messages-list')!;
+            list.innerHTML = '<div class="flex h-full items-center justify-center"><div class="bg-red-500/80 text-white px-5 py-2 rounded-full text-sm font-medium backdrop-blur-md shadow-lg">Ошибка загрузки сообщений</div></div>';
+        }
     }
 }
 export function renderMessages(messages: any[], isInitialLoad = false) {

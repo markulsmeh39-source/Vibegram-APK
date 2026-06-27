@@ -381,17 +381,38 @@ export async function openUserProfile(userId: string) {
   document.getElementById("modal-overlay")?.classList.remove("hidden");
   modal.innerHTML = `<div class="p-12 flex justify-center items-center"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>`;
 
-  const { data: userToFind } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  let userToFind = null;
+  const cachedProfile = localStorage.getItem('vibegram_cached_profile_' + userId);
+  
+  if (cachedProfile) {
+    try {
+        userToFind = JSON.parse(cachedProfile);
+        renderProfileModal(userToFind, modal, userId);
+    } catch(e) {}
+  }
+
+  if (navigator.onLine) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+        
+      if (data) {
+          userToFind = data;
+          localStorage.setItem('vibegram_cached_profile_' + userId, JSON.stringify(data));
+          renderProfileModal(userToFind, modal, userId);
+      }
+  }
+
   if (!userToFind) {
     modal.innerHTML =
       '<div class="p-6 text-center text-gray-500">Пользователь не найден</div>';
     return;
   }
+}
 
+function renderProfileModal(userToFind: any, modal: HTMLElement, userId: string) {
   let isPremiumUser =
     userToFind.is_premium &&
     (!userToFind.premium_until ||

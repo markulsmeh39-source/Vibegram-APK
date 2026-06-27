@@ -2,86 +2,12 @@ import { supabase, state } from "./supabase";
 import { getStatusText, customConfirm } from "./utils";
 import { loadMessages, markMessagesAsRead } from "./messages";
 
-export async function loadChats() {
-  try {
-    import("./group")
-      .then((m) => {
-        if (m.checkGlobalPendingRequests) m.checkGlobalPendingRequests();
-      })
-      .catch((err) =>
-        console.error("Error loading group for pending checks:", err),
-      );
-
-    let members = null;
-    let membersError = null;
-    
-    if (navigator.onLine) {
-      const res = await supabase
-        .from("chat_members")
-        .select("chat_id")
-        .eq("user_id", state.currentUser.id)
-        .neq("role", "pending");
-      members = res.data;
-      membersError = res.error;
-    }
-      
-    if (membersError && navigator.onLine) throw membersError;
-    
-    if (!navigator.onLine && !members) {
-      const cachedMembers = localStorage.getItem("vibegram_cached_chat_members");
-      if (cachedMembers) {
-        members = JSON.parse(cachedMembers);
-      }
-    } else if (members) {
-      localStorage.setItem("vibegram_cached_chat_members", JSON.stringify(members));
-    }
-
-    let chatIds = members ? members.map((m) => m.chat_id) : [];
-    if (state.currentProfile?.settings?.is_tech_support) {
-      const { data: supportChats } = await supabase
-        .from("chats")
-        .select("id")
-        .eq("description", "TECH_SUPPORT_CHAT");
-      if (supportChats) {
-        chatIds = [...new Set([...chatIds, ...supportChats.map((c) => c.id)])];
-      }
-    }
-
+function renderChats(chats: any[]) {
     const list = document.getElementById("chats-list")!;
-
-    if (chatIds.length === 0) {
+    if (!chats || chats.length === 0) {
       list.innerHTML = `<div class="text-center text-gray-400 mt-20 p-6"><span class="text-sm">У вас пока нет чатов.<br>Найдите друзей через поиск выше.</span></div>`;
       return;
     }
-
-    let chats = null;
-    let chatsError = null;
-    
-    if (navigator.onLine) {
-      const res = await supabase
-        .from("chats")
-        .select(
-          `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
-        )
-        .in("id", chatIds);
-      chats = res.data;
-      chatsError = res.error;
-    }
-      
-    if (chatsError && navigator.onLine) throw chatsError;
-    
-    if (!navigator.onLine && !chats) {
-      const cachedChats = localStorage.getItem("vibegram_cached_chats");
-      if (cachedChats) {
-        chats = JSON.parse(cachedChats);
-      } else {
-        throw new Error("No cached chats available");
-      }
-    } else if (chats) {
-      localStorage.setItem("vibegram_cached_chats", JSON.stringify(chats));
-    }
-    
-    if (!chats) return;
 
     chats.forEach((chat: any) => {
       if (chat.messages) {
@@ -466,6 +392,96 @@ export async function loadChats() {
         openChatContextMenu(chat.id, chatName || "Чат", e);
       });
     });
+}
+
+export async function loadChats() {
+  try {
+    import("./group")
+      .then((m) => {
+        if (m.checkGlobalPendingRequests) m.checkGlobalPendingRequests();
+      })
+      .catch((err) =>
+        console.error("Error loading group for pending checks:", err),
+      );
+
+    // Instant render from cache
+    const cachedChats = localStorage.getItem("vibegram_cached_chats");
+    if (cachedChats) {
+        try {
+            renderChats(JSON.parse(cachedChats));
+        } catch(e) {}
+    }
+
+    let members = null;
+    let membersError = null;
+    
+    if (navigator.onLine) {
+      const res = await supabase
+        .from("chat_members")
+        .select("chat_id")
+        .eq("user_id", state.currentUser.id)
+        .neq("role", "pending");
+      members = res.data;
+      membersError = res.error;
+    }
+      
+    if (membersError && navigator.onLine) throw membersError;
+    
+    if (!navigator.onLine && !members) {
+      const cachedMembers = localStorage.getItem("vibegram_cached_chat_members");
+      if (cachedMembers) {
+        members = JSON.parse(cachedMembers);
+      }
+    } else if (members) {
+      localStorage.setItem("vibegram_cached_chat_members", JSON.stringify(members));
+    }
+
+    let chatIds = members ? members.map((m) => m.chat_id) : [];
+    if (state.currentProfile?.settings?.is_tech_support) {
+      const { data: supportChats } = await supabase
+        .from("chats")
+        .select("id")
+        .eq("description", "TECH_SUPPORT_CHAT");
+      if (supportChats) {
+        chatIds = [...new Set([...chatIds, ...supportChats.map((c) => c.id)])];
+      }
+    }
+
+    if (chatIds.length === 0) {
+      const list = document.getElementById("chats-list")!;
+      list.innerHTML = `<div class="text-center text-gray-400 mt-20 p-6"><span class="text-sm">У вас пока нет чатов.<br>Найдите друзей через поиск выше.</span></div>`;
+      return;
+    }
+
+    let chats = null;
+    let chatsError = null;
+    
+    if (navigator.onLine) {
+      const res = await supabase
+        .from("chats")
+        .select(
+          `id, created_at, type, title, avatar_url, description, is_public, is_verified, chat_members(user_id, role, profiles(id, username, display_name, last_seen, is_online, avatar_url, bio, settings, is_premium, premium_until)), messages(content, message_type, created_at, is_read, sender_id, media)`,
+        )
+        .in("id", chatIds);
+      chats = res.data;
+      chatsError = res.error;
+    }
+      
+    if (chatsError && navigator.onLine) throw chatsError;
+    
+    if (!navigator.onLine && !chats) {
+      if (cachedChats) {
+        chats = JSON.parse(cachedChats);
+      } else {
+        throw new Error("No cached chats available");
+      }
+    } else if (chats) {
+      localStorage.setItem("vibegram_cached_chats", JSON.stringify(chats));
+    }
+    
+    if (!chats) return;
+
+    renderChats(chats);
   } catch (error: any) {
     console.error("Error loading chats:", error.message || error);
     const list = document.getElementById("chats-list")!;
