@@ -977,14 +977,28 @@ export async function openChat(
   }
 
   let isVerified = false;
-  try {
-    const { data } = await supabase
-      .from("chats")
-      .select("is_verified")
-      .eq("id", chatId)
-      .single();
-    if (data) isVerified = !!data.is_verified;
-  } catch (e) {}
+  const cachedChatsStr = localStorage.getItem("vibegram_cached_chats");
+  if (cachedChatsStr) {
+      try {
+          const c = JSON.parse(cachedChatsStr).find((x: any) => x.id === chatId);
+          if (c) isVerified = !!c.is_verified;
+      } catch(e) {}
+  }
+  
+  supabase
+    .from("chats")
+    .select("is_verified")
+    .eq("id", chatId)
+    .single()
+    .then(({ data }) => {
+      if (data && data.is_verified && state.activeChatId === chatId) {
+        const nameContainer = document.getElementById("current-chat-name");
+        if (nameContainer && !nameContainer.innerHTML.includes("text-blue-500 fill-current")) {
+          const badge = `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`;
+          nameContainer.innerHTML += badge;
+        }
+      }
+    });
 
   const verifiedBadgeListHtml = isVerified
     ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
@@ -1147,17 +1161,21 @@ export async function openChat(
   }
 
   // Fast chat switching: show loader
-  const list = document.getElementById("messages-list")!;
-  list.innerHTML =
-    '<div class="flex h-full items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>';
-
-  await loadMessages(chatId, true);
-  markMessagesAsRead(chatId);
-  
-  if ((window as any).pendingSharedFiles && state.selectedFiles && state.selectedFiles.length > 0) {
-    (window as any).pendingSharedFiles = false;
-    import('./messages-media').then(m => m.renderMediaModal());
+  const cachedMessagesStr = localStorage.getItem(`vibegram_cached_msgs_${chatId}`);
+  if (!cachedMessagesStr) {
+    const list = document.getElementById("messages-list")!;
+    list.innerHTML =
+      '<div class="flex h-full items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>';
   }
+
+  loadMessages(chatId, true).then(() => {
+    markMessagesAsRead(chatId);
+    
+    if ((window as any).pendingSharedFiles && state.selectedFiles && state.selectedFiles.length > 0) {
+      (window as any).pendingSharedFiles = false;
+      import('./messages-media').then(m => m.renderMediaModal());
+    }
+  });
   
   } finally {
     isChatOpening = false;

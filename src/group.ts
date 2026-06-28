@@ -574,32 +574,15 @@ export async function openChatInfo(skipPushState = false) {
 
   let usernameHtml = "";
   if (state.activeChatIsGroup) {
-    const { data: chatData } = await supabase
-      .from("chats")
-      .select("username")
-      .eq("id", state.activeChatId)
-      .single();
-    if (state.activeChatId !== currentChatId) return;
-    if (chatData?.username) {
-      usernameHtml = `<div class="text-sm text-blue-500 text-center select-all mt-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="navigator.clipboard.writeText('@${chatData.username}'); const old=this.innerHTML; this.innerHTML='✅ Скопировано'; setTimeout(()=>this.innerHTML=old, 2000);" title="Копировать ID">@${chatData.username}</div>`;
-    }
+    // Optionally fetch username async later
   } else if (!isSavedMessages) {
-    const { data: userData } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("id", state.activeChatOtherUser?.id)
-      .single();
-    if (state.activeChatId !== currentChatId) return;
+    const userData = state.activeChatOtherUser;
     if (userData?.username) {
       usernameHtml = `<div class="text-sm text-blue-500 text-center select-all mt-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="navigator.clipboard.writeText('@${userData.username}'); const old=this.innerHTML; this.innerHTML='✅ Скопировано'; setTimeout(()=>this.innerHTML=old, 2000);" title="Копировать ID">@${userData.username}</div>`;
     }
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("settings")
-    .eq("id", state.currentUser.id)
-    .single();
+  const profile = state.currentProfile;
   if (state.activeChatId !== currentChatId) return;
   const settings = profile?.settings || {};
   const mutedChats = settings.muted_chats || [];
@@ -649,12 +632,7 @@ export async function openChatInfo(skipPushState = false) {
             </div>
         `;
   } else if (state.activeChatIsGroup) {
-    const { data: members } = await supabase
-      .from("chat_members")
-      .select(
-        "role, user_id, profiles(id, username, display_name, avatar_url, is_online)",
-      )
-      .eq("chat_id", state.activeChatId);
+    const members = state.activeChatMembers || [];
     if (state.activeChatId !== currentChatId) return;
     const myRole = members?.find(
       (m: any) => m.user_id === state.currentUser.id,
@@ -873,16 +851,7 @@ export async function openChatInfo(skipPushState = false) {
         `;
   }
 
-  // Fetch media for tabs
-  const { data: messagesWithMedia } = await supabase
-    .from("messages")
-    .select("id, media, message_type, created_at")
-    .eq("chat_id", state.activeChatId)
-    .not("media", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1000);
 
-  if (state.activeChatId !== currentChatId) return;
 
   let photosVideos: any[] = [];
   let files: any[] = [];
@@ -1091,9 +1060,15 @@ export async function openChatInfo(skipPushState = false) {
                 <div id="chat-info-tab-info" class="w-full tab-content block">
                     ${infoHtml}
                 </div>
-                <div id="chat-info-tab-media" class="w-full tab-content hidden">${photosVideos.length > 0 ? renderMediaGrid(photosVideos) : '<div class="text-center text-gray-500 py-4">Нет медиа</div>'}</div>
-                <div id="chat-info-tab-files" class="w-full tab-content hidden">${files.length > 0 ? renderFileList(files) : '<div class="text-center text-gray-500 py-4">Нет файлов</div>'}</div>
-                <div id="chat-info-tab-audiovideo" class="w-full tab-content hidden">${audioVideo.length > 0 ? renderAudioVideoList(audioVideo) : '<div class="text-center text-gray-500 py-4">Нет голосовых</div>'}</div>
+                <div id="chat-info-tab-media" class="w-full tab-content hidden">
+                    <div class="flex justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>
+                </div>
+                <div id="chat-info-tab-files" class="w-full tab-content hidden">
+                    <div class="flex justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>
+                </div>
+                <div id="chat-info-tab-audiovideo" class="w-full tab-content hidden">
+                    <div class="flex justify-center p-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>
+                </div>
             </div>
         </div>
     `;
@@ -1115,6 +1090,72 @@ export async function openChatInfo(skipPushState = false) {
         </div>
     `;
   document.getElementById("modal-overlay")!.classList.remove("hidden");
+  
+  if (navigator.onLine) {
+      supabase
+        .from("messages")
+        .select("id, media, message_type, created_at")
+        .eq("chat_id", state.activeChatId)
+        .not("media", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1000)
+        .then(({ data }) => {
+            if (state.activeChatId !== currentChatId) return;
+            let photosVideosAsync: any[] = [];
+            let filesAsync: any[] = [];
+            let audioVideoAsync: any[] = [];
+            
+            data?.forEach((msg) => {
+              if (!msg.media) return;
+              const actualMedia = msg.media.filter(
+                (m: any) => m.type !== "reply" && m.type !== "forward" && m.type !== 'admin_mode' && m.type !== 'share_app_content' && m.type !== 'comments_enabled' && m.type !== 'short' && m.type !== 'miniapp' && !m.short_id && !m.miniapp_id,
+              );
+              if (actualMedia.length === 0) return;
+              if (msg.message_type === "voice") {
+                audioVideoAsync.push({ msgId: msg.id, media: actualMedia[0], date: msg.created_at, type: "voice" });
+              } else if (msg.message_type === "video_circle") {
+                audioVideoAsync.push({ msgId: msg.id, media: actualMedia[0], date: msg.created_at, type: "circle" });
+              } else if (msg.message_type === "poll") {
+                return;
+              } else {
+                actualMedia.forEach((m: any) => {
+                  if (m.type?.startsWith("image/") || m.type?.startsWith("video/")) {
+                    if (m.asFile) filesAsync.push({ msgId: msg.id, media: m, date: msg.created_at });
+                    else photosVideosAsync.push({ msgId: msg.id, media: m, date: msg.created_at });
+                  } else if (m.type?.startsWith("audio/")) {
+                    audioVideoAsync.push({ msgId: msg.id, media: m, date: msg.created_at, type: "voice" });
+                  } else {
+                    filesAsync.push({ msgId: msg.id, media: m, date: msg.created_at });
+                  }
+                });
+              }
+            });
+            audioVideoAsync.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            const mediaTab = document.getElementById("chat-info-tab-media");
+            const filesTab = document.getElementById("chat-info-tab-files");
+            const audioTab = document.getElementById("chat-info-tab-audiovideo");
+            if (mediaTab) mediaTab.innerHTML = photosVideosAsync.length > 0 ? renderMediaGrid(photosVideosAsync) : '<div class="text-center text-gray-500 py-4">Нет медиа</div>';
+            if (filesTab) filesTab.innerHTML = filesAsync.length > 0 ? renderFileList(filesAsync) : '<div class="text-center text-gray-500 py-4">Нет файлов</div>';
+            if (audioTab) audioTab.innerHTML = audioVideoAsync.length > 0 ? renderAudioVideoList(audioVideoAsync) : '<div class="text-center text-gray-500 py-4">Нет голосовых</div>';
+        })
+        .catch(() => {
+            if (state.activeChatId !== currentChatId) return;
+            const mediaTab = document.getElementById("chat-info-tab-media");
+            const filesTab = document.getElementById("chat-info-tab-files");
+            const audioTab = document.getElementById("chat-info-tab-audiovideo");
+            if (mediaTab) mediaTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет медиа</div>';
+            if (filesTab) filesTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет файлов</div>';
+            if (audioTab) audioTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет голосовых</div>';
+        });
+  } else {
+        const mediaTab = document.getElementById("chat-info-tab-media");
+        const filesTab = document.getElementById("chat-info-tab-files");
+        const audioTab = document.getElementById("chat-info-tab-audiovideo");
+        if (mediaTab) mediaTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет медиа</div>';
+        if (filesTab) filesTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет файлов</div>';
+        if (audioTab) audioTab.innerHTML = '<div class="text-center text-gray-500 py-4">Нет голосовых</div>';
+  }
 }
 
 export function switchChatInfoTab(tabId: string, btn: HTMLElement) {

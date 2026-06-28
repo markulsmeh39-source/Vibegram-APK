@@ -243,13 +243,23 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         let error = null;
         
         if (navigator.onLine) {
-            const res = await supabase.from('messages')
-                .select('*, profiles(username, display_name, is_premium, premium_until)')
-                .eq('chat_id', chatId)
-                .order('created_at', { ascending: false })
-                .limit(currentMessageLimit);
-            messages = res.data;
-            error = res.error;
+            try {
+                const fetchPromise = supabase.from('messages')
+                    .select('*, profiles(username, display_name, is_premium, premium_until)')
+                    .eq('chat_id', chatId)
+                    .order('created_at', { ascending: false })
+                    .limit(currentMessageLimit);
+                
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout")), 5000)
+                );
+                
+                const res: any = await Promise.race([fetchPromise, timeoutPromise]);
+                messages = res.data;
+                error = res.error;
+            } catch (e) {
+                error = e;
+            }
         }
             
         if (error && navigator.onLine) throw error;
@@ -266,10 +276,8 @@ export async function loadMessages(chatId: string, isInitialLoad = false) {
         }
         
         if (messages) {
+            if (chatId !== state.activeChatId) return;
             hasMoreMessages = messages.length === currentMessageLimit;
-            // If it's online and initial load, we already rendered cache, so we re-render network data
-            // We can pass false to avoid scrolling down again if the user already scrolled up? 
-            // Wait, if it's initial load, we always want to scroll down unless state.chatScrollPositions says otherwise.
             renderMessages(messages.reverse(), isInitialLoad);
         }
     } catch (error) {
