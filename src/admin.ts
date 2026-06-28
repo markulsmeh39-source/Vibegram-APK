@@ -768,14 +768,16 @@ function renderChatsList(chats: any[]) {
       const badge = isPremium
         ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>`
         : "";
+      const safeNickname = (pr?.display_name || pr?.username || "User").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       document.getElementById("my-nickname")!.innerHTML =
-        `<span class="flex items-center">${pr?.display_name || pr?.username || "User"}${badge}</span>`;
+        `<span class="flex items-center">${safeNickname}${badge}</span>`;
       const myAvatar = document.getElementById("my-avatar");
       if (myAvatar) {
         const avatarUrl = userProfile.avatar_url;
         const nickname =
           userProfile.display_name || userProfile.username || "U";
-        myAvatar.innerHTML = `${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">` : nickname[0].toUpperCase()} <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>`;
+        const safeInitial = nickname[0].toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        myAvatar.innerHTML = `${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">` : safeInitial} <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>`;
       }
 
       closeModal();

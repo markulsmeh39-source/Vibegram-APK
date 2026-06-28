@@ -596,7 +596,8 @@ function setupRealtime() {
                 const badge = isPremium ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
                 const myNicknameEl = document.getElementById('my-nickname');
                 if (myNicknameEl) {
-                    myNicknameEl.innerHTML = `<span class="flex items-center">${payload.new.display_name || payload.new.username || ''}${badge}</span>`;
+                    const safeNickname = (payload.new.display_name || payload.new.username || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    myNicknameEl.innerHTML = `<span class="flex items-center">${safeNickname}${badge}</span>`;
                 }
             }
             if (state.activeChatId && ((payload.new.id === state.activeChatOtherUser?.id) || (payload.new.id === state.currentUser?.id))) {
@@ -622,7 +623,8 @@ function setupRealtime() {
                 }
                 const nameEl = document.getElementById('current-chat-name');
                 if (nameEl) {
-                    nameEl.innerHTML = `<span class="truncate shrink">${payload.new.title}</span>`;
+                    const safeTitle = (payload.new.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    nameEl.innerHTML = `<span class="truncate shrink">${safeTitle}</span>`;
                 }
             }
             if ((window as any).logic?.loadChats) (window as any).logic.loadChats();

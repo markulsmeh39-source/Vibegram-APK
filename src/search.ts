@@ -21,13 +21,14 @@ export function searchUsers(q: string) {
       if (channel) {
         resultsBox.innerHTML = "";
         const title = channel.title;
+        const safeTitle = (title || "Channel").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const div = document.createElement("div");
         div.className =
           "p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0";
         const avatarHtml = channel.avatar_url
           ? `<img src="${channel.avatar_url}" class="w-full h-full object-cover rounded-full">`
-          : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
-        div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}</span><span class="text-xs text-gray-500 truncate block">По ключу-приглашению</span></div>`;
+          : `<div class="w-full h-full flex justify-center items-center">${safeTitle[0].toUpperCase()}</div>`;
+        div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${safeTitle}</span><span class="text-xs text-gray-500 truncate block">По ключу-приглашению</span></div>`;
         div.onclick = () => {
           resultsBox.classList.add("hidden");
           (document.getElementById("search-input") as HTMLInputElement).value =
@@ -81,13 +82,14 @@ export function searchUsers(q: string) {
     } else {
       resultsBox.innerHTML = "";
       users?.forEach((u) => {
-        const nickname = u.display_name || u.username;
+        const nickname = u.display_name || u.username || "User";
+        const safeNickname = nickname.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const div = document.createElement("div");
         div.className =
           "p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0";
         const avatarHtml = u.avatar_url
           ? `<img src="${u.avatar_url}" class="w-full h-full object-cover rounded-full">`
-          : `<div class="w-full h-full flex justify-center items-center">${nickname[0].toUpperCase()}</div>`;
+          : `<div class="w-full h-full flex justify-center items-center">${safeNickname[0].toUpperCase()}</div>`;
         const isPremiumUser =
           u.is_premium &&
           (!u.premium_until || new Date(u.premium_until) > new Date());
@@ -95,9 +97,9 @@ export function searchUsers(q: string) {
           ? `<div class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>`
           : "";
         let usernameTag = u.username
-          ? `<span class="text-xs text-gray-500 truncate block">@${u.username}</span>`
+          ? `<span class="text-xs text-gray-500 truncate block">@${u.username.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</span>`
           : "";
-        div.innerHTML = `<div class="w-10 h-10 shrink-0 relative"><div class="w-full h-full bg-blue-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden">${avatarHtml}</div>${premiumBadgeHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${nickname}</span>${usernameTag}</div>`;
+        div.innerHTML = `<div class="w-10 h-10 shrink-0 relative"><div class="w-full h-full bg-blue-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden">${avatarHtml}</div>${premiumBadgeHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${safeNickname}</span>${usernameTag}</div>`;
         div.onclick = () => {
           resultsBox.classList.add("hidden");
           (document.getElementById("search-input") as HTMLInputElement).value =
@@ -108,17 +110,18 @@ export function searchUsers(q: string) {
       });
       groups?.forEach((g) => {
         const title = g.title;
+        const safeTitle = (title || "Group").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const div = document.createElement("div");
         div.className =
           "p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0";
         const avatarHtml = g.avatar_url
           ? `<img src="${g.avatar_url}" class="w-full h-full object-cover rounded-full">`
-          : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
-        let usernameTag = g.username ? ` • @${g.username}` : "";
+          : `<div class="w-full h-full flex justify-center items-center">${safeTitle[0].toUpperCase()}</div>`;
+        let usernameTag = g.username ? ` • @${g.username.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}` : "";
         const verifiedBadge = g.is_verified
           ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1 inline-block -mt-0.5" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
           : "";
-        div.innerHTML = `<div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}${verifiedBadge}</span><span class="text-xs text-gray-500 truncate block">Группа${usernameTag}</span></div>`;
+        div.innerHTML = `<div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${safeTitle}${verifiedBadge}</span><span class="text-xs text-gray-500 truncate block">Группа${usernameTag}</span></div>`;
         div.onclick = () => {
           resultsBox.classList.add("hidden");
           (document.getElementById("search-input") as HTMLInputElement).value =
@@ -129,17 +132,18 @@ export function searchUsers(q: string) {
       });
       channels?.forEach((c) => {
         const title = c.title;
+        const safeTitle = (title || "Channel").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const div = document.createElement("div");
         div.className =
           "p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 transition-colors min-w-0";
         const avatarHtml = c.avatar_url
           ? `<img src="${c.avatar_url}" class="w-full h-full object-cover rounded-full">`
-          : `<div class="w-full h-full flex justify-center items-center">${title[0].toUpperCase()}</div>`;
-        let usernameTag = c.username ? ` • @${c.username}` : "";
+          : `<div class="w-full h-full flex justify-center items-center">${safeTitle[0].toUpperCase()}</div>`;
+        let usernameTag = c.username ? ` • @${c.username.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}` : "";
         const verifiedBadge = c.is_verified
           ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1 inline-block -mt-0.5" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
           : "";
-        div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${title}${verifiedBadge}</span><span class="text-xs text-gray-500 truncate block">Канал${usernameTag}</span></div>`;
+        div.innerHTML = `<div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold overflow-hidden shrink-0">${avatarHtml}</div><div class="flex-1 min-w-0"><span class="font-semibold text-gray-800 dark:text-gray-100 truncate block">${safeTitle}${verifiedBadge}</span><span class="text-xs text-gray-500 truncate block">Канал${usernameTag}</span></div>`;
         div.onclick = () => {
           resultsBox.classList.add("hidden");
           (document.getElementById("search-input") as HTMLInputElement).value =

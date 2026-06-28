@@ -232,7 +232,7 @@ function renderChats(chats: any[]) {
         else if (lastMsg.message_type === "photo") previewText = "📷 Фото";
         else if (lastMsg.message_type === "video") previewText = "🎥 Видео";
         else if (lastMsg.message_type === "document") previewText = "📁 Файл";
-        else previewText = lastMsg.content || "";
+        else previewText = (lastMsg.content || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
         if (lastMsg.sender_id === state.currentUser.id) {
           previewText = `${lastMsg.is_read ? "✓✓" : "✓"} <span class="text-gray-600 truncate">${previewText}</span>`;
@@ -349,6 +349,8 @@ function renderChats(chats: any[]) {
         ? `<svg class="w-4 h-4 text-blue-500 fill-current shrink-0 ml-1" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.999 14.413-3.713-3.705L7.7 11.292l2.299 2.295 5.294-5.294 1.414 1.414-6.706 6.706z"></path></svg>`
         : "";
 
+      const safeChatName = (chatName || "Неизвестно").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
       div.innerHTML = `
                 <div class="relative shrink-0 w-12 h-12 pointer-events-none">
                     <div class="w-full h-full rounded-full overflow-hidden relative">
@@ -360,7 +362,7 @@ function renderChats(chats: any[]) {
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1 min-w-0 flex-1">
                             <div class="font-bold text-gray-900 dark:text-gray-100 text-[15px] flex items-center min-w-0 flex-1 max-w-full">
-                                <div class="truncate shrink">${chatName || "Неизвестно"}</div>
+                                <div class="truncate shrink">${safeChatName}</div>
                                 ${verifiedBadgeListHtml}
                                 ${premiumBadgeListHtml}
                             </div>
@@ -534,8 +536,10 @@ export async function openChatContextMenu(
   const isSavedMessages =
     chatId === "new_saved_messages" || chatName === "Избранное";
 
+  const safeChatName = (chatName || "Чат").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   menu.innerHTML = `
-        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-sm font-semibold truncate text-gray-900 dark:text-gray-100">${chatName}</div>
+        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-sm font-semibold truncate text-gray-900 dark:text-gray-100">${safeChatName}</div>
         ${
           !isSavedMessages
             ? `
@@ -989,8 +993,11 @@ export async function openChat(
   const premiumBadgeListHtml = isPremiumUser
     ? `<span class="inline-flex items-center justify-center ml-1 shrink-0" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-4 h-4 object-contain" alt="Premium"></span>`
     : "";
+    
+  const safeChatName = (chatName || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  
   document.getElementById("current-chat-name")!.innerHTML =
-    `<span class="truncate shrink">${chatName}</span>${verifiedBadgeListHtml}${premiumBadgeListHtml}`;
+    `<span class="truncate shrink">${safeChatName}</span>${verifiedBadgeListHtml}${premiumBadgeListHtml}`;
 
   const backBtn = document.querySelector("#chat-header-container button");
   if (backBtn) {

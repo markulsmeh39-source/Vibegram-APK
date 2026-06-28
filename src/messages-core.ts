@@ -89,14 +89,31 @@ function renderContent(content: string) {
         return `<div class="flex gap-2 justify-center py-2">${html}</div>`;
     }
     
-    let safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let safeContent = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    
     const linkRegex = /((?:https?|capacitor|file):\/\/[^\s]+)/g;
     const urlParsedContent = safeContent.replace(linkRegex, (url) => {
         // Do not render share app content links as clickable blue links
         if (url.includes('#shorts?id=') || url.includes('?miniapp=')) {
             return '';
         }
-        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${url.replace(/'/g, "\\'")}');}else{window.open('${url.replace(/'/g, "\\'")}', '_blank');}" class="text-blue-500 hover:underline break-all active:scale-95 active:opacity-70 transition-all duration-200">${url}</a>`;
+        
+        // We must unescape HTML entities for the actual URL to be valid in JS,
+        // but we'll use encodeURI to ensure it's a safe string for the onclick attribute
+        const jsUrl = encodeURI(
+            url.replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&quot;/g, '"')
+               .replace(/&#39;/g, "'")
+        ).replace(/'/g, "\\'");
+
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${jsUrl}');}else{window.open('${jsUrl}', '_blank');}" class="text-blue-500 hover:underline break-all active:scale-95 active:opacity-70 transition-all duration-200">${url}</a>`;
     });
 
     return `<p class="break-words [word-break:break-word] leading-relaxed whitespace-pre-wrap" style="font-size: var(--msg-text-size, 15px);">${urlParsedContent}</p>`;
@@ -420,8 +437,12 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                 }
             }
 
+            const safeShareTitle = (shareData.title || 'Смотреть').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const safeShareLabel = (shareData.content_type_label || 'Контент').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const safeUrlHash = (shareData.url_hash || '').replace(/'/g, "\\'");
+
             shareHtml = `
-                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${shareData.url_hash}'.startsWith('?miniapp=')) { if (!window.location.search.includes('${shareData.url_hash}')) { window.history.pushState(null, '', window.location.pathname + '${shareData.url_hash}' + window.location.hash); } if(window.runMiniApp) window.runMiniApp('${shareData.url_hash}'.split('=')[1]); } else if('${shareData.url_hash}'.startsWith('#shorts?id=')) { if (!window.location.hash.includes('${shareData.url_hash}')) { window.history.pushState(null, '', window.location.pathname + window.location.search + '${shareData.url_hash}'); } if(window.openShorts) window.openShorts('${shareData.url_hash}'.split('id=')[1]); } else if('${shareData.url_hash}'.startsWith('?')) { window.location.href = '${shareData.url_hash}'; } else { window.history.pushState(null, '', '${shareData.url_hash}'); window.dispatchEvent(new Event('popstate')); }">
+                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${safeUrlHash}'.startsWith('?miniapp=')) { if (!window.location.search.includes('${safeUrlHash}')) { window.history.pushState(null, '', window.location.pathname + '${safeUrlHash}' + window.location.hash); } if(window.runMiniApp) window.runMiniApp('${safeUrlHash}'.split('=')[1]); } else if('${safeUrlHash}'.startsWith('#shorts?id=')) { if (!window.location.hash.includes('${safeUrlHash}')) { window.history.pushState(null, '', window.location.pathname + window.location.search + '${safeUrlHash}'); } if(window.openShorts) window.openShorts('${safeUrlHash}'.split('id=')[1]); } else if('${safeUrlHash}'.startsWith('?')) { window.location.href = '${safeUrlHash}'; } else { window.history.pushState(null, '', '${safeUrlHash}'); window.dispatchEvent(new Event('popstate')); }">
                     <div class="relative w-full aspect-video bg-gray-100 dark:bg-[#2C2C2E] flex items-center justify-center overflow-hidden group border-b border-gray-100 dark:border-gray-800">
                         ${(shareData.thumbnail_url && shareData.content_type_label !== 'ШОРТС') ? `<img src="${shareData.thumbnail_url}" class="w-full h-full object-cover">` : `<svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`}
 
@@ -434,42 +455,47 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                     <div class="p-3">
                         <div class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 mb-1 flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            ${shareData.content_type_label || 'Контент'}
+                            ${safeShareLabel}
                         </div>
-                        <div class="font-semibold text-sm text-gray-900 dark:text-white leading-tight line-clamp-2">${shareData.title || 'Смотреть'}</div>
+                        <div class="font-semibold text-sm text-gray-900 dark:text-white leading-tight line-clamp-2">${safeShareTitle}</div>
                     </div>
                 </div>
             `;
         }
 
         if (replyData) {
+            const safeSender = (replyData.original_sender || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const safeContent = (replyData.original_content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             replyHtml = `
                 <div class="flex items-center gap-2 mb-1.5 pl-2 border-l-2 border-blue-500 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded-r transition-colors" onclick="if(window.highlightMessage) window.highlightMessage('${replyData.original_id}')">
                     <div class="flex-1 min-w-0">
-                        <div class="text-[13px] font-medium text-blue-500 dark:text-blue-400">${replyData.original_sender}</div>
-                        <div class="text-[13px] text-gray-500 dark:text-gray-400 truncate">${replyData.original_content}</div>
+                        <div class="text-[13px] font-medium text-blue-500 dark:text-blue-400">${safeSender}</div>
+                        <div class="text-[13px] text-gray-500 dark:text-gray-400 truncate">${safeContent}</div>
                     </div>
                 </div>
             `;
         }
 
         if (forwardData) {
+            const safeSender = (forwardData.original_sender || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             forwardHtml = `
                 <div class="text-[12px] text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                    Переслано от: <span class="font-medium">${forwardData.original_sender}</span>
+                    Переслано от: <span class="font-medium">${safeSender}</span>
                 </div>
             `;
         }
         
         if (msg.message_type === 'poll' && actualMedia.length > 0) {
             const pollData = actualMedia[0];
+            const safeQuestion = (pollData.question || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             const totalVotes = pollData.options.reduce((sum: number, opt: any) => sum + opt.votes.length, 0);
             
             let optionsHtml = '';
             pollData.options.forEach((opt: any) => {
                 const percent = totalVotes > 0 ? Math.round((opt.votes.length / totalVotes) * 100) : 0;
                 const isVoted = state.currentUser ? opt.votes.includes(state.currentUser.id) : false;
+                const safeOptText = (opt.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 
                 optionsHtml += `
                     <div class="relative mb-2 cursor-pointer group" onclick="votePoll('${msg.id}', '${opt.id}')">
@@ -481,7 +507,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                                 <div class="w-4 h-4 rounded-full border-2 ${isVoted ? 'border-blue-500 bg-blue-500' : 'border-gray-400 group-hover:border-blue-400'} flex items-center justify-center transition-colors">
                                     ${isVoted ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                 </div>
-                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">${opt.text}</span>
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">${safeOptText}</span>
                             </div>
                             <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">${percent}%</span>
                         </div>
@@ -500,7 +526,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${pollData.anonymous ? 'Анонимный опрос' : 'Опрос'}</span>
                     </div>
-                    <h4 class="font-bold text-gray-900 dark:text-white mb-3 text-[15px] leading-tight">${pollData.question}</h4>
+                    <h4 class="font-bold text-gray-900 dark:text-white mb-3 text-[15px] leading-tight">${safeQuestion}</h4>
                     <div class="poll-options">
                         ${optionsHtml}
                     </div>
@@ -511,8 +537,9 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                 </div>
             `;
         } else if (msg.message_type === 'voice' && actualMedia.length > 0) {
-            const transcriptionText = `<div id="transcription-text-${msg.id}" class="w-full">${actualMedia[0].transcription ? `<div class="mt-1 text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 p-2 rounded-lg">${actualMedia[0].transcription}</div>` : ''}</div>`;
-            const transcribeBtn = !actualMedia[0].transcription ? `<button id="transcribe-btn-${msg.id}" onclick="transcribeMedia('${actualMedia[0].url}', '${msg.id}', 'voice')" class="w-7 h-7 shrink-0 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center transition-colors ml-1" title="Расшифровать"><span class="text-[10px] font-bold">Aa</span></button>` : '';
+            const safeTranscription = actualMedia[0].transcription ? actualMedia[0].transcription.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+            const transcriptionText = `<div id="transcription-text-${msg.id}" class="w-full">${safeTranscription ? `<div class="mt-1 text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 p-2 rounded-lg">${safeTranscription}</div>` : ''}</div>`;
+            const transcribeBtn = !safeTranscription ? `<button id="transcribe-btn-${msg.id}" onclick="transcribeMedia('${actualMedia[0].url}', '${msg.id}', 'voice')" class="w-7 h-7 shrink-0 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center transition-colors ml-1" title="Расшифровать"><span class="text-[10px] font-bold">Aa</span></button>` : '';
             
             fileHtml = `
                 <div class="flex flex-col mb-1">
@@ -533,8 +560,9 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                 </div>
             `;
         } else if (msg.message_type === 'video_circle' && actualMedia.length > 0) {
-            const transcriptionText = `<div id="transcription-text-${msg.id}" class="w-full flex justify-end">${actualMedia[0].transcription ? `<div class="mt-1 text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 p-2 rounded-lg max-w-[200px]">${actualMedia[0].transcription}</div>` : ''}</div>`;
-            const transcribeBtn = !actualMedia[0].transcription ? `<button id="transcribe-btn-${msg.id}" onclick="transcribeMedia('${actualMedia[0].url}', '${msg.id}', 'video_circle')" class="absolute bottom-0 right-0 w-8 h-8 bg-gray-800/70 hover:bg-gray-800 text-white rounded-full flex items-center justify-center transition-colors z-10 backdrop-blur-sm" title="Расшифровать"><span class="text-[11px] font-bold">Aa</span></button>` : '';
+            const safeTranscription = actualMedia[0].transcription ? actualMedia[0].transcription.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+            const transcriptionText = `<div id="transcription-text-${msg.id}" class="w-full flex justify-end">${safeTranscription ? `<div class="mt-1 text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 p-2 rounded-lg max-w-[200px]">${safeTranscription}</div>` : ''}</div>`;
+            const transcribeBtn = !safeTranscription ? `<button id="transcribe-btn-${msg.id}" onclick="transcribeMedia('${actualMedia[0].url}', '${msg.id}', 'video_circle')" class="absolute bottom-0 right-0 w-8 h-8 bg-gray-800/70 hover:bg-gray-800 text-white rounded-full flex items-center justify-center transition-colors z-10 backdrop-blur-sm" title="Расшифровать"><span class="text-[11px] font-bold">Aa</span></button>` : '';
 
             fileHtml = `
                 <div class="flex flex-col mb-1 items-end">
@@ -557,12 +585,13 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         } else if (actualMedia.length === 1 && (actualMedia[0].type === 'short' || actualMedia[0].short_id)) {
             const file = actualMedia[0];
             const shortId = file.short_id || file.id || file.url;
+            const safeTitle = (file.title || 'Vibegram Shorts').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             fileHtml = `
                 <div class="rounded-xl overflow-hidden shadow-sm border border-black/5 bg-gray-900 group cursor-pointer w-48 relative aspect-[9/16] mb-1 shrink-0" onclick="window.location.hash='#shorts'; setTimeout(() => window.openShorts('${shortId}'), 100);">
                     ${file.cover_url ? `<img src="${file.cover_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center text-gray-500"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>`}
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                     <div class="absolute bottom-0 left-0 p-3 w-full pointer-events-none">
-                        <div class="font-bold text-white text-sm line-clamp-2 leading-tight">${file.title || 'Vibegram Shorts'}</div>
+                        <div class="font-bold text-white text-sm line-clamp-2 leading-tight">${safeTitle}</div>
                         <div class="text-xs text-gray-300 mt-1 uppercase font-bold tracking-widest text-[10px]">Shorts</div>
                     </div>
                     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -573,19 +602,21 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         } else if (actualMedia.length === 1 && (actualMedia[0].type === 'miniapp' || actualMedia[0].miniapp_id)) {
             const file = actualMedia[0];
             const appId = file.miniapp_id || file.id || file.url;
+            const safeTitle = (file.title || 'Mini App').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             fileHtml = `
                 <div class="rounded-2xl overflow-hidden shadow-sm border border-black/5 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 group cursor-pointer w-64 p-3 mb-1 flex items-center gap-3 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50" onclick="window.runMiniApp('${appId}')">
                     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner shrink-0 truncate px-1">
                         ${file.icon_url ? `<img src="${file.icon_url}" class="w-full h-full object-cover rounded-xl">` : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>`}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="font-bold text-gray-900 dark:text-white truncate text-sm leading-tight">${file.title || 'Mini App'}</div>
+                        <div class="font-bold text-gray-900 dark:text-white truncate text-sm leading-tight">${safeTitle}</div>
                         <div class="text-[10px] uppercase font-bold text-blue-500 tracking-wider mt-0.5">Mini App</div>
                     </div>
                 </div>
             `;
         } else if (actualMedia.length === 1 && actualMedia[0].type?.startsWith('audio/')) {
             const file = actualMedia[0];
+            const safeName = (file.name || 'Аудио').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             fileHtml = `
                 <div class="audio-player-container flex items-center gap-3 w-[240px] sm:w-[280px] bg-black/5 dark:bg-white/5 p-2 rounded-xl mb-1 border border-black/5 dark:border-white/5">
                     <button onclick="toggleAudio(this, '${file.url}')" class="w-10 h-10 shrink-0 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors shadow-sm">
@@ -593,7 +624,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                         <svg class="w-5 h-5 pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
-                        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate w-full mb-1">${file.name || 'Аудио'}</div>
+                        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate w-full mb-1">${safeName}</div>
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full relative overflow-hidden cursor-pointer media-progress-container">
                                 <div class="absolute left-0 top-0 h-full bg-blue-500 progress-bar" style="width: 0%"></div>
@@ -635,7 +666,8 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                         </div>
                     `;
                 } else {
-                    fileHtml += `<a href="${file.url}" target="_blank" class="flex items-center gap-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 p-3 rounded-xl transition-colors border border-black/5 dark:border-white/5 w-full min-w-0 overflow-hidden"><div class="bg-blue-500 text-white p-2.5 rounded-lg shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div><div class="flex-1 min-w-0"><span class="truncate font-semibold text-sm block w-full">${file.name || 'Файл'}</span><span class="text-xs opacity-70 mt-0.5 block">${file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : ''}</span></div></a>`;
+                    const safeName = (file.name || 'Файл').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    fileHtml += `<a href="${file.url}" target="_blank" class="flex items-center gap-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 p-3 rounded-xl transition-colors border border-black/5 dark:border-white/5 w-full min-w-0 overflow-hidden"><div class="bg-blue-500 text-white p-2.5 rounded-lg shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div><div class="flex-1 min-w-0"><span class="truncate font-semibold text-sm block w-full">${safeName}</span><span class="text-xs opacity-70 mt-0.5 block">${file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : ''}</span></div></a>`;
                 }
             });
             fileHtml += '</div>';
@@ -676,7 +708,9 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         const isPremium = msg.profiles?.is_premium && (!msg.profiles.premium_until || new Date(msg.profiles.premium_until) > new Date());
         const premiumBadge = isPremium ? `<span class="inline-flex items-center justify-center ml-1" title="Vibegram Premium"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-3.5 h-3.5 object-contain" alt="Premium"></span>` : '';
 
-        const senderNameHtml = (state.activeChatType === 'group' && (!isMe || isSystemAdmin)) ? `<div onclick="event.stopPropagation(); openUserProfile('${msg.sender_id}')" class="text-[13px] font-bold text-blue-500 mb-0.5 flex items-center cursor-pointer hover:underline w-fit">${displaySenderName}${premiumBadge}</div>` : '';
+        const safeDisplaySenderName = displaySenderName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+        const senderNameHtml = (state.activeChatType === 'group' && (!isMe || isSystemAdmin)) ? `<div onclick="event.stopPropagation(); openUserProfile('${msg.sender_id}')" class="text-[13px] font-bold text-blue-500 mb-0.5 flex items-center cursor-pointer hover:underline w-fit">${safeDisplaySenderName}${premiumBadge}</div>` : '';
         
         let canManageComments = false;
         if (state.activeChatType === 'channel') {
