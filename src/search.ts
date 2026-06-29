@@ -364,7 +364,7 @@ export async function startChatWithUser(userToFind: any) {
 export async function startDirectChatById(userId: string) {
   if (userId === state.currentUser?.id) {
     import("./utils").then((m) => m.closeModal());
-    startChatWithUser(state.currentUser);
+    startChatWithUser(state.currentProfile);
     return;
   }
 
