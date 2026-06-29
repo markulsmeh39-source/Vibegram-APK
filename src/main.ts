@@ -139,7 +139,14 @@ window.addEventListener('popstate', (e) => {
 (window as any).searchUsers = logic.searchUsers;
 (window as any).startChatWithUser = logic.startChatWithUser;
 (window as any).startDirectChatById = logic.startDirectChatById;
-(window as any).openSavedMessages = () => logic.startChatWithUser(state.currentProfile);
+(window as any).openSavedMessages = () => {
+    if (state.savedMessagesChatId) {
+        import("./utils").then((m) => m.closeModal());
+        logic.openChat(state.savedMessagesChatId, "Избранное", "И", false, "private", [{ user_id: state.currentUser?.id, profiles: state.currentProfile }]);
+    } else {
+        logic.startChatWithUser(state.currentProfile);
+    }
+};
 (window as any).joinGroup = logic.joinGroup;
 (window as any).closeModal = logic.closeModal;
 (window as any).openSettings = logic.openSettings;

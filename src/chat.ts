@@ -123,6 +123,10 @@ function renderChats(chats: any[]) {
       }
       chats.unshift(savedMessagesChat);
     }
+    
+    if (savedMessagesChat) {
+      state.savedMessagesChatId = savedMessagesChat.id;
+    }
 
     list.innerHTML = "";
     chats.forEach((chat: any) => {
@@ -229,7 +233,12 @@ function renderChats(chats: any[]) {
         } else if (lastMsg.message_type === "voice") previewText = "🎤 Голосовое";
         else if (lastMsg.message_type === "video_circle")
           previewText = "📹 Видеосообщение";
-        else if (lastMsg.message_type === "photo") previewText = "📷 Фото";
+        else if (lastMsg.media && Array.isArray(lastMsg.media) && lastMsg.media.length > 0 && lastMsg.message_type === "text" && !lastMsg.content) {
+            const firstMedia = lastMsg.media[0];
+            if (firstMedia.type?.startsWith('image/')) previewText = "📷 Фото";
+            else if (firstMedia.type?.startsWith('video/')) previewText = "🎥 Видео";
+            else previewText = "📁 Файл";
+        } else if (lastMsg.message_type === "photo") previewText = "📷 Фото";
         else if (lastMsg.message_type === "video") previewText = "🎥 Видео";
         else if (lastMsg.message_type === "document") previewText = "📁 Файл";
         else previewText = (lastMsg.content || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

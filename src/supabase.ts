@@ -21,6 +21,7 @@ export const state = {
     pendingLockValue: null as string | null,
     currentUser: null as any,
     currentProfile: null as any,
+    savedMessagesChatId: null as string | null,
     activeChatId: null as string | null,
     activeChatType: 'private' as 'direct' | 'private' | 'group' | 'channel',
     activeChatIsGroup: false,

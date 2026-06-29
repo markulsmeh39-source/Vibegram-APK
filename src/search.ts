@@ -364,7 +364,11 @@ export async function startChatWithUser(userToFind: any) {
 export async function startDirectChatById(userId: string) {
   if (userId === state.currentUser?.id) {
     import("./utils").then((m) => m.closeModal());
-    startChatWithUser(state.currentProfile);
+    if (state.savedMessagesChatId) {
+        import("./chat").then(m => m.openChat(state.savedMessagesChatId!, "Избранное", "И", false, "private", [{ user_id: state.currentUser?.id, profiles: state.currentProfile }]));
+    } else {
+        startChatWithUser(state.currentProfile);
+    }
     return;
   }
 

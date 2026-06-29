@@ -979,15 +979,44 @@ export async function runMiniApp(id: string) {
     }
 
     const runModal = document.getElementById("mini-app-run-modal")!;
-    const iframe = document.getElementById(
-      "mini-app-frame",
-    ) as HTMLIFrameElement;
+    let iframeContainer = document.getElementById("mini-app-frame-container");
+    if (!iframeContainer) {
+        // Fallback if container is not there, we'll replace the iframe itself
+        const oldIframe = document.getElementById("mini-app-frame");
+        if (oldIframe) {
+            iframeContainer = oldIframe.parentElement;
+            oldIframe.remove();
+        }
+    } else {
+        iframeContainer.innerHTML = ''; // Clear previous iframe
+    }
+    
+    const iframe = document.createElement("iframe");
+    iframe.id = "mini-app-frame";
+    iframe.className = "w-full h-full border-0 bg-white dark:bg-gray-900";
+    iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen";
+    iframeContainer?.appendChild(iframe);
 
     runModal.classList.remove("hidden");
     setTimeout(() => runModal.classList.remove("translate-y-full"), 10);
 
-    iframe.removeAttribute("srcdoc");
-    iframe.removeAttribute("src");
+    const constructTgUrl = (base: string) => {
+        try {
+            const urlObj = new URL(base);
+            const userStr = JSON.stringify({ 
+                id: state.currentUser?.id || 1, 
+                first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
+                username: state.currentProfile?.username || "user"
+            });
+            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+                bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+                text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            }))}`;
+            return urlObj.toString();
+        } catch(e) {
+            return base;
+        }
+    };
 
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
@@ -998,20 +1027,20 @@ export async function runMiniApp(id: string) {
         try {
           iframe.srcdoc = await fetchAndInjectBase(data.html_content);
         } catch (err) {
-          iframe.src = data.html_content;
+          iframe.src = constructTgUrl(data.html_content);
         }
       } else {
-        iframe.src = data.html_content;
+        iframe.src = constructTgUrl(data.html_content);
       }
     } else if (data.html_url) {
       if (data.html_url.includes("res.cloudinary.com")) {
         try {
           iframe.srcdoc = await fetchAndInjectBase(data.html_url);
         } catch (err) {
-          iframe.src = data.html_url;
+          iframe.src = constructTgUrl(data.html_url);
         }
       } else {
-        iframe.src = data.html_url;
+        iframe.src = constructTgUrl(data.html_url);
       }
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
@@ -1047,8 +1076,9 @@ export function closeMiniApp(fromPopState = false) {
       const iframe = document.getElementById(
         "mini-app-frame",
       ) as HTMLIFrameElement;
-      iframe.removeAttribute("srcdoc");
-      iframe.removeAttribute("src");
+      if (iframe) {
+          iframe.remove();
+      }
       currentRunningAppId = null;
       miniAppContentData = null;
     }, 300);
