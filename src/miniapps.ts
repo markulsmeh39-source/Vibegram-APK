@@ -357,6 +357,13 @@ function renderMiniAppsList(data: any[], tab: string, likedAppIds: Set<string>, 
 
 async function loadMiniApps(tab: string) {
   const listEl = document.getElementById("mini-apps-list")!;
+  if (!navigator.onLine) {
+    listEl.innerHTML = `<div class="text-center p-8 text-gray-500 dark:text-gray-400 flex flex-col items-center">
+      <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+      <p>Нет подключения к интернету</p>
+    </div>`;
+    return;
+  }
   listEl.innerHTML =
     '<div class="text-center p-4 text-gray-500"><div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>Загрузка...</div>';
 
@@ -378,18 +385,8 @@ async function loadMiniApps(tab: string) {
             const parsed = JSON.parse(cachedData);
             const cachedLikesData = localStorage.getItem('vibegram_cached_miniapps_likes');
             if (cachedLikesData) cachedLikes = new Set(JSON.parse(cachedLikesData));
-            renderMiniAppsList(parsed, tab, cachedLikes, listEl);
+            // renderMiniAppsList(parsed, tab, cachedLikes, listEl); // Skip rendering cached data to force loading icon/network check
         } catch(e) {}
-    }
-
-    if (!navigator.onLine) {
-        if (!cachedData) {
-            listEl.innerHTML = `<div class="text-center p-8 text-gray-500 dark:text-gray-400 flex flex-col items-center">
-                <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                <p>Нет подключения к интернету</p>
-            </div>`;
-        }
-        return;
     }
 
     if (tab === "public" && !currentAuthorFilter && !currentSearchQuery) {

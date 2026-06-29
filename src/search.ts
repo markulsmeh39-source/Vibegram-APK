@@ -362,12 +362,29 @@ export async function startChatWithUser(userToFind: any) {
 }
 
 export async function startDirectChatById(userId: string) {
+  if (userId === state.currentUser?.id) {
+    import("./utils").then((m) => m.closeModal());
+    startChatWithUser(state.currentUser);
+    return;
+  }
+
+  const cachedProfile = localStorage.getItem('vibegram_cached_profile_' + userId);
+  if (cachedProfile) {
+    try {
+        const userToFind = JSON.parse(cachedProfile);
+        import("./utils").then((m) => m.closeModal());
+        startChatWithUser(userToFind);
+        return;
+    } catch(e) {}
+  }
+
   const { data: userToFind } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", userId)
     .single();
   if (userToFind) {
+    localStorage.setItem('vibegram_cached_profile_' + userId, JSON.stringify(userToFind));
     import("./utils").then((m) => m.closeModal());
     startChatWithUser(userToFind);
   }

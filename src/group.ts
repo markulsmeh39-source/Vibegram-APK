@@ -538,17 +538,20 @@ export async function openChatInfo(skipPushState = false) {
   let avatarUrl = state.activeChatIsGroup
     ? state.activeChatAvatarUrl
     : state.activeChatOtherUser?.avatar_url;
+
   if (state.activeChatIsGroup && !avatarUrl) {
-    const { data: chatData } = await supabase
+    // Load async so it doesn't block opening
+    supabase
       .from("chats")
       .select("avatar_url")
       .eq("id", state.activeChatId)
-      .single();
-    if (state.activeChatId !== currentChatId) return;
-    if (chatData?.avatar_url) {
-      avatarUrl = chatData.avatar_url;
-      state.activeChatAvatarUrl = avatarUrl;
-    }
+      .single().then(({ data: chatData }) => {
+        if (state.activeChatId !== currentChatId) return;
+        if (chatData?.avatar_url) {
+          state.activeChatAvatarUrl = chatData.avatar_url;
+          // Note: UI update would happen next time, or we could DOM manipulate here
+        }
+      });
   }
   let isPremiumUser = false;
   if (!state.activeChatIsGroup && state.activeChatOtherUser) {
