@@ -9,6 +9,7 @@ export function setupMiniApps() {
   (window as any).closeCreateMiniApp = closeCreateMiniApp;
   (window as any).submitMiniApp = submitMiniApp;
   (window as any).runMiniApp = runMiniApp;
+  (window as any).openMiniAppInNewTab = openMiniAppInNewTab;
   (window as any).closeMiniApp = closeMiniApp;
   (window as any).copyMiniAppLink = copyMiniAppLink;
   (window as any).copyMiniAppDirectLink = copyMiniAppDirectLink;
@@ -1008,10 +1009,13 @@ export async function runMiniApp(id: string) {
                 first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
                 username: state.currentProfile?.username || "user"
             });
-            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+            urlObj.searchParams.set('tgWebAppData', `user=${userStr}`);
+            urlObj.searchParams.set('tgWebAppVersion', '7.0');
+            urlObj.searchParams.set('tgWebAppPlatform', 'weba');
+            urlObj.searchParams.set('tgWebAppThemeParams', JSON.stringify({
                 bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
                 text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-            }))}`;
+            }));
             return urlObj.toString();
         } catch(e) {
             return base;
@@ -1059,6 +1063,38 @@ export async function runMiniApp(id: string) {
     });
   } catch (e: any) {
     customToast(`Ошибка: ${e.message}`);
+  }
+}
+
+export function openMiniAppInNewTab() {
+  if (!miniAppContentData) {
+    customToast('Нет активного приложения');
+    return;
+  }
+  
+  const url = miniAppContentData.html_url;
+  if (!url) {
+    customToast('Это приложение загружено кодом и не имеет прямой ссылки');
+    return;
+  }
+
+  try {
+      const urlObj = new URL(url);
+      const userStr = JSON.stringify({ 
+          id: state.currentUser?.id || 1, 
+          first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
+          username: state.currentProfile?.username || "user"
+      });
+      urlObj.searchParams.set('tgWebAppData', `user=${userStr}`);
+      urlObj.searchParams.set('tgWebAppVersion', '7.0');
+      urlObj.searchParams.set('tgWebAppPlatform', 'weba');
+      urlObj.searchParams.set('tgWebAppThemeParams', JSON.stringify({
+          bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+          text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+      }));
+      window.open(urlObj.toString(), '_blank');
+  } catch(e) {
+      window.open(url, '_blank');
   }
 }
 
