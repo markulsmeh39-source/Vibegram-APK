@@ -936,7 +936,10 @@ export async function submitEditMiniApp() {
 }
 
 async function fetchAndInjectBase(url: string): Promise<string> {
-  const res = await fetch(url);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
+  const res = await fetch(url, { signal: controller.signal });
+  clearTimeout(timeoutId);
   if (!res.ok) throw new Error("Fetch failed");
   let text = await res.text();
   const urlObj = new URL(url);
@@ -983,11 +986,16 @@ export async function runMiniApp(id: string) {
       "mini-app-frame",
     ) as HTMLIFrameElement;
 
+    runModal.classList.remove("hidden");
+    setTimeout(() => runModal.classList.remove("translate-y-full"), 10);
+
     iframe.removeAttribute("srcdoc");
     iframe.removeAttribute("src");
 
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
+    } else if (data.html_content && data.html_content.startsWith("data:")) {
+      iframe.src = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("https://")) {
       if (data.html_content.includes("res.cloudinary.com")) {
         try {
@@ -1011,9 +1019,6 @@ export async function runMiniApp(id: string) {
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
     }
-
-    runModal.classList.remove("hidden");
-    setTimeout(() => runModal.classList.remove("translate-y-full"), 10);
 
     // Increment views
     supabase.rpc("increment_miniapp_view", { app_id: id }).then((res) => {

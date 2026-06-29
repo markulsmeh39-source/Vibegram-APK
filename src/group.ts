@@ -853,65 +853,6 @@ export async function openChatInfo(skipPushState = false) {
 
 
 
-  let photosVideos: any[] = [];
-  let files: any[] = [];
-  let audioVideo: any[] = [];
-
-  messagesWithMedia?.forEach((msg) => {
-    if (!msg.media) return;
-    const actualMedia = msg.media.filter(
-      (m: any) => m.type !== "reply" && m.type !== "forward" && m.type !== 'admin_mode' && m.type !== 'share_app_content' && m.type !== 'comments_enabled' && m.type !== 'short' && m.type !== 'miniapp' && !m.short_id && !m.miniapp_id,
-    );
-    if (actualMedia.length === 0) return;
-
-    if (msg.message_type === "voice") {
-      audioVideo.push({
-        msgId: msg.id,
-        media: actualMedia[0],
-        date: msg.created_at,
-        type: "voice",
-      });
-    } else if (msg.message_type === "video_circle") {
-      audioVideo.push({
-        msgId: msg.id,
-        media: actualMedia[0],
-        date: msg.created_at,
-        type: "circle",
-      });
-    } else if (msg.message_type === "poll") {
-      // Do not add polls to media tabs
-      return;
-    } else {
-      actualMedia.forEach((m: any) => {
-        if (m.type?.startsWith("image/") || m.type?.startsWith("video/")) {
-          if (m.asFile)
-            files.push({ msgId: msg.id, media: m, date: msg.created_at });
-          else
-            photosVideos.push({
-              msgId: msg.id,
-              media: m,
-              date: msg.created_at,
-            });
-        } else if (m.type?.startsWith("audio/")) {
-          audioVideo.push({
-            msgId: msg.id,
-            media: m,
-            date: msg.created_at,
-            type: "voice",
-          });
-        } else {
-          files.push({ msgId: msg.id, media: m, date: msg.created_at });
-        }
-      });
-    }
-  });
-
-  audioVideo.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
-
-  const hasAnyMedia =
-    photosVideos.length > 0 || files.length > 0 || audioVideo.length > 0;
   let mediaContentHtml = "";
 
   const renderMediaGrid = (items: any[]) => `
