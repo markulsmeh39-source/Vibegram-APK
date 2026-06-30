@@ -300,7 +300,7 @@ if (fullscreenMiniAppId) {
             const loadIframe = async () => {
                 if (data.html_content && data.html_content.trim().startsWith("<")) {
                     iframe.srcdoc = data.html_content;
-                } else if (data.html_content && data.html_content.startsWith("https://")) {
+                } else if (data.html_content && data.html_content.startsWith("http")) {
                     if (data.html_content.includes("res.cloudinary.com")) {
                         try {
                             const res = await fetch(data.html_content);
@@ -416,6 +416,28 @@ else if (!idToken && hashError) {
     }
     import('./utils').then(m => m.showError('Auth Error: ' + errorMsg));
     window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+// Optimistic UI load
+if (!idToken && !hashError && !standaloneMiniAppId && !fullscreenMiniAppId) {
+    const cachedUser = localStorage.getItem("vibegram_cached_user");
+    const cachedProfile = localStorage.getItem("vibegram_cached_profile");
+    if (cachedUser && cachedProfile) {
+        try {
+            state.currentUser = JSON.parse(cachedUser);
+            state.currentProfile = JSON.parse(cachedProfile);
+            
+            const appLock = localStorage.getItem("vibegram_app_lock_" + state.currentUser.id);
+            const twoStepPasscode = state.currentProfile?.settings?.twoStepPasscode;
+            const needsLock = (twoStepPasscode && !localStorage.getItem("vibegram_2fa_trusted_" + state.currentUser.id)) || 
+                              (appLock && !sessionStorage.getItem("vibegram_applock_passed"));
+            
+            if (!needsLock) {
+                import('./auth').then(m => m.finalizeAppSetup());
+                import('./chat').then(m => m.loadChats());
+            }
+        } catch(e) {}
+    }
 }
 
 supabase.auth.getSession().then(({ data: { session }, error }) => {

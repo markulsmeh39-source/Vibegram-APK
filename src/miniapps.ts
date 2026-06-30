@@ -1012,10 +1012,13 @@ export async function runMiniApp(id: string) {
                 first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
                 username: state.currentProfile?.username || "user"
             });
-            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+            urlObj.searchParams.append("tgWebAppData", `user=${encodeURIComponent(userStr)}`);
+            urlObj.searchParams.append("tgWebAppVersion", "7.0");
+            urlObj.searchParams.append("tgWebAppPlatform", "weba");
+            urlObj.searchParams.append("tgWebAppThemeParams", JSON.stringify({
                 bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
                 text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-            }))}`;
+            }));
             return urlObj.toString();
         } catch(e) {
             return base;
@@ -1026,26 +1029,10 @@ export async function runMiniApp(id: string) {
       iframe.srcdoc = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("data:")) {
       iframe.src = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      if (data.html_content.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_content);
-        }
-      } else {
-        iframe.src = constructTgUrl(data.html_content);
-      }
+    } else if (data.html_content && data.html_content.startsWith("http")) {
+      iframe.src = constructTgUrl(data.html_content);
     } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_url);
-        }
-      } else {
-        iframe.src = constructTgUrl(data.html_url);
-      }
+      iframe.src = constructTgUrl(data.html_url);
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
     }
@@ -1097,8 +1084,7 @@ export function closeMiniApp(fromPopState = false) {
         "mini-app-frame",
       ) as HTMLIFrameElement;
       if (iframe) {
-        iframe.removeAttribute("srcdoc");
-        iframe.removeAttribute("src");
+        iframe.remove();
       }
       currentRunningAppId = null;
       miniAppContentData = null;
@@ -1178,10 +1164,13 @@ export async function runStandaloneMiniApp(id: string) {
                 first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
                 username: state.currentProfile?.username || "user"
             });
-            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+            urlObj.searchParams.append("tgWebAppData", `user=${encodeURIComponent(userStr)}`);
+            urlObj.searchParams.append("tgWebAppVersion", "7.0");
+            urlObj.searchParams.append("tgWebAppPlatform", "weba");
+            urlObj.searchParams.append("tgWebAppThemeParams", JSON.stringify({
                 bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
                 text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-            }))}`;
+            }));
             return urlObj.toString();
         } catch(e) {
             return base;
@@ -1192,26 +1181,10 @@ export async function runStandaloneMiniApp(id: string) {
       iframe.srcdoc = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("data:")) {
       iframe.src = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      if (data.html_content.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_content);
-        }
-      } else {
-        iframe.src = constructTgUrl(data.html_content);
-      }
+    } else if (data.html_content && data.html_content.startsWith("http")) {
+      iframe.src = constructTgUrl(data.html_content);
     } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_url);
-        }
-      } else {
-        iframe.src = constructTgUrl(data.html_url);
-      }
+      iframe.src = constructTgUrl(data.html_url);
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
     }

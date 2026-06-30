@@ -452,7 +452,7 @@ export async function verifyRecoveryCode() {
   }
 }
 
-function finalizeAppSetup() {
+export function finalizeAppSetup() {
   const loader = document.getElementById("initial-loader");
   if (loader) {
     loader.classList.add("opacity-0", "pointer-events-none");
