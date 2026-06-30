@@ -15,7 +15,25 @@ import com.getcapacitor.BridgeActivity;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.webkit.CookieManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+
 public class MainActivity extends BridgeActivity {
+    @Override
+    public void onStart() {
+        super.onStart();
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            WebSettings settings = webView.getSettings();
+            settings.setDomStorageEnabled(true);
+            settings.setDatabaseEnabled(true);
+            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            settings.setJavaScriptEnabled(true);
+            CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

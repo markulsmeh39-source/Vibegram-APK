@@ -80,7 +80,8 @@ export async function downloadMedia(url: string, filename: string) {
 
         const { Capacitor } = await import('@capacitor/core');
         if (Capacitor.isNativePlatform()) {
-            window.open(downloadUrl, '_blank');
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ url: downloadUrl });
             import('./utils').then(m => m.customToast('Загрузка файла начата...'));
             return;
         }
