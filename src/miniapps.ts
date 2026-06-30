@@ -9,7 +9,6 @@ export function setupMiniApps() {
   (window as any).closeCreateMiniApp = closeCreateMiniApp;
   (window as any).submitMiniApp = submitMiniApp;
   (window as any).runMiniApp = runMiniApp;
-  (window as any).openMiniAppInNewTab = openMiniAppInNewTab;
   (window as any).closeMiniApp = closeMiniApp;
   (window as any).copyMiniAppLink = copyMiniAppLink;
   (window as any).copyMiniAppDirectLink = copyMiniAppDirectLink;
@@ -933,32 +932,24 @@ export async function submitEditMiniApp() {
   }
 }
 
-async function fetchAndInjectBase(url: string): Promise<string> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
-  const res = await fetch(url, { signal: controller.signal });
-  clearTimeout(timeoutId);
-  if (!res.ok) throw new Error("Fetch failed");
-  let text = await res.text();
-  const urlObj = new URL(url);
-  urlObj.pathname = urlObj.pathname.substring(
-    0,
-    urlObj.pathname.lastIndexOf("/") + 1,
-  );
-  const baseTag = `<base href="${urlObj.href}">`;
-  if (/<head[^>]*>/i.test(text)) {
-    text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
-  } else if (/<html[^>]*>/i.test(text)) {
-    text = text.replace(/(<html[^>]*>)/i, `$1<head>${baseTag}</head>`);
-  } else {
-    text = `<head>${baseTag}</head>` + text;
-  }
-  return text;
-}
-
 export async function runMiniApp(id: string) {
-  customToast("Загрузка приложения...");
-
+  const themeMeta = document.getElementById("theme-color-meta");
+  if (themeMeta) themeMeta.setAttribute("content", "#111827");
+  
+  const runModal = document.getElementById("mini-app-run-modal")!;
+  runModal.classList.remove("hidden");
+  setTimeout(() => runModal.classList.remove("translate-y-full"), 10);
+  
+  document.getElementById("run-app-title")!.textContent = "Загрузка...";
+  const iconEl = document.getElementById("run-app-icon")!;
+  iconEl.innerHTML = `<div class="w-full h-full rounded-lg animate-pulse bg-gray-700"></div>`;
+  
+  const iframe = document.getElementById(
+    "mini-app-frame",
+  ) as HTMLIFrameElement;
+  iframe.removeAttribute("srcdoc");
+  iframe.removeAttribute("src");
+  
   try {
     const { data, error } = await supabase
       .from("mini_apps")
@@ -972,82 +963,38 @@ export async function runMiniApp(id: string) {
     miniAppContentData = data;
 
     document.getElementById("run-app-title")!.textContent = data.title;
-    const iconEl = document.getElementById("run-app-icon")!;
     if (data.icon_url) {
       iconEl.innerHTML = `<img src="${data.icon_url}" class="w-full h-full object-cover rounded-lg">`;
     } else {
       iconEl.textContent = data.title.substring(0, 2).toUpperCase();
     }
 
-    const runModal = document.getElementById("mini-app-run-modal")!;
-    let iframeContainer = document.getElementById("mini-app-frame-container");
-    if (!iframeContainer) {
-        // Fallback if container is not there, we'll replace the iframe itself
-        const oldIframe = document.getElementById("mini-app-frame");
-        if (oldIframe) {
-            iframeContainer = oldIframe.parentElement;
-            oldIframe.remove();
-        }
-    } else {
-        iframeContainer.innerHTML = ''; // Clear previous iframe
-    }
-    
-    const iframe = document.createElement("iframe");
-    iframe.id = "mini-app-frame";
-    iframe.className = "w-full h-full border-0 bg-white dark:bg-gray-900";
-    iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen";
-    iframeContainer?.appendChild(iframe);
-
-    runModal.classList.remove("hidden");
-    setTimeout(() => runModal.classList.remove("translate-y-full"), 10);
-
-    const constructTgUrl = (base: string) => {
-        try {
-            const urlObj = new URL(base);
-            const userStr = JSON.stringify({ 
-                id: state.currentUser?.id || 1, 
-                first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
-                username: state.currentProfile?.username || "user"
-            });
-            urlObj.searchParams.set('tgWebAppData', `user=${userStr}`);
-            urlObj.searchParams.set('tgWebAppVersion', '7.0');
-            urlObj.searchParams.set('tgWebAppPlatform', 'weba');
-            urlObj.searchParams.set('tgWebAppThemeParams', JSON.stringify({
-                bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
-                text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-            }));
-            return urlObj.toString();
-        } catch(e) {
-            return base;
-        }
-    };
-
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("data:")) {
-      iframe.src = data.html_content;
     } else if (data.html_content && data.html_content.startsWith("https://")) {
-      if (data.html_content.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_content);
-        }
-      } else {
-        iframe.src = constructTgUrl(data.html_content);
-      }
+      iframe.src = data.html_content;
     } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com")) {
-        try {
-          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
-        } catch (err) {
-          iframe.src = constructTgUrl(data.html_url);
-        }
+      if (data.html_url.includes("res.cloudinary.com") && data.html_url.includes("/raw/upload/")) {
+        fetch(data.html_url).then(res => res.text()).then(html => {
+          supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
+          iframe.srcdoc = html;
+        }).catch(() => {
+          iframe.src = data.html_url;
+        });
       } else {
-        iframe.src = constructTgUrl(data.html_url);
+        iframe.src = data.html_url;
       }
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
+    }
+
+    const shareBtn = document.getElementById('run-app-share-btn');
+    if (shareBtn) {
+        shareBtn.onclick = () => {
+            if ((window as any).shareAppContent) {
+                (window as any).shareAppContent(`?miniapp=${id}`, data.title, 'ПРИЛОЖЕНИЕ', data.icon_url || '');
+            }
+        };
     }
 
     // Increment views
@@ -1066,39 +1013,14 @@ export async function runMiniApp(id: string) {
   }
 }
 
-export function openMiniAppInNewTab() {
-  if (!miniAppContentData) {
-    customToast('Нет активного приложения');
-    return;
-  }
-  
-  const url = miniAppContentData.html_url;
-  if (!url) {
-    customToast('Это приложение загружено кодом и не имеет прямой ссылки');
-    return;
-  }
-
-  try {
-      const urlObj = new URL(url);
-      const userStr = JSON.stringify({ 
-          id: state.currentUser?.id || 1, 
-          first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
-          username: state.currentProfile?.username || "user"
-      });
-      urlObj.searchParams.set('tgWebAppData', `user=${userStr}`);
-      urlObj.searchParams.set('tgWebAppVersion', '7.0');
-      urlObj.searchParams.set('tgWebAppPlatform', 'weba');
-      urlObj.searchParams.set('tgWebAppThemeParams', JSON.stringify({
-          bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
-          text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-      }));
-      window.open(urlObj.toString(), '_blank');
-  } catch(e) {
-      window.open(url, '_blank');
-  }
-}
-
 export function closeMiniApp(fromPopState = false) {
+  const themeMeta = document.getElementById("theme-color-meta");
+  if (themeMeta) {
+      if (!document.documentElement.classList.contains('dark')) {
+          themeMeta.setAttribute("content", "#ffffff");
+      }
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   if (!fromPopState && urlParams.has("miniapp")) {
      window.history.replaceState(null, '', window.location.pathname + window.location.hash);
@@ -1113,7 +1035,8 @@ export function closeMiniApp(fromPopState = false) {
         "mini-app-frame",
       ) as HTMLIFrameElement;
       if (iframe) {
-          iframe.remove();
+        iframe.removeAttribute("srcdoc");
+        iframe.removeAttribute("src");
       }
       currentRunningAppId = null;
       miniAppContentData = null;

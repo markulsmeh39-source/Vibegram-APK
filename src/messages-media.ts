@@ -78,17 +78,41 @@ export async function downloadMedia(url: string, filename: string) {
             downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
         }
 
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = filename || 'download';
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+            window.open(downloadUrl, '_blank');
+            import('./utils').then(m => m.customToast('Загрузка файла начата...'));
+            return;
+        }
         
-        import('./utils').then(m => m.customToast('Загрузка начата...'));
+        try {
+            const response = await fetch(downloadUrl);
+            if (!response.ok) throw new Error('Fetch failed');
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'download';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            import('./utils').then(m => m.customToast('Загрузка завершена'));
+            return;
+        } catch (fetchErr) {
+            console.warn('Blob fetch failed, falling back to direct link:', fetchErr);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename || 'download';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            import('./utils').then(m => m.customToast('Загрузка файла начата...'));
+        }
     } catch (e) {
         console.error('Download failed', e);
+        import('./utils').then(m => m.customToast('Ошибка при скачивании. Открываем в новой вкладке...'));
         window.open(url, '_blank');
     }
 }
