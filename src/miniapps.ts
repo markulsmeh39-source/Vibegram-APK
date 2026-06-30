@@ -932,6 +932,29 @@ export async function submitEditMiniApp() {
   }
 }
 
+async function fetchAndInjectBase(url: string): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
+  const res = await fetch(url, { signal: controller.signal });
+  clearTimeout(timeoutId);
+  if (!res.ok) throw new Error("Fetch failed");
+  let text = await res.text();
+  const urlObj = new URL(url);
+  urlObj.pathname = urlObj.pathname.substring(
+    0,
+    urlObj.pathname.lastIndexOf("/") + 1,
+  );
+  const baseTag = `<base href="${urlObj.href}">`;
+  if (/<head[^>]*>/i.test(text)) {
+    text = text.replace(/(<head[^>]*>)/i, `$1${baseTag}`);
+  } else if (/<html[^>]*>/i.test(text)) {
+    text = text.replace(/(<html[^>]*>)/i, `$1<head>${baseTag}</head>`);
+  } else {
+    text = `<head>${baseTag}</head>` + text;
+  }
+  return text;
+}
+
 export async function runMiniApp(id: string) {
   const themeMeta = document.getElementById("theme-color-meta");
   if (themeMeta) themeMeta.setAttribute("content", "#111827");
@@ -943,12 +966,6 @@ export async function runMiniApp(id: string) {
   document.getElementById("run-app-title")!.textContent = "Загрузка...";
   const iconEl = document.getElementById("run-app-icon")!;
   iconEl.innerHTML = `<div class="w-full h-full rounded-lg animate-pulse bg-gray-700"></div>`;
-  
-  const iframe = document.getElementById(
-    "mini-app-frame",
-  ) as HTMLIFrameElement;
-  iframe.removeAttribute("srcdoc");
-  iframe.removeAttribute("src");
   
   try {
     const { data, error } = await supabase
@@ -969,20 +986,65 @@ export async function runMiniApp(id: string) {
       iconEl.textContent = data.title.substring(0, 2).toUpperCase();
     }
 
+    let iframeContainer = document.getElementById("mini-app-frame-container");
+    if (!iframeContainer) {
+        // Fallback if container is not there, we'll replace the iframe itself
+        const oldIframe = document.getElementById("mini-app-frame");
+        if (oldIframe) {
+            iframeContainer = oldIframe.parentElement;
+            oldIframe.remove();
+        }
+    } else {
+        iframeContainer.innerHTML = ''; // Clear previous iframe
+    }
+    
+    const iframe = document.createElement("iframe");
+    iframe.id = "mini-app-frame";
+    iframe.className = "w-full h-full border-0 bg-white dark:bg-gray-900";
+    iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen";
+    iframeContainer?.appendChild(iframe);
+
+    const constructTgUrl = (base: string) => {
+        try {
+            const urlObj = new URL(base);
+            const userStr = JSON.stringify({ 
+                id: state.currentUser?.id || 1, 
+                first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
+                username: state.currentProfile?.username || "user"
+            });
+            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+                bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+                text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            }))}`;
+            return urlObj.toString();
+        } catch(e) {
+            return base;
+        }
+    };
+
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
+    } else if (data.html_content && data.html_content.startsWith("data:")) {
       iframe.src = data.html_content;
-    } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com") && data.html_url.includes("/raw/upload/")) {
-        fetch(data.html_url).then(res => res.text()).then(html => {
-          supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
-          iframe.srcdoc = html;
-        }).catch(() => {
-          iframe.src = data.html_url;
-        });
+    } else if (data.html_content && data.html_content.startsWith("https://")) {
+      if (data.html_content.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
+        } catch (err) {
+          iframe.src = constructTgUrl(data.html_content);
+        }
       } else {
-        iframe.src = data.html_url;
+        iframe.src = constructTgUrl(data.html_content);
+      }
+    } else if (data.html_url) {
+      if (data.html_url.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
+        } catch (err) {
+          iframe.src = constructTgUrl(data.html_url);
+        }
+      } else {
+        iframe.src = constructTgUrl(data.html_url);
       }
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
@@ -1054,6 +1116,118 @@ export function copyMiniAppLink(appId?: string) {
       m.customToast("Ссылка на проект скопирована!"),
     );
   });
+}
+
+export async function runStandaloneMiniApp(id: string) {
+  const themeMeta = document.getElementById("theme-color-meta");
+  if (themeMeta) themeMeta.setAttribute("content", "#111827");
+  
+  currentRunningAppId = id;
+  const screens = [
+    "auth-screen",
+    "lock-screen",
+    "app-screen",
+    "initial-loader",
+  ];
+  screens.forEach((sId) =>
+    document.getElementById(sId)?.classList.add("hidden"),
+  );
+
+  const standaloneScreen = document.getElementById(
+    "standalone-miniapp-screen",
+  )!;
+  standaloneScreen.classList.remove("hidden");
+  standaloneScreen.classList.add("flex");
+
+  let iframeContainer = document.getElementById("standalone-miniapp-frame-container");
+  if (!iframeContainer) {
+      const oldIframe = document.getElementById("standalone-miniapp-frame");
+      if (oldIframe) {
+          iframeContainer = oldIframe.parentElement;
+          oldIframe.remove();
+      }
+  } else {
+      iframeContainer.innerHTML = '';
+  }
+  
+  const iframe = document.createElement("iframe");
+  iframe.id = "standalone-miniapp-frame";
+  iframe.className = "w-full h-full border-0";
+  iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen";
+  iframeContainer?.appendChild(iframe);
+  
+  iframe.srcdoc = `
+    <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#888;">
+      Загрузка приложения...
+    </div>
+  `;
+
+  try {
+    const { data, error } = await supabase
+      .from("mini_apps")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error || !data) throw error || new Error("App Not Found");
+
+    const constructTgUrl = (base: string) => {
+        try {
+            const urlObj = new URL(base);
+            const userStr = JSON.stringify({ 
+                id: state.currentUser?.id || 1, 
+                first_name: state.currentProfile?.display_name || state.currentProfile?.username || "User", 
+                username: state.currentProfile?.username || "user"
+            });
+            urlObj.hash = `tgWebAppData=${encodeURIComponent(`user=${userStr}`)}&tgWebAppVersion=7.0&tgWebAppPlatform=weba&tgWebAppThemeParams=${encodeURIComponent(JSON.stringify({
+                bg_color: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+                text_color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            }))}`;
+            return urlObj.toString();
+        } catch(e) {
+            return base;
+        }
+    };
+
+    if (data.html_content && data.html_content.trim().startsWith("<")) {
+      iframe.srcdoc = data.html_content;
+    } else if (data.html_content && data.html_content.startsWith("data:")) {
+      iframe.src = data.html_content;
+    } else if (data.html_content && data.html_content.startsWith("https://")) {
+      if (data.html_content.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_content);
+        } catch (err) {
+          iframe.src = constructTgUrl(data.html_content);
+        }
+      } else {
+        iframe.src = constructTgUrl(data.html_content);
+      }
+    } else if (data.html_url) {
+      if (data.html_url.includes("res.cloudinary.com")) {
+        try {
+          iframe.srcdoc = await fetchAndInjectBase(data.html_url);
+        } catch (err) {
+          iframe.src = constructTgUrl(data.html_url);
+        }
+      } else {
+        iframe.src = constructTgUrl(data.html_url);
+      }
+    } else if (data.html_content) {
+      iframe.srcdoc = data.html_content;
+    }
+
+    supabase.rpc("increment_miniapp_view", { app_id: id }).then((res) => {
+      if (res.error)
+        supabase
+          .from("mini_apps")
+          .update({ views_count: (data.views_count || 0) + 1 })
+          .eq("id", id)
+          .then();
+    });
+
+  } catch (e: any) {
+    document.body.innerHTML = `<div class="h-full w-full flex items-center justify-center text-red-500 font-bold bg-white dark:bg-gray-900">Ошибка загрузки приложения: ${e.message}</div>`;
+  }
 }
 
 function handleMiniAppMessage(event: MessageEvent) {

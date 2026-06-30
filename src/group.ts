@@ -1082,8 +1082,7 @@ export async function openChatInfo(skipPushState = false) {
             if (mediaTab) mediaTab.innerHTML = photosVideosAsync.length > 0 ? renderMediaGrid(photosVideosAsync) : '<div class="text-center text-gray-500 py-4">Нет медиа</div>';
             if (filesTab) filesTab.innerHTML = filesAsync.length > 0 ? renderFileList(filesAsync) : '<div class="text-center text-gray-500 py-4">Нет файлов</div>';
             if (audioTab) audioTab.innerHTML = audioVideoAsync.length > 0 ? renderAudioVideoList(audioVideoAsync) : '<div class="text-center text-gray-500 py-4">Нет голосовых</div>';
-        })
-        .catch(() => {
+        }, () => {
             if (state.activeChatId !== currentChatId) return;
             const mediaTab = document.getElementById("chat-info-tab-media");
             const filesTab = document.getElementById("chat-info-tab-files");
