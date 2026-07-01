@@ -30,6 +30,7 @@ public class MainActivity extends BridgeActivity {
             settings.setDatabaseEnabled(true);
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
             settings.setJavaScriptEnabled(true);
+            settings.setMediaPlaybackRequiresUserGesture(false);
             CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
         }
     }

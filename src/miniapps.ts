@@ -1042,6 +1042,14 @@ export async function runMiniApp(id: string) {
       
       if (finalUrl.includes("res.cloudinary.com") && finalUrl.includes("/raw/upload/")) {
         fetch(finalUrl).then(res => res.text()).then(html => {
+          if (!html.includes('upgrade-insecure-requests')) {
+             const csp = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">';
+             if (html.includes('<head>')) {
+                 html = html.replace('<head>', '<head>' + csp);
+             } else {
+                 html = csp + html;
+             }
+          }
           supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
           iframe.srcdoc = html;
         }).catch(() => {
@@ -1200,6 +1208,14 @@ export async function runStandaloneMiniApp(id: string) {
       
       if (finalUrl.includes("res.cloudinary.com") && finalUrl.includes("/raw/upload/")) {
         fetch(finalUrl).then(res => res.text()).then(html => {
+          if (!html.includes('upgrade-insecure-requests')) {
+             const csp = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">';
+             if (html.includes('<head>')) {
+                 html = html.replace('<head>', '<head>' + csp);
+             } else {
+                 html = csp + html;
+             }
+          }
           supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
           iframe.srcdoc = html;
         }).catch(() => {
