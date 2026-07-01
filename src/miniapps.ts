@@ -63,7 +63,7 @@ export function setupMiniApps() {
         
         const iframe = document.getElementById("standalone-miniapp-frame") as HTMLIFrameElement;
         if (iframe) {
-           iframe.removeAttribute("srcdoc");
+           iframe.srcdoc = "";
            iframe.removeAttribute("src");
         }
         currentRunningAppId = null;
@@ -1013,27 +1013,42 @@ export async function runMiniApp(id: string) {
       iconEl.textContent = data.title.substring(0, 2).toUpperCase();
     }
 
+    const oldIframe = document.getElementById("mini-app-frame");
     let iframeContainer = document.getElementById("mini-app-frame-container");
-    const iframe = document.getElementById("mini-app-frame") as HTMLIFrameElement;
-    if (iframe) {
-      iframe.removeAttribute("srcdoc");
-      iframe.removeAttribute("src");
+    
+    if (oldIframe) {
+      if (!iframeContainer) iframeContainer = oldIframe.parentElement;
+      oldIframe.remove();
+    }
+    
+    const iframe = document.createElement("iframe");
+    iframe.id = "mini-app-frame";
+    iframe.className = "w-full h-full border-0 bg-white dark:bg-gray-900";
+    iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen; autoplay";
+    if (iframeContainer) {
+      iframeContainer.appendChild(iframe);
+    }
+
+    let linkToLoad = data.html_url;
+    if (data.html_content && data.html_content.trim().match(/^https?:\/\//i)) {
+       linkToLoad = data.html_content.trim();
     }
 
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      iframe.src = data.html_content;
-    } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com") && data.html_url.includes("/raw/upload/")) {
-        fetch(data.html_url).then(res => res.text()).then(html => {
+    } else if (linkToLoad) {
+      let finalUrl = linkToLoad.trim();
+      if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+      
+      if (finalUrl.includes("res.cloudinary.com") && finalUrl.includes("/raw/upload/")) {
+        fetch(finalUrl).then(res => res.text()).then(html => {
           supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
           iframe.srcdoc = html;
         }).catch(() => {
-          iframe.src = data.html_url;
+          iframe.src = finalUrl;
         });
       } else {
-        iframe.src = data.html_url;
+        iframe.src = finalUrl;
       }
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
@@ -1086,7 +1101,7 @@ export function closeMiniApp() {
     document.getElementById("app-screen")?.classList.remove("hidden");
     const iframe = document.getElementById("standalone-miniapp-frame") as HTMLIFrameElement;
     if (iframe) {
-        iframe.removeAttribute("srcdoc");
+        iframe.srcdoc = "";
         iframe.removeAttribute("src");
     }
     currentRunningAppId = null;
@@ -1144,12 +1159,20 @@ export async function runStandaloneMiniApp(id: string) {
   standaloneScreen.classList.remove("hidden");
   standaloneScreen.classList.add("flex");
 
-  const iframe = document.getElementById(
-    "standalone-miniapp-frame",
-  ) as HTMLIFrameElement;
+  const oldIframe = document.getElementById("standalone-miniapp-frame");
+  let parent = oldIframe?.parentElement;
+  if (oldIframe) {
+    oldIframe.remove();
+  }
   
-  iframe.removeAttribute("srcdoc");
-  iframe.removeAttribute("src");
+  const iframe = document.createElement("iframe");
+  iframe.id = "standalone-miniapp-frame";
+  iframe.className = "w-full h-full border-0 bg-white dark:bg-gray-900";
+  iframe.allow = "camera; microphone; geolocation; clipboard-write; clipboard-read; display-capture; fullscreen; autoplay";
+  if (parent) {
+    parent.appendChild(iframe);
+  }
+  
   iframe.srcdoc = `
     <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#888;">
       Загрузка приложения...
@@ -1164,20 +1187,26 @@ export async function runStandaloneMiniApp(id: string) {
       .single();
     if (error || !data) throw error || new Error("App Not Found");
 
+    let linkToLoad = data.html_url;
+    if (data.html_content && data.html_content.trim().match(/^https?:\/\//i)) {
+       linkToLoad = data.html_content.trim();
+    }
+
     if (data.html_content && data.html_content.trim().startsWith("<")) {
       iframe.srcdoc = data.html_content;
-    } else if (data.html_content && data.html_content.startsWith("https://")) {
-      iframe.src = data.html_content;
-    } else if (data.html_url) {
-      if (data.html_url.includes("res.cloudinary.com") && data.html_url.includes("/raw/upload/")) {
-        fetch(data.html_url).then(res => res.text()).then(html => {
+    } else if (linkToLoad) {
+      let finalUrl = linkToLoad.trim();
+      if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+      
+      if (finalUrl.includes("res.cloudinary.com") && finalUrl.includes("/raw/upload/")) {
+        fetch(finalUrl).then(res => res.text()).then(html => {
           supabase.from("mini_apps").update({ html_content: html, html_url: null }).eq("id", id).then();
           iframe.srcdoc = html;
         }).catch(() => {
-          iframe.src = data.html_url;
+          iframe.src = finalUrl;
         });
       } else {
-        iframe.src = data.html_url;
+        iframe.src = finalUrl;
       }
     } else if (data.html_content) {
       iframe.srcdoc = data.html_content;
