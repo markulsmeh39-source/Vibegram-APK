@@ -209,6 +209,14 @@ document.addEventListener('click', (e) => {
     
     if (!isSwiping) {
         if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (state.activeChatType === 'channel') {
+                const myRole = state.activeChatMembers?.find((m: any) => m.user_id === state.currentUser.id)?.role;
+                if (myRole !== 'creator' && myRole !== 'admin') {
+                    clearTimeout(touchTimer);
+                    touchTarget = null;
+                    return;
+                }
+            }
             isSwiping = true;
             clearTimeout(touchTimer);
         } else if (Math.abs(deltaY) > 10) {
