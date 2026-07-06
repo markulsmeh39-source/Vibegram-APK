@@ -408,30 +408,6 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
         const adminModeData = mediaArr.find((m: any) => m.type === 'admin_mode');
         const isCommentsEnabled = mediaArr.some((m: any) => m.type === 'comments_enabled');
 
-        if (!shareData && msg.content) {
-            const miniappMatch = msg.content.match(/(?:\?miniapp=)([\w-]+)/);
-            if (miniappMatch) {
-                shareData = {
-                    type: 'share_app_content',
-                    content_type_label: 'МИНИ-ПРИЛОЖЕНИЕ',
-                    url_hash: '?miniapp=' + miniappMatch[1],
-                    title: 'Мини-приложение',
-                    thumbnail_url: ''
-                };
-            } else {
-                const shortsMatch = msg.content.match(/(?:#shorts\?id=)([\w-]+)/);
-                if (shortsMatch) {
-                    shareData = {
-                        type: 'share_app_content',
-                        content_type_label: 'ШОРТС',
-                        url_hash: '#shorts?id=' + shortsMatch[1],
-                        title: 'Смотреть шортс',
-                        thumbnail_url: ''
-                    };
-                }
-            }
-        }
-
         let displayContent = msg.content || '';
         let shareHtml = '';
         if (shareData) {
@@ -451,7 +427,7 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             const safeUrlHash = (shareData.url_hash || '').replace(/'/g, "\\'");
 
             shareHtml = `
-                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${safeUrlHash}'.startsWith('?miniapp=')) { if (!window.location.search.includes('${safeUrlHash}')) { window.history.pushState(null, '', window.location.pathname + '${safeUrlHash}' + window.location.hash); } if(window.runMiniApp) window.runMiniApp('${safeUrlHash}'.split('=')[1]); } else if('${safeUrlHash}'.startsWith('#shorts?id=')) { if (!window.location.hash.includes('${safeUrlHash}')) { window.history.pushState(null, '', window.location.pathname + window.location.search + '${safeUrlHash}'); } if(window.openShorts) window.openShorts('${safeUrlHash}'.split('id=')[1]); } else if('${safeUrlHash}'.startsWith('?')) { window.location.href = '${safeUrlHash}'; } else { window.history.pushState(null, '', '${safeUrlHash}'); window.dispatchEvent(new Event('popstate')); }">
+                <div class="mb-2 w-full max-w-[280px] bg-white dark:bg-[#1C1C1D] shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[16px] overflow-hidden border border-gray-100 dark:border-[#2C2C2E] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]" onclick="if('${safeUrlHash}'.startsWith('?miniapp=')) { if(window.runMiniApp) window.runMiniApp('${safeUrlHash}'.split('=')[1]); } else if('${safeUrlHash}'.startsWith('#shorts?id=')) { if(window.openShorts) window.openShorts('${safeUrlHash}'.split('id=')[1]); } else if('${safeUrlHash}'.startsWith('?')) { window.location.href = '${safeUrlHash}'; } else { window.history.pushState(null, '', '${safeUrlHash}'); window.dispatchEvent(new Event('popstate')); }">
                     <div class="relative w-full aspect-video bg-gray-100 dark:bg-[#2C2C2E] flex items-center justify-center overflow-hidden group border-b border-gray-100 dark:border-gray-800">
                         ${(shareData.thumbnail_url && shareData.content_type_label !== 'ШОРТС') ? `<img src="${shareData.thumbnail_url}" class="w-full h-full object-cover">` : `<svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`}
 

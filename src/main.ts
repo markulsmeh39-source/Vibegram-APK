@@ -210,6 +210,8 @@ window.addEventListener('popstate', (e) => {
 (window as any).forwardMessage = logic.forwardMessage;
 (window as any).toggleForwardChatSelection = logic.toggleForwardChatSelection;
 (window as any).confirmForward = logic.confirmForward;
+(window as any).confirmShareToChats = logic.confirmShareToChats;
+(window as any).shareContentToChats = logic.shareContentToChats;
 (window as any).handleVideoCircleClick = logic.handleVideoCircleClick;
 (window as any).updateVideoProgress = logic.updateVideoProgress;
 (window as any).toggleAudio = logic.toggleAudio;
@@ -823,26 +825,18 @@ if (Capacitor.isNativePlatform()) {
                     if (text || stream) {
                         const { state, customToast } = await import('./logic');
                         
-                        // We will need a way to read the file from URI. Capacitor Filesystem can sometimes do it, or we can just send the URI and let Capacitor HTTP send it?
-                        // Actually, without a proper file reading plugin, it's tricky.
-                        // For now, let's just handle text sharing easily.
                         if (text && !stream) {
-                            const chatInput = document.getElementById('message-input') as HTMLTextAreaElement;
-                            if (chatInput) {
-                                chatInput.value = text;
-                                customToast('Текст скопирован в поле ввода');
-                            }
+                            const { shareContentToChats } = await import('./messages-actions');
+                            shareContentToChats(text);
                         } else if (stream) {
                             try {
                                 const { Filesystem } = await import('@capacitor/filesystem');
                                 const fileData = await Filesystem.readFile({
                                     path: stream
                                 });
-                                // fileData.data is base64 string
                                 // Convert to File object
                                 const res = await fetch(`data:application/octet-stream;base64,${fileData.data}`);
                                 const blob = await res.blob();
-                                // Try to extract filename or just use a generic one
                                 let filename = "shared_file";
                                 if (stream.includes('%2F')) {
                                     const parts = stream.split('%2F');
@@ -854,14 +848,9 @@ if (Capacitor.isNativePlatform()) {
                                 
                                 const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
                                 
-                                if (state.activeChatId) {
-                                    const { handleMediaSelect } = await import('./messages-media');
-                                    handleMediaSelect({ target: { files: [file], value: '' } });
-                                } else {
-                                    state.selectedFiles = [file];
-                                    (window as any).pendingSharedFiles = true;
-                                    customToast('Получен файл. Откройте нужный чат для отправки.');
-                                }
+                                state.selectedFiles = [file];
+                                const { shareContentToChats } = await import('./messages-actions');
+                                shareContentToChats(text || '');
                             } catch (e: any) {
                                 customToast('Ошибка при чтении файла: ' + e.message);
                             }
@@ -894,19 +883,8 @@ async function checkSharedFiles() {
                     if (sharedData.files && sharedData.files.length > 0) {
                         const { state } = await import('./logic');
                         state.selectedFiles = sharedData.files;
-                        
-                        // We need the user to pick a chat if none is active
-                        if (!state.activeChatId) {
-                            const { customToast } = await import('./utils');
-                            customToast('Выберите чат для отправки файла');
-                            // We keep the files in state, when they open a chat they can send them.
-                            // Or better, show the attach menu immediately when they open a chat.
-                            // Let's set a global flag so next time openChat finishes, we show modal.
-                            (window as any).pendingSharedFiles = true;
-                        } else {
-                            const { renderMediaModal } = await import('./messages-media');
-                            renderMediaModal();
-                        }
+                        const { shareContentToChats } = await import('./messages-actions');
+                        shareContentToChats(sharedData.text || '');
                     }
                 }
                 store.clear();

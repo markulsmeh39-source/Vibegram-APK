@@ -228,6 +228,184 @@ export async function confirmForward(msgId: string, content: string, senderName:
         import('./chat').then(c => c.loadChats());
     }
 }
+
+export async function shareContentToChats(content: string) {
+    if (!state.currentUser) {
+        import('./utils').then(m => m.customToast('Сначала войдите в аккаунт'));
+        return;
+    }
+    
+    state.forwardSelectedChats = [];
+    const modal = document.getElementById('modal-content')!;
+    modal.innerHTML = `
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Поделиться в...</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-full transition-colors">✕</button>
+            </div>
+            <div id="forward-chats-list" class="max-h-80 overflow-y-auto space-y-1 mb-6">
+                <div class="flex justify-center p-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div></div>
+            </div>
+            <button id="confirm-forward-btn" onclick="confirmShareToChats(decodeURIComponent('${encodeURIComponent(content).replace(/'/g, "%27")}'))" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md opacity-50 cursor-not-allowed" disabled>
+                Отправить
+            </button>
+        </div>
+    `;
+    document.getElementById('modal-overlay')!.classList.remove('hidden');
+
+    const { data: members } = await supabase.from('chat_members').select('chat_id').eq('user_id', state.currentUser.id);
+    if (!members || members.length === 0) {
+        document.getElementById('forward-chats-list')!.innerHTML = '<div class="text-center text-gray-500 text-sm p-4">Нет доступных чатов</div>';
+        return;
+    }
+    
+    const { data: chats } = await supabase.from('chats').select('id, type, title, avatar_url, chat_members(user_id, role, profiles(username, display_name, avatar_url))').in('id', members.map(m => m.chat_id));
+    
+    let savedMessagesChat = chats?.find(c => !c.type.includes('group') && !c.type.includes('channel') && (!c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length));
+    let renderedChats = chats ? [...chats] : [];
+    
+    renderedChats = renderedChats.filter(c => {
+        if (c.type === 'channel') {
+            const myRole = c.chat_members?.find((m: any) => m.user_id === state.currentUser.id)?.role;
+            if (myRole !== 'admin' && myRole !== 'creator') return false;
+        }
+        return c.type.includes('group') || c.type.includes('channel') || (c.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id)?.length);
+    });
+    
+    if (savedMessagesChat) {
+        renderedChats.unshift(savedMessagesChat);
+    }
+    
+    const list = document.getElementById('forward-chats-list')!;
+    list.innerHTML = '';
+    
+    renderedChats.forEach((chat: any) => {
+        const isGroup = chat.type === 'group' || chat.type === 'channel';
+        let isSavedMessages = false;
+        let chatName = chat.title;
+        let avatarUrl = chat.avatar_url;
+        let isPremiumUser = false;
+        
+        if (!isGroup) {
+            const others = chat.chat_members?.filter((m: any) => m.user_id !== state.currentUser.id);
+            if (!others || others.length === 0) {
+                isSavedMessages = true;
+                chatName = 'Избранное';
+            } else {
+                const other = others[0];
+                if (other?.profiles) {
+                    chatName = other.profiles.display_name || other.profiles.username;
+                    avatarUrl = other.profiles.avatar_url;
+                    isPremiumUser = other.profiles.is_premium && (!other.profiles.premium_until || new Date(other.profiles.premium_until) > new Date());
+                }
+            }
+        }
+        
+        const premiumBadgeHtml = isPremiumUser ? `<div class="absolute -top-1 -left-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-gray-200 dark:border-gray-700 z-50 w-4 h-4 flex items-center justify-center"><img src="./image/Google-Gemini-Logo-Transparent.png" class="w-full h-full object-contain" alt="Premium"></div>` : '';
+        const firstLetter = (chatName || 'C')[0].toUpperCase();
+        
+        let avatarHtml = isSavedMessages 
+            ? `<div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">И</div>`
+            : avatarUrl ? `<div class="w-full h-full rounded-full overflow-hidden relative"><img src="${avatarUrl}" class="w-full h-full object-cover"></div>` 
+            : `<div class="w-full h-full bg-gradient-to-br ${isGroup ? 'from-emerald-400 to-teal-500' : 'from-blue-400 to-indigo-500'} rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden relative">${firstLetter}</div>`;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition-colors group';
+        div.onclick = () => (window as any).toggleForwardChatSelection(chat.id);
+        
+        div.innerHTML = `
+            <div class="w-10 h-10 shrink-0 relative">${avatarHtml}${premiumBadgeHtml}</div>
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">${chatName || 'Неизвестно'}</div>
+                <div class="text-xs text-gray-500">${isSavedMessages ? 'Избранное' : (chat.type === 'channel' ? 'Канал' : (isGroup ? 'Группа' : 'Личный чат'))}</div>
+            </div>
+            <div id="forward-check-${chat.id}" class="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all">
+                <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+export async function confirmShareToChats(content: string) {
+    if (state.forwardSelectedChats.length === 0) return;
+    
+    const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>';
+
+    let mediaArr: any[] = [];
+    const files = [...(state.selectedFiles || [])];
+    
+    if (files.length > 0) {
+        try {
+            const { uploadToCloudinary } = await import('./utils');
+            const uploadPromises = files.map(async (file) => {
+                const url = await uploadToCloudinary(file as File, false);
+                if (!url) return null;
+                const fileType = (file as File).type;
+                let ratio = '1/1';
+                
+                if (fileType.startsWith('image/')) {
+                    try {
+                        const img = new Image();
+                        img.src = URL.createObjectURL(file as File);
+                        await new Promise(r => { img.onload = r; img.onerror = r; });
+                        if (img.naturalWidth && img.naturalHeight) {
+                            const r = img.naturalWidth / img.naturalHeight;
+                            if (r > 1.5) ratio = '16/9';
+                            else if (r < 0.75) ratio = '9/16';
+                            else ratio = '4/3';
+                        }
+                    } catch (e) {}
+                }
+                
+                return {
+                    url,
+                    type: fileType,
+                    name: (file as File).name,
+                    size: (file as File).size,
+                    asFile: (file as any).asFile || false,
+                    ratio
+                };
+            });
+            mediaArr = (await Promise.all(uploadPromises)).filter(r => r !== null);
+            state.selectedFiles = []; // clear after upload
+        } catch (e: any) {
+            import('./utils').then(m => m.customToast('Ошибка загрузки файлов: ' + e.message));
+            btn.innerHTML = 'Отправить';
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    const promises = state.forwardSelectedChats.map(chatId => {
+        return supabase.from('messages').insert({
+            chat_id: chatId,
+            sender_id: state.currentUser.id,
+            content: content,
+            media: mediaArr.length > 0 ? mediaArr : null,
+            message_type: 'text'
+        });
+    });
+
+    await Promise.all(promises);
+    closeModal();
+    customToast(`Отправлено в чаты (${state.forwardSelectedChats.length})`);
+    
+    // Broadcast for all
+    state.forwardSelectedChats.forEach(chatId => {
+        import('./supabase').then(s => s.broadcastUpdate(chatId, 'message'));
+    });
+    
+    if (state.forwardSelectedChats.includes(state.activeChatId!)) {
+        loadMessages(state.activeChatId!);
+        import('./chat').then(c => c.loadChats());
+    }
+}
+(window as any).confirmShareToChats = confirmShareToChats;
+(window as any).shareContentToChats = shareContentToChats;
+
 export function selectForwardChat() { /* Deprecated */ }
 export async function editMessage(messageId: string, currentContent: string) {
     closeAllMessageMenus();
