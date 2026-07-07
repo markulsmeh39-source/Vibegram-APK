@@ -482,13 +482,19 @@ export function closeShortsAnalytics() {
 (window as any).closeShortsAnalytics = closeShortsAnalytics;
 
 export function closeShorts() {
-  if (window.location.hash.startsWith("#shorts")) {
-    window.history.back(); // Use history.back() instead of setting hash to empty
-  } else {
-    const screen = document.getElementById("shorts-screen");
-    if (screen) screen.classList.add("hidden");
+  const screen = document.getElementById("shorts-screen");
+  if (screen && !screen.classList.contains("hidden")) {
+    screen.classList.add("hidden");
     document.body.style.overflow = "";
     pauseAllVideos();
+  }
+
+  if (window.location.hash.startsWith("#shorts")) {
+    // Return to the previous logical view (usually chat or home)
+    // To avoid being stuck in multiple #shorts states, we replace state or go back until we are out of shorts.
+    // For simplicity, just set hash to empty to go home, or #chat if we know we came from there.
+    // The easiest is just history.back() but since we already hid the UI, it will gracefully pop in the background.
+    window.history.back();
   }
 }
 (window as any).closeShorts = closeShorts;

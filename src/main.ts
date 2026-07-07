@@ -830,13 +830,18 @@ if (Capacitor.isNativePlatform()) {
                             shareContentToChats(text);
                         } else if (stream) {
                             try {
+                                const { customToast } = await import('./logic');
+                                // Create a blocking overlay
+                                const overlay = document.createElement('div');
+                                overlay.id = 'share-intent-blocking-overlay';
+                                overlay.className = 'fixed inset-0 bg-black/50 z-[9999] flex flex-col items-center justify-center text-white backdrop-blur-sm';
+                                overlay.innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div><div class="font-bold">Подготовка медиа...</div>';
+                                document.body.appendChild(overlay);
+
                                 const { Filesystem } = await import('@capacitor/filesystem');
                                 const fileData = await Filesystem.readFile({
                                     path: stream
                                 });
-                                // Convert to File object
-                                const res = await fetch(`data:application/octet-stream;base64,${fileData.data}`);
-                                const blob = await res.blob();
                                 let filename = "shared_file";
                                 if (stream.includes('%2F')) {
                                     const parts = stream.split('%2F');
@@ -846,12 +851,30 @@ if (Capacitor.isNativePlatform()) {
                                     filename = parts[parts.length - 1];
                                 }
                                 
-                                const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+                                let mimeType = 'application/octet-stream';
+                                const ext = filename.split('.').pop()?.toLowerCase();
+                                if (ext) {
+                                    const mimeMap: Record<string, string> = {
+                                        'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
+                                        'mp4': 'video/mp4', 'mov': 'video/quicktime', 'webm': 'video/webm', 'avi': 'video/x-msvideo',
+                                        'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'm4a': 'audio/mp4',
+                                        'pdf': 'application/pdf', 'doc': 'application/msword', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                                    };
+                                    if (mimeMap[ext]) mimeType = mimeMap[ext];
+                                }
+
+                                const res = await fetch(`data:${mimeType};base64,${fileData.data}`);
+                                const blob = await res.blob();
+                                
+                                const file = new File([blob], filename, { type: mimeType });
                                 
                                 state.selectedFiles = [file];
+                                overlay.remove();
                                 const { shareContentToChats } = await import('./messages-actions');
                                 shareContentToChats(text || '');
                             } catch (e: any) {
+                                document.getElementById('share-intent-blocking-overlay')?.remove();
+                                const { customToast } = await import('./logic');
                                 customToast('Ошибка при чтении файла: ' + e.message);
                             }
                         }

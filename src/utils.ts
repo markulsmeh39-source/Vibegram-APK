@@ -281,7 +281,9 @@ export function closeChatMobile(skipHistoryBack = false) {
   }
 
   if (!skipHistoryBack && window.location.hash === "#chat") {
-    window.history.back();
+    // If there are lingering iframe history states from miniapps, history.back() will just pop those
+    // and popstate will re-open the chat. So we manually hide the chat, and push a clean state.
+    window.location.hash = '';
     return;
   }
 

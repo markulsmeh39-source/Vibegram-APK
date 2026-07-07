@@ -182,6 +182,11 @@ export async function confirmForward(msgId: string, content: string, senderName:
     const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
     btn.disabled = true;
     btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>';
+    
+    const list = document.getElementById('forward-chats-list');
+    if (list) list.style.pointerEvents = 'none';
+    const closeBtn = document.querySelector('#modal-content button[onclick="closeModal()"]') as HTMLButtonElement;
+    if (closeBtn) closeBtn.disabled = true;
 
     // Fetch original message to get its media and message_type
     const { data: originalMsg } = await supabase
@@ -333,6 +338,11 @@ export async function confirmShareToChats(content: string) {
     const btn = document.getElementById('confirm-forward-btn') as HTMLButtonElement;
     btn.disabled = true;
     btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>';
+    
+    const list = document.getElementById('forward-chats-list');
+    if (list) list.style.pointerEvents = 'none';
+    const closeBtn = document.querySelector('#modal-content button[onclick="closeModal()"]') as HTMLButtonElement;
+    if (closeBtn) closeBtn.disabled = true;
 
     let mediaArr: any[] = [];
     const files = [...(state.selectedFiles || [])];
@@ -375,6 +385,8 @@ export async function confirmShareToChats(content: string) {
             import('./utils').then(m => m.customToast('Ошибка загрузки файлов: ' + e.message));
             btn.innerHTML = 'Отправить';
             btn.disabled = false;
+            if (list) list.style.pointerEvents = '';
+            if (closeBtn) closeBtn.disabled = false;
             return;
         }
     }

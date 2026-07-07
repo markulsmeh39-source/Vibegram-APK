@@ -99,11 +99,6 @@ function renderContent(content: string) {
     
     const linkRegex = /((?:https?|capacitor|file):\/\/[^\s]+)/g;
     const urlParsedContent = safeContent.replace(linkRegex, (url) => {
-        // Do not render share app content links as clickable blue links
-        if (url.includes('#shorts?id=') || url.includes('?miniapp=')) {
-            return '';
-        }
-        
         // We must unescape HTML entities for the actual URL to be valid in JS,
         // but we'll use encodeURI to ensure it's a safe string for the onclick attribute
         const jsUrl = encodeURI(
@@ -113,6 +108,15 @@ function renderContent(content: string) {
                .replace(/&quot;/g, '"')
                .replace(/&#39;/g, "'")
         ).replace(/'/g, "\\'");
+
+        if (url.includes('?miniapp=')) {
+            const appId = url.split('?miniapp=')[1];
+            return `<a href="#" onclick="runStandaloneMiniApp('${appId}'); return false;" class="text-blue-500 hover:underline break-all">${url}</a>`;
+        }
+        if (url.includes('#shorts?id=')) {
+            const shortId = url.split('#shorts?id=')[1];
+            return `<a href="#" onclick="window.location.hash='#shorts'; setTimeout(() => window.openShorts('${shortId}'), 100); return false;" class="text-blue-500 hover:underline break-all">${url}</a>`;
+        }
 
         return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); if(window.openExternalURL){window.openExternalURL('${jsUrl}');}else{window.open('${jsUrl}', '_blank');}" class="text-blue-500 hover:underline break-all active:scale-95 active:opacity-70 transition-all duration-200">${url}</a>`;
     });
@@ -549,11 +553,13 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
             const transcriptionText = `<div id="transcription-text-${msg.id}" class="w-full flex justify-end">${safeTranscription ? `<div class="mt-1 text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 p-2 rounded-lg max-w-[200px]">${safeTranscription}</div>` : ''}</div>`;
             const transcribeBtn = !safeTranscription ? `<button id="transcribe-btn-${msg.id}" onclick="transcribeMedia('${actualMedia[0].url}', '${msg.id}', 'video_circle')" class="absolute bottom-0 right-0 w-8 h-8 bg-gray-800/70 hover:bg-gray-800 text-white rounded-full flex items-center justify-center transition-colors z-10 backdrop-blur-sm" title="Расшифровать"><span class="text-[11px] font-bold">Aa</span></button>` : '';
 
+            const posterUrl = actualMedia[0].url.includes('res.cloudinary.com') ? actualMedia[0].url.replace(/\.(mp4|webm|mov|avi|mkv)$/i, '.jpg') : '';
+
             fileHtml = `
                 <div class="flex flex-col mb-1 items-end">
                     <div class="relative">
                         <div class="video-circle-container uninteracted" onclick="handleVideoCircleClick(event, this)">
-                            <video src="${actualMedia[0].url}" loop muted playsinline data-autoplay="true" ontimeupdate="updateVideoProgress(this)" onerror="this.onerror=null; window.handleMediaError(this, '${actualMedia[0].url}');"></video>
+                            <video ${posterUrl ? `poster="${posterUrl}"` : ''} src="${actualMedia[0].url}" loop muted playsinline data-autoplay="true" ontimeupdate="updateVideoProgress(this)" onerror="this.onerror=null; window.handleMediaError(this, '${actualMedia[0].url}');"></video>
                             <svg class="video-progress-ring" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="48" stroke-linecap="round"></circle>
                             </svg>
@@ -630,9 +636,10 @@ export function renderMessages(messages: any[], isInitialLoad = false) {
                 if(file.type?.startsWith('image/') && !file.asFile) {
                     fileHtml += `<img data-src="${file.url}" class="${aspectCls} w-full rounded-xl object-cover cursor-pointer hover:opacity-95 shadow-sm border border-black/5 chat-media-item bg-gray-200 dark:bg-gray-800" onclick="openLightbox('${file.url}')" onload="const l=this.closest('#messages-list'); if(l && l.scrollHeight - l.scrollTop - l.clientHeight < 250) l.scrollTop = l.scrollHeight;" onerror="this.onerror=null; window.handleMediaError(this, '${file.url}');">`;
                 } else if(file.type?.startsWith('video/') && !file.asFile) {
+                    const posterUrl = file.url.includes('res.cloudinary.com') ? file.url.replace(/\.(mp4|webm|mov|avi|mkv)$/i, '.jpg') : '';
                     fileHtml += `
                         <div class="relative ${aspectCls} w-full rounded-xl overflow-hidden shadow-sm border border-black/5 group chat-media-item-container mb-1 bg-gray-800">
-                            <video src="${file.url}" preload="metadata" class="w-full h-full object-cover chat-media-item cursor-pointer" onclick="toggleInlineVideo(this)" onloadeddata="const l=this.closest('#messages-list'); if(l && l.scrollHeight - l.scrollTop - l.clientHeight < 250) l.scrollTop = l.scrollHeight;" onloadedmetadata="this.parentElement.querySelector('.video-time').textContent = Math.floor(this.duration / 60) + ':' + Math.floor(this.duration % 60).toString().padStart(2, '0')" onerror="this.onerror=null; window.handleMediaError(this, '${file.url}');"></video>
+                            <video ${posterUrl ? `poster="${posterUrl}"` : ''} src="${file.url}#t=0.001" preload="metadata" class="w-full h-full object-cover chat-media-item cursor-pointer" onclick="toggleInlineVideo(this)" onloadeddata="const l=this.closest('#messages-list'); if(l && l.scrollHeight - l.scrollTop - l.clientHeight < 250) l.scrollTop = l.scrollHeight;" onloadedmetadata="this.parentElement.querySelector('.video-time').textContent = Math.floor(this.duration / 60) + ':' + Math.floor(this.duration % 60).toString().padStart(2, '0')" onerror="this.onerror=null; window.handleMediaError(this, '${file.url}');"></video>
                             <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none video-overlay">
                                 <div class="w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-sm">
                                     <svg class="w-6 h-6 ml-0.5 play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
