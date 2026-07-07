@@ -942,3 +942,31 @@ window.addEventListener('offline', updateNetworkStatus);
 // Initial check
 updateNetworkStatus();
 
+
+// OTA Web Update Logic
+declare const __APP_VERSION__: string;
+
+function checkOTAUpdate() {
+    if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) return;
+    if (typeof __APP_VERSION__ !== 'undefined') {
+        const currentVersion = __APP_VERSION__;
+        fetch(`/version.json?t=${Date.now()}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.version && data.version !== currentVersion) {
+                    console.log('New version available. Reloading...');
+                    window.location.reload();
+                }
+            })
+            .catch(err => {
+                console.error('OTA Check failed', err);
+            });
+    }
+}
+
+// Check every 5 minutes
+setInterval(checkOTAUpdate, 5 * 60 * 1000);
+// Also check when the window regains focus
+window.addEventListener('focus', checkOTAUpdate);
+// Check 5 seconds after load
+setTimeout(checkOTAUpdate, 5000);
