@@ -1,15 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import fs from 'fs';
 import {defineConfig, loadEnv} from 'vite';
-
-const appVersion = Date.now().toString();
-const publicDir = path.resolve(__dirname, 'public');
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir);
-}
-fs.writeFileSync(path.join(publicDir, 'version.json'), JSON.stringify({ version: appVersion }));
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
@@ -36,7 +28,6 @@ export default defineConfig(({mode}) => {
     base: repoName,
     plugins: [react(), tailwindcss()],
     define: {
-      '__APP_VERSION__': JSON.stringify(appVersion),
       'process.env.GEMINI_API_KEY_OBFUSCATED': JSON.stringify(obfuscatedAiKey),
       'process.env.HF_API_KEY_OBFUSCATED': JSON.stringify(obfuscatedHfKey),
       'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
